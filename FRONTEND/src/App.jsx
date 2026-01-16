@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense, lazy } from 'react'
+import { Box, Skeleton } from '@mui/material'
 import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { LayoutProvider } from './contexts/LayoutContext'
@@ -8,15 +9,16 @@ import { AuthProvider } from './contexts/AuthContext'
 import { DashboardProvider } from './contexts/DashboardContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import Navbar from './components/Navbar'
-import Sidebar from './components/Sidebar'
 import ChatSection from './components/ChatSection'
-import PYQSection from './components/PYQSection'
-import Dashboard from './components/Dashboard'
-import PYQPractice from './components/PYQPractice'
-import QuizSection from './components/QuizSection'
-import EligibilitySection from './components/EligibilitySection'
-import SyllabusSection from './components/SyllabusSection'
-import GDTopicsSection from './components/GDTopicsSection'
+
+const Sidebar = lazy(() => import('./components/Sidebar'))
+const PYQSection = lazy(() => import('./components/PYQSection'))
+const Dashboard = lazy(() => import('./components/Dashboard'))
+const PYQPractice = lazy(() => import('./components/PYQPractice'))
+const QuizSection = lazy(() => import('./components/QuizSection'))
+const EligibilitySection = lazy(() => import('./components/EligibilitySection'))
+const SyllabusSection = lazy(() => import('./components/SyllabusSection'))
+const GDTopicsSection = lazy(() => import('./components/GDTopicsSection'))
 
 const muiTheme = createTheme({
   palette: {
@@ -79,30 +81,107 @@ function AppContent() {
 
   return (
     <div 
-      className="h-screen overflow-hidden transition-colors duration-300 -mb-3"
+      className="h-screen overflow-hidden transition-colors duration-300"
       style={{ 
         backgroundColor: '#f5f5f5'
       }}
     >
       <Navbar onViewChange={handleViewChange} currentView={currentView} />
-      <div className="flex flex-col md:flex-row pt-16 h-full">
-        <Sidebar />
+      <div className="flex flex-col md:flex-row h-full" style={{ paddingTop: 72 }}>
+        <Suspense
+          fallback={
+            <Box sx={{ width: 240, p: 2 }}>
+              <Skeleton variant="rounded" height={40} sx={{ mb: 2 }} />
+              <Skeleton variant="rounded" height={16} sx={{ mb: 1 }} />
+              <Skeleton variant="rounded" height={16} sx={{ mb: 1 }} />
+              <Skeleton variant="rounded" height={16} sx={{ mb: 1 }} />
+              <Skeleton variant="rounded" height={16} />
+            </Box>
+          }
+        >
+          <Sidebar />
+        </Suspense>
         {currentView === 'dashboard' ? (
-          <Dashboard />
+          <Suspense
+            fallback={
+              <Box sx={{ flex: 1, p: 2 }}>
+                <Skeleton variant="rounded" height={120} sx={{ mb: 2 }} />
+                <Skeleton variant="rounded" height={200} sx={{ mb: 2 }} />
+                <Skeleton variant="rounded" height={200} />
+              </Box>
+            }
+          >
+            <Dashboard />
+          </Suspense>
         ) : currentView === 'pyq-practice' ? (
-          <PYQPractice />
+          <Suspense
+            fallback={
+              <Box sx={{ flex: 1, p: 2 }}>
+                <Skeleton variant="rounded" height={120} sx={{ mb: 2 }} />
+                <Skeleton variant="rounded" height={300} />
+              </Box>
+            }
+          >
+            <PYQPractice />
+          </Suspense>
         ) : currentView === 'eligibility' ? (
-          <EligibilitySection />
+          <Suspense
+            fallback={
+              <Box sx={{ flex: 1, p: 2 }}>
+                <Skeleton variant="rounded" height={120} sx={{ mb: 2 }} />
+                <Skeleton variant="rounded" height={300} />
+              </Box>
+            }
+          >
+            <EligibilitySection />
+          </Suspense>
         ) : currentView === 'syllabus' ? (
-          <SyllabusSection />
+          <Suspense
+            fallback={
+              <Box sx={{ flex: 1, p: 2 }}>
+                <Skeleton variant="rounded" height={120} sx={{ mb: 2 }} />
+                <Skeleton variant="rounded" height={300} />
+              </Box>
+            }
+          >
+            <SyllabusSection />
+          </Suspense>
         ) : currentView === 'quiz' ? (
-          <QuizSection />
+          <Suspense
+            fallback={
+              <Box sx={{ flex: 1, p: 2 }}>
+                <Skeleton variant="rounded" height={120} sx={{ mb: 2 }} />
+                <Skeleton variant="rounded" height={300} />
+              </Box>
+            }
+          >
+            <QuizSection />
+          </Suspense>
         ) : currentView === 'gd-topics' ? (
-          <GDTopicsSection />
+          <Suspense
+            fallback={
+              <Box sx={{ flex: 1, p: 2 }}>
+                <Skeleton variant="rounded" height={120} sx={{ mb: 2 }} />
+                <Skeleton variant="rounded" height={300} />
+              </Box>
+            }
+          >
+            <GDTopicsSection />
+          </Suspense>
         ) : (
           <>
             <ChatSection />
-            <PYQSection />
+            <Suspense
+              fallback={
+                <Box sx={{ width: 450, p: 2 }}>
+                  <Skeleton variant="rounded" height={40} sx={{ mb: 2 }} />
+                  <Skeleton variant="rounded" height={160} sx={{ mb: 2 }} />
+                  <Skeleton variant="rounded" height={160} />
+                </Box>
+              }
+            >
+              <PYQSection />
+            </Suspense>
           </>
         )}
       </div>

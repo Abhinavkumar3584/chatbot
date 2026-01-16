@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, lazy, Suspense } from 'react'
 import { LogIn, UserPlus, Home, BarChart3, Info, Phone, LogOut, Target } from 'lucide-react'
 import { AppBar, Toolbar, Box, Typography, Button, Avatar, Stack, Container, Chip } from '@mui/material'
-import AuthModal from './AuthModal'
-import AboutUsModal from './AboutUsModal'
-import ContactModal from './ContactModal'
-import EditProfileModal from './EditProfileModal'
+const AuthModal = lazy(() => import('./AuthModal'))
+const AboutUsModal = lazy(() => import('./AboutUsModal'))
+const ContactModal = lazy(() => import('./ContactModal'))
+const EditProfileModal = lazy(() => import('./EditProfileModal'))
 import Clock from './Clock'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -115,13 +115,14 @@ const Navbar = ({ onViewChange, currentView }) => {
         backgroundColor: '#ffffff',
         border: '1px solid #808080',
         borderRadius: 2,
-        top: 4,
-        left: 4,
-        right: 4,
+        top: 8,
+        left: 8,
+        right: 8,
+        height: 64,
         zIndex: 50
       }}
     >
-      <Toolbar disableGutters sx={{ minHeight: 56 }}>
+      <Toolbar disableGutters sx={{ minHeight: 64 }}>
         <Container maxWidth={false} disableGutters sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%', minWidth: 0 }}>
             {/* Left side - App name */}
@@ -254,25 +255,27 @@ const Navbar = ({ onViewChange, currentView }) => {
         </Container>
       </Toolbar>
 
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        initialMode={authMode}
-      />
+      <Suspense fallback={null}>
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          initialMode={authMode}
+        />
 
-      <AboutUsModal
-        isOpen={showAboutModal}
-        onClose={() => setShowAboutModal(false)}
-      />
+        <AboutUsModal
+          isOpen={showAboutModal}
+          onClose={() => setShowAboutModal(false)}
+        />
 
-      <ContactModal
-        isOpen={showContactModal}
-        onClose={() => setShowContactModal(false)}
-      />
-      <EditProfileModal
-        isOpen={showEditProfile}
-        onClose={() => setShowEditProfile(false)}
-      />
+        <ContactModal
+          isOpen={showContactModal}
+          onClose={() => setShowContactModal(false)}
+        />
+        <EditProfileModal
+          isOpen={showEditProfile}
+          onClose={() => setShowEditProfile(false)}
+        />
+      </Suspense>
     </AppBar>
   )
 }

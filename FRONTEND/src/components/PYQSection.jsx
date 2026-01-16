@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { ChevronDown, FileText, ChevronLeft, ChevronRight, Star } from 'lucide-react'
 import { Box, Paper, Stack, Typography, IconButton, Chip, Divider, Button, Menu, MenuItem } from '@mui/material'
 import { useLayout } from '../contexts/LayoutContext'
@@ -84,14 +84,6 @@ const PYQSection = () => {
     
     loadInitialData()
   }, [])
-
-  // Load questions when filters change - but only if we have search results
-  useEffect(() => {
-    // Only apply filters if we have search results from the main search
-    if (searchResults.length > 0) {
-      applyFilters()
-    }
-  }, [selectedExam, selectedSubject, showImportantOnly, importantQuestions, searchResults.length])
 
   // Listen for MCQ results from chat searches
   useEffect(() => {
@@ -294,6 +286,39 @@ const PYQSection = () => {
   // Determine which questions to display based on search results or filtered API results
   const currentQuestions = searchResults.length > 0 ? filteredQuestions : filteredQuestions
 
+  const progressStats = useMemo(() => {
+    if (currentQuestions.length === 0 || Object.keys(userAnswers).length === 0) {
+      return { correct: 0, wrong: 0, answered: 0 }
+    }
+
+    let correct = 0
+    let wrong = 0
+
+    currentQuestions.forEach((q, idx) => {
+      const questionId = q.id || `fallback_${idx}`
+      const userAnswer = userAnswers[questionId]
+      const hasValidCorrectAnswer =
+        q.correct_answer !== undefined &&
+        Number.isInteger(q.correct_answer) &&
+        q.correct_answer >= 0 &&
+        q.correct_answer < (q.options?.length || 0)
+
+      if (!hasValidCorrectAnswer || userAnswer === undefined) return
+
+      if (userAnswer === q.correct_answer) {
+        correct++
+      } else {
+        wrong++
+      }
+    })
+
+    return {
+      correct,
+      wrong,
+      answered: Object.keys(userAnswers).length
+    }
+  }, [currentQuestions, userAnswers])
+
   return (
     <>
       {/* Full PYQ Section */}
@@ -302,9 +327,9 @@ const PYQSection = () => {
           elevation={3}
           sx={{
             position: 'fixed',
-            right: 4,
-            top: '4rem',
-            bottom: 4,
+            right: 8,
+            top: 72,
+            bottom: 8,
             width: 450,
             zIndex: 30,
             borderRadius: 2,
@@ -453,42 +478,17 @@ const PYQSection = () => {
                       </Typography>
                       <Chip
                         size="small"
-                        label={`${(() => {
-                          let correct = 0
-                          currentQuestions.forEach((q, idx) => {
-                            const questionId = q.id || `fallback_${idx}`
-                            const hasValidCorrectAnswer = 
-                              q.correct_answer !== undefined && 
-                              Number.isInteger(q.correct_answer) &&
-                              q.correct_answer >= 0 && 
-                              q.correct_answer < (q.options?.length || 0)
-                            if (hasValidCorrectAnswer && userAnswers[questionId] === q.correct_answer) correct++
-                          })
-                          return correct
-                        })()} Correct`}
+                        label={`${progressStats.correct} Correct`}
                         sx={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#16a34a', fontSize: '0.7rem' }}
                       />
                       <Chip
                         size="small"
-                        label={`${(() => {
-                          let wrong = 0
-                          currentQuestions.forEach((q, idx) => {
-                            const questionId = q.id || `fallback_${idx}`
-                            const userAnswer = userAnswers[questionId]
-                            const hasValidCorrectAnswer = 
-                              q.correct_answer !== undefined && 
-                              Number.isInteger(q.correct_answer) &&
-                              q.correct_answer >= 0 && 
-                              q.correct_answer < (q.options?.length || 0)
-                            if (hasValidCorrectAnswer && userAnswer !== undefined && userAnswer !== q.correct_answer) wrong++
-                          })
-                          return wrong
-                        })()} Wrong`}
+                        label={`${progressStats.wrong} Wrong`}
                         sx={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#dc2626', fontSize: '0.7rem' }}
                       />
                       <Chip
                         size="small"
-                        label={`${Object.keys(userAnswers).length}/${currentQuestions.length} Answered`}
+                        label={`${progressStats.answered}/${currentQuestions.length} Answered`}
                         sx={{ backgroundColor: 'rgba(0,0,0,0.06)', color: '#000000', fontSize: '0.7rem' }}
                       />
                     </Stack>
@@ -742,9 +742,9 @@ const PYQSection = () => {
           elevation={3}
           sx={{
             position: 'fixed',
-            right: 4,
-            top: '4rem',
-            bottom: 4,
+            right: 8,
+            top: 72,
+            bottom: 8,
             width: 40,
             zIndex: 30,
             borderRadius: 2,

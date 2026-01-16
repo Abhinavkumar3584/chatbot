@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react'
 import { MessageCircle, Search, BookOpen, FileText, Lightbulb, HelpCircle, ChevronLeft, ChevronRight, Trash2, Plus, Clock, Target, CheckCircle, GraduationCap, PenTool, MessagesSquare } from 'lucide-react'
 import { Box, Paper, Stack, Typography, Button, IconButton, Divider } from '@mui/material'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLayout } from '../contexts/LayoutContext'
 import { useSearchHistory } from '../contexts/SearchHistoryContext'
 import { useAuth } from '../contexts/AuthContext'
-import HelpSupportModal from './HelpSupportModal'
-import WhatsNewModal from './WhatsNewModal'
+const HelpSupportModal = lazy(() => import('./HelpSupportModal'))
+const WhatsNewModal = lazy(() => import('./WhatsNewModal'))
 import apiService from '../services/api'
 import { ChevronFirst } from './icons/ChevronFirst'
 import { CircleHelp } from './icons/CircleHelp'
@@ -32,7 +32,7 @@ const Sidebar = () => {
   const [chatError, setChatError] = useState('')
 
   // Load chat history
-  const loadChatHistory = async () => {
+  const loadChatHistory = useCallback(async () => {
     if (!currentUser) {
       console.log('❌ No currentUser, skipping chat history load')
       return
@@ -51,7 +51,7 @@ const Sidebar = () => {
     } finally {
       setIsLoadingChats(false)
     }
-  }
+  }, [currentUser, getChatHistory])
 
   // Handle new chat creation
   const handleNewChat = async () => {
@@ -125,7 +125,7 @@ const Sidebar = () => {
   }
 
   // Format chat title from first message
-  const formatChatTitle = (chat) => {
+  const formatChatTitle = useCallback((chat) => {
     // If chat has a custom title that's not "New Chat", use it
     if (chat.title && chat.title !== 'New Chat') {
       return chat.title
@@ -140,9 +140,12 @@ const Sidebar = () => {
     
     // Fallback
     return 'Untitled Chat'
-  }
+  }, [])
 
-  const loadBooks = async () => {
+  const guestChats = useMemo(() => guestChatHistory || [], [guestChatHistory])
+  const userChats = useMemo(() => chatHistory || [], [chatHistory])
+
+  const loadBooks = useCallback(async () => {
     setIsLoadingBooks(true)
     try {
       const books = await apiService.getBooks()
@@ -152,9 +155,9 @@ const Sidebar = () => {
     } finally {
       setIsLoadingBooks(false)
     }
-  }
+  }, [])
 
-  const loadInsertedPyqs = async () => {
+  const loadInsertedPyqs = useCallback(async () => {
     setIsLoadingPyqs(true)
     try {
       const pyqs = await apiService.getInsertedPyqs()
@@ -164,17 +167,17 @@ const Sidebar = () => {
     } finally {
       setIsLoadingPyqs(false)
     }
-  }
+  }, [])
 
-  const handleBooksClick = () => {
+  const handleBooksClick = useCallback(() => {
     setShowBooksModal(true)
     loadBooks()
-  }
+  }, [loadBooks])
 
-  const handlePyqsClick = () => {
+  const handlePyqsClick = useCallback(() => {
     setShowPyqsModal(true)
     loadInsertedPyqs()
-  }
+  }, [loadInsertedPyqs])
 
   const handleHelpClick = () => {
     setShowHelpModal(true)
@@ -216,7 +219,7 @@ const Sidebar = () => {
   useEffect(() => {
     loadBooks()
     loadInsertedPyqs()
-  }, [])
+  }, [loadBooks, loadInsertedPyqs])
 
   // Load chat history when user changes
   useEffect(() => {
@@ -227,7 +230,7 @@ const Sidebar = () => {
       console.log('👤 No user, clearing chat history')
       setChatHistory([])
     }
-  }, [currentUser])
+  }, [currentUser, loadChatHistory])
 
   // Listen for refresh chat list events
   useEffect(() => {
@@ -242,7 +245,7 @@ const Sidebar = () => {
     return () => {
       window.removeEventListener('refreshChatList', handleRefreshChatList)
     }
-  }, [currentUser])
+  }, [currentUser, loadChatHistory])
 
   return (
     <>
@@ -252,9 +255,9 @@ const Sidebar = () => {
           elevation={3}
           sx={{
             position: 'fixed',
-            left: 4,
-            top: '4rem',
-            bottom: 4,
+            left: 8,
+            top: 72,
+            bottom: 8,
             width: { xs: 208, sm: 240, md: 272 },
             zIndex: 30,
             borderRadius: 2,
@@ -322,7 +325,7 @@ const Sidebar = () => {
             <div className="flex-1 overflow-y-auto px-2 pb-2 sidebar-chat-history">
               <div className="space-y-1">
                 {/* Show guest chats if not authenticated or no user chats */}
-                {!currentUser && guestChatHistory.length === 0 ? (
+                {!currentUser && guestChats.length === 0 ? (
                   <div className="text-center py-6">
                     <MessageCircle 
                       className="w-10 h-10 mx-auto mb-2 transition-colors duration-300" 
@@ -341,7 +344,7 @@ const Sidebar = () => {
                       Start a conversation to see your chat history
                     </p>
                   </div>
-                ) : !currentUser && guestChatHistory.length > 0 ? (
+                ) : !currentUser && guestChats.length > 0 ? (
                   <>
                     <div 
                       className="text-xs mb-2 px-2 font-medium transition-colors duration-300" 
@@ -349,7 +352,7 @@ const Sidebar = () => {
                     >
                       Recent Conversations
                     </div>
-                    {guestChatHistory.map((chat) => (
+                    {guestChats.map((chat) => (
                       <div
                         key={chat.id}
                         className="w-full text-left p-2 rounded-lg transition-colors group relative"
@@ -426,7 +429,7 @@ const Sidebar = () => {
                       Retry
                     </button>
                   </div>
-                ) : currentUser && chatHistory.length === 0 ? (
+                ) : currentUser && userChats.length === 0 ? (
                   <div className="text-center py-6">
                     <MessageCircle 
                       className="w-10 h-10 mx-auto mb-2"
@@ -445,7 +448,7 @@ const Sidebar = () => {
                       Start chatting to see your history here
                     </p>
                   </div>
-                ) : currentUser && chatHistory.length > 0 ? (
+                ) : currentUser && userChats.length > 0 ? (
                   <>
                     <div 
                       className="text-xs mb-2 px-2 font-medium" 
@@ -453,7 +456,7 @@ const Sidebar = () => {
                     >
                       Recent Conversations
                     </div>
-                    {chatHistory.map((chat) => (
+                    {userChats.map((chat) => (
                       <div
                         key={chat.id}
                         className="w-full text-left p-2 rounded-lg transition-colors group relative"
@@ -549,9 +552,9 @@ const Sidebar = () => {
           elevation={3}
           sx={{
             position: 'fixed',
-            left: 4,
-            top: '4rem',
-            bottom: 4,
+            left: 8,
+            top: 72,
+            bottom: 8,
             width: 40,
             zIndex: 30,
             borderRadius: 2,
@@ -911,17 +914,19 @@ const Sidebar = () => {
         </div>
       )}
 
-      {/* Help & Support Modal */}
-      <HelpSupportModal 
-        isOpen={showHelpModal}
-        onClose={() => setShowHelpModal(false)}
-      />
-      
-      {/* What's New Modal */}
-      <WhatsNewModal 
-        isOpen={showWhatsNewModal}
-        onClose={() => setShowWhatsNewModal(false)}
-      />
+      <Suspense fallback={null}>
+        {/* Help & Support Modal */}
+        <HelpSupportModal
+          isOpen={showHelpModal}
+          onClose={() => setShowHelpModal(false)}
+        />
+        
+        {/* What's New Modal */}
+        <WhatsNewModal
+          isOpen={showWhatsNewModal}
+          onClose={() => setShowWhatsNewModal(false)}
+        />
+      </Suspense>
 
       {/* Coming Soon Modal */}
       {showComingSoonModal && (

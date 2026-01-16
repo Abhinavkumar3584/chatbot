@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { User, Bot, ChevronDown, ChevronUp, Send, Loader2, MessageCircle, FileText, Hash } from 'lucide-react'
 import { Box, Paper, Stack, Typography, Alert, Chip, Divider, Avatar, IconButton, Button } from '@mui/material'
 import { useTheme } from '../contexts/ThemeContext'
@@ -25,13 +25,9 @@ const ChatSection = () => {
   const [currentChatTitle, setCurrentChatTitle] = useState('New Chat')
   const [rateLimitMessage, setRateLimitMessage] = useState('')
   const [expandedSources, setExpandedSources] = useState({}) // Track expanded sources for each message
+  const [aiStatusText, setAiStatusText] = useState('')
 
-  // Debug: Add test message to verify display is working
-  useEffect(() => {
-    console.log('💬 ChatSection mounted, messages state:', messages)
-  }, [messages])
-
-  const toggleSources = (sourceKey) => {
+  const toggleSources = useCallback((sourceKey) => {
     setExpandedSources(prev => {
       // If clicking the same source, close it
       if (prev[sourceKey]) {
@@ -55,7 +51,7 @@ const ChatSection = () => {
       newState[sourceKey] = true
       return newState
     })
-  }
+  }, [])
 
   // Check system health on component mount
   useEffect(() => {
@@ -74,6 +70,32 @@ const ChatSection = () => {
     
     checkHealth()
   }, [])
+
+  // Progressive UI feedback during AI response (non-blocking)
+  useEffect(() => {
+    if (!isLoading) {
+      setAiStatusText('')
+      return
+    }
+
+    const steps = [
+      'Reformatting your question…',
+      'Querying AI model…',
+      'Fetching relevant information…',
+      'Preparing final response…'
+    ]
+
+    setAiStatusText(steps[0])
+    const timeouts = steps.slice(1).map((step, index) =>
+      setTimeout(() => {
+        setAiStatusText(step)
+      }, (index + 1) * 900)
+    )
+
+    return () => {
+      timeouts.forEach(clearTimeout)
+    }
+  }, [isLoading])
 
   // Listen for chat events from Sidebar
   useEffect(() => {
@@ -154,7 +176,7 @@ const ChatSection = () => {
   }, [])
 
   // Handle guest chat saving
-  const handleGuestChatSave = (messages) => {
+  const handleGuestChatSave = useCallback((messages) => {
     if (currentUser) return // Don't save guest chats for authenticated users
     
     if (!currentChatId || !currentChatId.startsWith('guest-')) {
@@ -181,10 +203,10 @@ const ChatSection = () => {
       setCurrentChatTitle(title)
       console.log('✅ Updated guest chat:', currentChatId)
     }
-  }
+  }, [currentUser, currentChatId, addGuestChat, updateGuestChat])
 
   // Handle sending messages - can be called from EmbeddedSearchBar
-  const sendMessage = async (query, selectedSubject = 'all') => {
+  const sendMessage = useCallback(async (query, selectedSubject = 'all') => {
     if (!query.trim()) return
     if (isLoading) return
     setIsLoading(true)
@@ -325,7 +347,18 @@ const ChatSection = () => {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [
+    isLoading,
+    currentUser,
+    currentChatId,
+    messages.length,
+    addToSearchHistory,
+    handleGuestChatSave,
+    saveMessage,
+    updateChatMessageCount,
+    updateChatTitle,
+    trackInteraction
+  ])
 
   // Auto scroll to bottom when messages change, but only if there are messages
   useEffect(() => {
@@ -334,12 +367,25 @@ const ChatSection = () => {
     }
   }, [messages, isLoading])
 
-  // Calculate dynamic margins based on visibility
-  const leftMargin = sidebarVisible ? 'ml-52 sm:ml-60 md:ml-68' : 'ml-12'
-  const rightMargin = pyqVisible ? 'mr-[450px]' : 'mr-12'
+  // Calculate dynamic margins based on visibility (match fixed panel sizes)
+  const leftMarginPx = useMemo(() => (sidebarVisible ? 296 : 64), [sidebarVisible])
+  const rightMarginPx = useMemo(() => (pyqVisible ? 474 : 24), [pyqVisible])
 
   return (
-    <Box className={`flex-1 ${leftMargin} ${rightMargin} flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}>
+    <Box
+      sx={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        overflow: 'hidden',
+        pl: 1,
+        pr: 1,
+        pb: 1,
+        ml: { xs: 2, md: `${leftMarginPx}px` },
+        mr: { xs: 2, md: `${rightMarginPx}px` }
+      }}
+    >
         {/* Main Chat Container with Theme-aware Background */}
         <Paper
           elevation={1}
@@ -664,7 +710,14 @@ const ChatSection = () => {
                     >
                       {/* Loading Indicator - Only for bot messages when loading */}
                       {message.type === 'bot' && message.isLoading ? (
-                        <SearchProgressIndicator isVisible={true} />
+                        <Box>
+                          <SearchProgressIndicator isVisible={true} />
+                          {aiStatusText && (
+                            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: '#6b7280' }}>
+                              {aiStatusText}
+                            </Typography>
+                          )}
+                        </Box>
                       ) : (
                         <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
                           {message.content}
