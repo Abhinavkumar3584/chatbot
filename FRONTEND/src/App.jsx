@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react'
+import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { LayoutProvider } from './contexts/LayoutContext'
 import { SearchHistoryProvider } from './contexts/SearchHistoryContext'
@@ -16,6 +17,19 @@ import QuizSection from './components/QuizSection'
 import EligibilitySection from './components/EligibilitySection'
 import SyllabusSection from './components/SyllabusSection'
 import GDTopicsSection from './components/GDTopicsSection'
+
+const muiTheme = createTheme({
+  palette: {
+    primary: { main: '#BAFF39' },
+    text: { primary: '#000000' },
+    background: { default: '#f5f5f5', paper: '#ffffff' }
+  },
+  typography: {
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+    button: { textTransform: 'none', fontWeight: 600 }
+  },
+  shape: { borderRadius: 8 }
+})
 
 function AppContent() {
   const [currentView, setCurrentView] = useState('chat') // 'chat', 'dashboard', 'pyq-practice', 'eligibility', 'syllabus', 'quiz', 'gd-topics'
@@ -104,7 +118,9 @@ function App() {
           <LayoutProvider>
             <SearchHistoryProvider>
               <DashboardProvider>
-                <AppContent />
+                <MuiThemeProvider theme={muiTheme}>
+                  <AppContent />
+                </MuiThemeProvider>
               </DashboardProvider>
             </SearchHistoryProvider>
           </LayoutProvider>

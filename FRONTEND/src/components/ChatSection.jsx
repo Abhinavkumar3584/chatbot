@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { User, Bot, ChevronDown, ChevronUp, Send, Loader2, MessageCircle, FileText, Hash } from 'lucide-react'
+import { Box, Paper, Stack, Typography, Alert, Chip, Divider, Avatar, IconButton, Button } from '@mui/material'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLayout } from '../contexts/LayoutContext'
 import { useSearchHistory } from '../contexts/SearchHistoryContext'
@@ -338,68 +339,73 @@ const ChatSection = () => {
   const rightMargin = pyqVisible ? 'mr-[450px]' : 'mr-12'
 
   return (
-    <div className={`flex-1 ${leftMargin} ${rightMargin} flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}>
+    <Box className={`flex-1 ${leftMargin} ${rightMargin} flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}>
         {/* Main Chat Container with Theme-aware Background */}
-        <div 
+        <Paper
+          elevation={1}
           className="flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden transition-colors duration-300"
-          style={{ 
+          sx={{
             backgroundColor: '#ffffff',
             border: '1px solid #808080'
           }}
         >
           {/* Chat Header with Title */}
           {currentChatTitle && currentChatTitle !== 'New Chat' && (
-            <div 
-              className="mx-3 mt-2 mb-1 p-1.5 rounded-md transition-colors duration-300" 
-              style={{ 
-                backgroundColor: 'rgba(186, 255, 57, 0.15)',
-                border: '1px solid rgba(186, 255, 57, 0.4)'
-              }}
-            >
-              <div className="flex items-center space-x-1">
-                <MessageCircle 
-                  className="w-2.5 h-2.5" 
-                  style={{ color: '#000000' }} 
-                />
-                <h2 
-                  className="text-xs font-medium truncate" 
-                  style={{ color: '#000000' }}
-                >
-                  {currentChatTitle}
-                </h2>
-              </div>
-            </div>
+            <Box sx={{ mx: 2, mt: 2, mb: 1 }}>
+              <Chip
+                size="small"
+                icon={<MessageCircle size={12} />}
+                label={currentChatTitle}
+                sx={{
+                  backgroundColor: 'rgba(186, 255, 57, 0.15)',
+                  border: '1px solid rgba(186, 255, 57, 0.4)',
+                  color: '#000000',
+                  maxWidth: '100%'
+                }}
+              />
+            </Box>
           )}
 
           {/* System Status Banner */}
           {!systemStatus.healthy && (
-            <div 
-              className="mb-1 mx-3 mt-2 p-1.5 rounded-md transition-colors duration-300" 
-              style={{ 
-                backgroundColor: 'rgba(255, 146, 28, 0.15)',
-                border: '1px solid rgba(255, 146, 28, 0.5)'
-              }}
-            >
-              <p 
-                className="text-xs" 
-                style={{ color: '#d97706' }}
+            <Box sx={{ mx: 2, mt: 1 }}>
+              <Alert
+                severity="warning"
+                variant="outlined"
+                sx={{
+                  py: 0.5,
+                  borderColor: 'rgba(255, 146, 28, 0.5)',
+                  backgroundColor: 'rgba(255, 146, 28, 0.15)',
+                  color: '#d97706',
+                  fontSize: '0.75rem'
+                }}
               >
-                🔧 System initializing... Please wait for the backend to be ready.
-              </p>
-            </div>
+                System initializing... Please wait for the backend to be ready.
+              </Alert>
+            </Box>
           )}
 
           {/* Rate Limit Message */}
           {rateLimitMessage && (
-            <div className="mb-1 mx-3 mt-2 p-1.5 bg-yellow-500/20 backdrop-blur-sm border border-yellow-400/30 rounded-md">
-              <p className={`text-xs text-yellow-900`}>
+            <Box sx={{ mx: 2, mt: 1 }}>
+              <Alert
+                severity="warning"
+                variant="outlined"
+                sx={{
+                  py: 0.5,
+                  borderColor: 'rgba(234, 179, 8, 0.35)',
+                  backgroundColor: 'rgba(234, 179, 8, 0.15)',
+                  color: '#92400e',
+                  fontSize: '0.75rem'
+                }}
+              >
                 {rateLimitMessage}
-              </p>
-            </div>
+              </Alert>
+            </Box>
           )}
           
           {/* Scrollable Messages Container */}
-          <div className="flex-1 overflow-y-auto px-3 pb-2 chat-messages-container relative" style={{ overscrollBehavior: 'none' }}>
+          <Box className="flex-1 overflow-y-auto px-3 pb-2 chat-messages-container relative" style={{ overscrollBehavior: 'none' }}>
             {/* Grid background for empty welcome state - spans full chat width */}
             {messages.length === 0 && (
               <div
@@ -627,246 +633,193 @@ const ChatSection = () => {
               )}
 
               {messages.map((message) => (
-                <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`flex items-start space-x-2 max-w-2xl ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                <Box key={message.id} sx={{ display: 'flex', justifyContent: message.type === 'user' ? 'flex-end' : 'flex-start' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, maxWidth: '40rem', flexDirection: message.type === 'user' ? 'row-reverse' : 'row' }}>
                     {/* Avatar */}
-                    <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                    <Box sx={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {message.type === 'user' ? (
-                        <div 
-                          className="w-8 h-8 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: '#BAFF39', color: '#000000' }}
-                        >
-                          <User className="w-3 h-3" />
-                        </div>
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: '#BAFF39', color: '#000000' }}>
+                          <User size={12} />
+                        </Avatar>
                       ) : (
-                        <img 
-                          src="/mg.png" 
-                          alt="MG Bot" 
-                          className="w-24 h-24 object-contain mg-logo-shake"
+                        <Box
+                          component="img"
+                          src="/mg.png"
+                          alt="MG Bot"
+                          sx={{ width: 48, height: 48, objectFit: 'contain' }}
                         />
                       )}
-                    </div>
+                    </Box>
 
                     {/* Message content */}
-                    <div className="rounded-lg p-2 transition-colors duration-300"
-                    style={message.type === 'user' 
-                      ? { 
-                          backgroundColor: '#BAFF39',
-                          color: '#000000'
-                        } 
-                      : { 
-                          backgroundColor: '#ffffff',
-                          border: '1px solid #e0e0e0',
-                          color: '#000000'
-                        }
-                    }
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        p: 1.5,
+                        borderRadius: 2,
+                        backgroundColor: message.type === 'user' ? '#BAFF39' : '#ffffff',
+                        color: '#000000',
+                        border: message.type === 'user' ? 'none' : '1px solid #e0e0e0'
+                      }}
                     >
                       {/* Loading Indicator - Only for bot messages when loading */}
                       {message.type === 'bot' && message.isLoading ? (
                         <SearchProgressIndicator isVisible={true} />
                       ) : (
-                        <p className="whitespace-pre-wrap text-xs leading-relaxed">
+                        <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
                           {message.content}
-                        </p>
+                        </Typography>
                       )}
-                      
+
                       {/* Sources Section - Only for bot messages with sources */}
                       {message.type === 'bot' && message.sources && message.sources.length > 0 && (
-                        <div 
-                          className="mt-2 pt-2" 
-                          style={{ 
-                            borderTop: '1px solid #e0e0e0'
-                          }}
-                        >
+                        <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #e0e0e0' }}>
                           {/* Sources Header with Individual Source Buttons */}
-                          <div className="flex items-center justify-between flex-wrap gap-1">
-                            {/* Left: Main Label */}
-                            <div className="flex items-center space-x-1">
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                               <FileText className="w-2.5 h-2.5" style={{ color: '#000000', opacity: 0.6 }} />
-                              <span className="text-xs font-medium" style={{ color: '#000000', opacity: 0.7 }}>
+                              <Typography variant="caption" sx={{ color: '#000000', opacity: 0.7, fontWeight: 600 }}>
                                 Sources ({message.sources.length}):
-                              </span>
-                            </div>
-                            
-                            {/* Right: Individual Source Buttons */}
-                            <div className="flex items-center space-x-1 flex-wrap">
+                              </Typography>
+                            </Box>
+
+                            <Stack direction="row" spacing={0.5} flexWrap="wrap">
                               {message.sources.map((source, index) => (
-                                <button
+                                <Button
                                   key={index}
+                                  size="small"
+                                  variant={expandedSources[`${message.id}-${index}`] ? 'contained' : 'outlined'}
                                   onClick={() => toggleSources(`${message.id}-${index}`)}
-                                  className="px-1.5 py-0.5 text-xs rounded-full border transition-colors"
-                                  style={expandedSources[`${message.id}-${index}`]
-                                    ? { backgroundColor: '#BAFF39', borderColor: '#BAFF39', color: '#000000' }
-                                    : { backgroundColor: '#f5f5f5', borderColor: '#d0d0d0', color: '#000000' }
-                                  }
-                                  onMouseEnter={(e) => {
-                                    if (!expandedSources[`${message.id}-${index}`]) {
-                                      e.currentTarget.style.backgroundColor = '#e8e8e8'
-                                    }
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    if (!expandedSources[`${message.id}-${index}`]) {
-                                      e.currentTarget.style.backgroundColor = '#f5f5f5'
-                                    }
+                                  sx={{
+                                    minWidth: 0,
+                                    px: 1,
+                                    py: 0.25,
+                                    borderRadius: 999,
+                                    fontSize: '0.7rem',
+                                    backgroundColor: expandedSources[`${message.id}-${index}`] ? '#BAFF39' : '#f5f5f5',
+                                    borderColor: expandedSources[`${message.id}-${index}`] ? '#BAFF39' : '#d0d0d0',
+                                    color: '#000000',
+                                    '&:hover': { backgroundColor: expandedSources[`${message.id}-${index}`] ? '#B0F236' : '#e8e8e8' }
                                   }}
                                 >
-                                  <div className="flex items-center space-x-0.5">
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                     <Hash className="w-2.5 h-2.5" />
                                     <span>{index + 1}</span>
                                     {source.score && (
-                                      <span className="ml-0.5 opacity-75">
-                                        ({(source.score * 100).toFixed(0)}%)
-                                      </span>
+                                      <span style={{ opacity: 0.75 }}>({(source.score * 100).toFixed(0)}%)</span>
                                     )}
-                                  </div>
-                                </button>
+                                  </Box>
+                                </Button>
                               ))}
-                            </div>
-                          </div>
-                          
+                            </Stack>
+                          </Box>
+
                           {/* Individual Source Content - Only show the specific expanded source */}
                           {message.sources.map((source, index) => {
                             const sourceKey = `${message.id}-${index}`
                             return expandedSources[sourceKey] ? (
-                              <div 
+                              <Paper
                                 key={index}
-                                className="mt-2 rounded-md p-2 animate-in slide-in-from-top-1 duration-200"
-                                style={{ backgroundColor: '#f9f9f9', border: '1px solid #e0e0e0' }}
+                                elevation={0}
+                                sx={{ mt: 2, p: 1.5, borderRadius: 2, backgroundColor: '#f9f9f9', border: '1px solid #e0e0e0' }}
                               >
                                 {/* Source Header */}
-                                <div className="flex items-center justify-between mb-1">
-                                  <div className="flex items-center space-x-1">
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                     <Hash className="w-2.5 h-2.5" style={{ color: '#000000', opacity: 0.6 }} />
-                                    <span className="text-xs font-medium" style={{ color: '#000000' }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 600, color: '#000000' }}>
                                       Source {index + 1}
-                                    </span>
+                                    </Typography>
                                     {source.score && (
-                                      <span 
-                                        className="text-xs px-1.5 py-0.5 rounded-full"
-                                        style={{ backgroundColor: '#BAFF39', color: '#000000' }}
-                                      >
-                                        {(source.score * 100).toFixed(1)}%
-                                      </span>
+                                      <Chip
+                                        size="small"
+                                        label={`${(source.score * 100).toFixed(1)}%`}
+                                        sx={{ backgroundColor: '#BAFF39', color: '#000000', fontSize: '0.7rem' }}
+                                      />
                                     )}
-                                  </div>
-                                  <button
-                                    onClick={() => toggleSources(sourceKey)}
-                                    className="transition-colors"
-                                    style={{ color: '#000000', opacity: 0.6 }}
-                                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
-                                  >
+                                  </Box>
+                                  <IconButton onClick={() => toggleSources(sourceKey)} size="small" sx={{ color: '#000000', opacity: 0.6 }}>
                                     <ChevronUp className="w-2.5 h-2.5" />
-                                  </button>
-                                </div>
-                                
+                                  </IconButton>
+                                </Box>
+
                                 {/* Source Details */}
-                                <div className="space-y-2">
-                                  {/* Compact Metadata Badges */}
-                                  <div className="flex flex-wrap gap-1">
+                                <Stack spacing={1}>
+                                  <Stack direction="row" spacing={1} flexWrap="wrap">
                                     {source.subject && (
-                                      <span 
-                                        className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                                        style={{ backgroundColor: '#BAFF39', color: '#000000' }}
-                                      >
-                                        {source.subject}
-                                      </span>
+                                      <Chip size="small" label={source.subject} sx={{ backgroundColor: '#BAFF39', color: '#000000', fontSize: '0.7rem' }} />
                                     )}
                                     {source.class && (
-                                      <span 
-                                        className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                                        style={{ backgroundColor: '#e0e0e0', color: '#000000' }}
-                                      >
-                                        {source.class}
-                                      </span>
+                                      <Chip size="small" label={source.class} sx={{ backgroundColor: '#e0e0e0', color: '#000000', fontSize: '0.7rem' }} />
                                     )}
                                     {(source.chapter || source.chapter_name) && (
-                                      <span 
-                                        className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                                        style={{ backgroundColor: '#e0e0e0', color: '#000000' }}
-                                      >
-                                        {source.chapter_name || source.chapter}
-                                      </span>
+                                      <Chip size="small" label={source.chapter_name || source.chapter} sx={{ backgroundColor: '#e0e0e0', color: '#000000', fontSize: '0.7rem' }} />
                                     )}
                                     {source.topic && (
-                                      <span 
-                                        className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                                        style={{ backgroundColor: '#e0e0e0', color: '#000000' }}
-                                      >
-                                        {source.topic}
-                                      </span>
+                                      <Chip size="small" label={source.topic} sx={{ backgroundColor: '#e0e0e0', color: '#000000', fontSize: '0.7rem' }} />
                                     )}
-                                  </div>
-                                  
-                                  {/* Technical Details - without File info */}
-                                  <div 
-                                    className="flex items-center space-x-4 text-xs pt-2"
-                                    style={{ borderTop: '1px solid #e0e0e0', color: '#000000', opacity: 0.6 }}
-                                  >
+                                  </Stack>
+
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: '0.7rem', pt: 1, borderTop: '1px solid #e0e0e0', color: '#000000', opacity: 0.6 }}>
                                     {source.chunk && (
                                       <span><strong>Chunk:</strong> {source.chunk}</span>
                                     )}
                                     <span><strong>Score:</strong> {(source.score * 100).toFixed(1)}%</span>
-                                  </div>
-                                  
-                                  {/* Full Content */}
+                                  </Box>
+
                                   {(source.content || source.text_preview || source.text || source.full_text) && (
-                                    <div 
-                                      className="rounded p-3 max-h-64 overflow-y-auto"
-                                      style={{ backgroundColor: '#f5f5f5', border: '1px solid #e0e0e0' }}
-                                    >
-                                      <p className="text-xs font-semibold mb-2" style={{ color: '#000000' }}>Content:</p>
-                                      <div className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: '#000000', opacity: 0.8 }}>
+                                    <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2, backgroundColor: '#f5f5f5', border: '1px solid #e0e0e0', maxHeight: 256, overflowY: 'auto' }}>
+                                      <Typography variant="caption" sx={{ fontWeight: 700, color: '#000000', display: 'block', mb: 1 }}>
+                                        Content:
+                                      </Typography>
+                                      <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.5, whiteSpace: 'pre-wrap', color: '#000000', opacity: 0.8 }}>
                                         {source.content || source.full_text || source.text_preview || source.text || 'No content available'}
-                                      </div>
-                                    </div>
+                                      </Typography>
+                                    </Paper>
                                   )}
-                                </div>
-                              </div>
+                                </Stack>
+                              </Paper>
                             ) : null
                           })}
-                        </div>
+                        </Box>
                       )}
-                      
+
                       {/* Legacy sources display (fallback) */}
                       {message.type === 'bot' && message.sources && typeof message.sources === 'string' && (
-                        <div className={`text-xs mt-2 border-t pt-1 ${
-                          'dark' 
-                            ? 'border-white/20 text-white/60' 
-                            : 'border-gray-200 text-gray-500'
-                        }`}>
+                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#6b7280', borderTop: '1px solid #e5e7eb', pt: 1 }}>
                           {message.sources}
-                        </div>
+                        </Typography>
                       )}
-                      
+
                       {message.error && (
-                        <div className={`text-xs mt-1 ${
-                          'text-red-500'
-                        }`}>
+                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#ef4444' }}>
                           Error processing request
-                        </div>
+                        </Typography>
                       )}
-                    </div>
-                  </div>
-                </div>
+                    </Paper>
+                  </Box>
+                </Box>
               ))}
               
               {/* Scroll anchor */}
               <div ref={messagesEndRef} />
             </div>
-          </div>
+          </Box>
 
           {/* Embedded Search Bar at Bottom */}
-          <div 
-            className="p-1 relative z-50 transition-colors duration-300" 
-            style={{ 
+          <Divider sx={{ borderColor: '#e0e0e0' }} />
+          <Box
+            sx={{
+              p: 1,
+              position: 'relative',
+              zIndex: 50,
               backgroundColor: '#ffffff'
             }}
           >
             <EmbeddedSearchBar onSendMessage={sendMessage} isLoading={isLoading} />
-          </div>
-        </div>
-      </div>
+          </Box>
+        </Paper>
+    </Box>
   )
 }
 

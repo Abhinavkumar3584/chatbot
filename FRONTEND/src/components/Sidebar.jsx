@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { MessageCircle, Search, BookOpen, FileText, Lightbulb, HelpCircle, ChevronLeft, ChevronRight, Trash2, Plus, Clock, Target, CheckCircle, GraduationCap, PenTool, MessagesSquare } from 'lucide-react'
+import { Box, Paper, Stack, Typography, Button, IconButton, Divider } from '@mui/material'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLayout } from '../contexts/LayoutContext'
 import { useSearchHistory } from '../contexts/SearchHistoryContext'
@@ -243,73 +244,79 @@ const Sidebar = () => {
     }
   }, [currentUser])
 
-  const sidebarStyle = {
-    background: '#ffffff',
-    color: '#000000',
-    border: '1px solid #808080'
-  }
-
   return (
     <>
       {/* Full Sidebar */}
       {sidebarVisible && (
-       <div 
-          className="fixed left-1 top-[4rem] bottom-1 w-52 sm:w-60 md:w-68 shadow-lg z-30 rounded-lg transition-colors duration-300"
-          style={sidebarStyle}
+       <Paper
+          elevation={3}
+          sx={{
+            position: 'fixed',
+            left: 4,
+            top: '4rem',
+            bottom: 4,
+            width: { xs: 208, sm: 240, md: 272 },
+            zIndex: 30,
+            borderRadius: 2,
+            border: '1px solid #808080',
+            backgroundColor: '#ffffff',
+            color: '#000000',
+            overflow: 'hidden'
+          }}
         >
-          <div className="flex flex-col h-full">
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Toggle Button and Sign-in Notice */}
-            <div className="p-1 flex justify-between items-center">
-              {!currentUser && (
-                <div 
-                  className="text-xs px-1.5 py-0.5 rounded transition-colors duration-300" 
-                  style={{ 
-                    color: '#000000',
-                    backgroundColor: 'rgba(186, 255, 57, 0.15)'
+            <Box sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+              {!currentUser ? (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    backgroundColor: 'rgba(186, 255, 57, 0.15)',
+                    color: '#000000'
                   }}
                 >
                   Sign in to sync your conversations
-                </div>
+                </Typography>
+              ) : (
+                <Box />
               )}
-              {currentUser && <div></div>}
-              <div 
-                onClick={toggleSidebar}
-                className="rounded transition-colors -m-2"
-                style={{ backgroundColor: 'transparent' }}
-                title="Hide Sidebar"
-              >
-                <ChevronFirst 
-                  width={15} 
-                  height={15} 
-                  strokeWidth={2} 
-                  stroke={'#000000'} 
-                />
-              </div>
-            </div>
+              <IconButton onClick={toggleSidebar} size="small" title="Hide Sidebar" sx={{ color: '#000000' }}>
+                <ChevronFirst width={15} height={15} strokeWidth={2} stroke={'#000000'} />
+              </IconButton>
+            </Box>
 
             {/* Top section - New Chat */}
-            <div className="px-2 pb-2">
-              {/* New Chat Button */}
-              <button 
+            <Box sx={{ px: 2, pb: 2 }}>
+              <Button
                 onClick={handleNewChat}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
+                fullWidth
+                variant="contained"
                 title="Start a new conversation"
+                sx={{
+                  backgroundColor: '#BAFF39',
+                  color: '#000000',
+                  borderRadius: 2,
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  py: 1,
+                  '&:hover': { backgroundColor: '#B0F236' }
+                }}
               >
-
-<animated-icons
-  src="https://animatedicons.co/get-icon?name=plus&style=minimalistic&token=3a3309ff-41ae-42ce-97d0-5767a4421b43"
-  trigger="loop-on-hover"
-  attributes='{"variationThumbColour":"#536DFE","variationName":"Two Tone","variationNumber":2,"numberOfGroups":2,"backgroundIsGroup":false,"strokeWidth":4,"defaultColours":{"group-1":"#000000","group-2":"#000000FF","background":"#FFFFFF00"}}'
-  height="20"
-  width="20"
-></animated-icons>
-
-
-
-                <span className="font-medium">New Chat</span>
-              </button>
-            </div>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <animated-icons
+                    src="https://animatedicons.co/get-icon?name=plus&style=minimalistic&token=3a3309ff-41ae-42ce-97d0-5767a4421b43"
+                    trigger="loop-on-hover"
+                    attributes='{"variationThumbColour":"#536DFE","variationName":"Two Tone","variationNumber":2,"numberOfGroups":2,"backgroundIsGroup":false,"strokeWidth":4,"defaultColours":{"group-1":"#000000","group-2":"#000000FF","background":"#FFFFFF00"}}'
+                    height="20"
+                    width="20"
+                  ></animated-icons>
+                  <span>New Chat</span>
+                </Box>
+              </Button>
+            </Box>
 
             {/* Chat History Section - Scrollable */}
             <div className="flex-1 overflow-y-auto px-2 pb-2 sidebar-chat-history">
@@ -499,117 +506,69 @@ const Sidebar = () => {
             </div>
 
             {/* Bottom section - Fixed at bottom */}
-            <div 
-              className="p-2 space-y-1.5 bg-inherit transition-colors duration-300" 
-              style={{ 
-                borderTop: '1px solid #808080'
-              }}
-            >
+            <Box sx={{ p: 2 }}>
+              <Divider sx={{ borderColor: '#808080', mb: 1.5 }} />
               {/* New buttons */}
-              <button 
-                onClick={handleGDTopicsClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
-              >
-                <MessagesSquare className="w-4 h-4" />
-                <span className="font-medium">AI for GD Topics</span>
-              </button>
-              <button 
-                onClick={handleEligibilityClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
-              >
-                <CheckCircle className="w-4 h-4" />
-                <span className="font-medium">Check Eligibility</span>
-              </button>
-              <button 
-                onClick={handleSyllabusClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
-              >
-                <Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />
-                <span className="font-medium">Exam Syllabus</span>
-              </button>
-              <button 
-                onClick={handleQuizClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
-              >
-                <PenTool className="w-4 h-4" />
-                <span className="font-medium">Attempt Quiz</span>
-              </button>
-              
-              {/* Existing buttons */}
-              <button 
-                onClick={handlePyqPracticeClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
-              >
-                <Target className="w-4 h-4" />
-                <span className="font-medium">PYQ Practice</span>
-              </button>
-              <button 
-                onClick={handleBooksClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
-              >
-                <BookOpen className="w-4 h-4" />
-                <span className="font-medium">Inserted Books</span>
-              </button>
-              <button 
-                onClick={handlePyqsClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
-              >
-                <FileText className="w-4 h-4" />
-                <span className="font-medium">Inserted PYQs</span>
-              </button>
-              <button 
-                onClick={handleWhatsNewClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
-              >
-                <Lightbulb className="w-4 h-4" />
-                <span className="font-medium">What's New</span>
-              </button>
-              <button 
-                onClick={handleHelpClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
-              >
-                <CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />
-                <span className="font-medium">Help & Support</span>
-              </button>
-            </div>
-          </div>
-        </div>
+              <Stack spacing={1}>
+                <Button onClick={handleGDTopicsClick} variant="contained" startIcon={<MessagesSquare className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                  AI for GD Topics
+                </Button>
+                <Button onClick={handleEligibilityClick} variant="contained" startIcon={<CheckCircle className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                  Check Eligibility
+                </Button>
+                <Button onClick={handleSyllabusClick} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                  Exam Syllabus
+                </Button>
+                <Button onClick={handleQuizClick} variant="contained" startIcon={<PenTool className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                  Attempt Quiz
+                </Button>
+                <Button onClick={handlePyqPracticeClick} variant="contained" startIcon={<Target className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                  PYQ Practice
+                </Button>
+                <Button onClick={handleBooksClick} variant="contained" startIcon={<BookOpen className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                  Inserted Books
+                </Button>
+                <Button onClick={handlePyqsClick} variant="contained" startIcon={<FileText className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                  Inserted PYQs
+                </Button>
+                <Button onClick={handleWhatsNewClick} variant="contained" startIcon={<Lightbulb className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                  What's New
+                </Button>
+                <Button onClick={handleHelpClick} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                  Help & Support
+                </Button>
+              </Stack>
+            </Box>
+          </Box>
+        </Paper>
       )}
 
       {/* Collapsed Sidebar (Icon Bar) */}
       {!sidebarVisible && (
-        <div 
-          className="fixed left-1 top-[4rem] bottom-1 w-10 shadow-lg flex flex-col rounded-lg transition-colors duration-300"
-          style={{
-            ...sidebarStyle,
-            border: '1px solid #808080'
+        <Paper
+          elevation={3}
+          sx={{
+            position: 'fixed',
+            left: 4,
+            top: '4rem',
+            bottom: 4,
+            width: 40,
+            zIndex: 30,
+            borderRadius: 2,
+            border: '1px solid #808080',
+            backgroundColor: '#ffffff',
+            color: '#000000',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
           {/* Toggle Button */}
-          <div className="p-1 flex justify-center -m-1">
-            <div 
-              onClick={toggleSidebar}
-              className="rounded transition-colors"
-              style={{ backgroundColor: 'transparent', transform: 'scaleX(-1)' }}
-              title="Show Sidebar"
-            >
-              <ChevronFirst 
-                width={15} 
-                height={15} 
-                strokeWidth={2} 
-                stroke='#000000' 
-              />
-            </div>
-          </div>
+          <Box sx={{ p: 0.5, display: 'flex', justifyContent: 'center' }}>
+            <IconButton onClick={toggleSidebar} size="small" title="Show Sidebar" sx={{ color: '#000000', transform: 'scaleX(-1)' }}>
+              <ChevronFirst width={15} height={15} strokeWidth={2} stroke="#000000" />
+            </IconButton>
+          </Box>
 
             {/* Icon Menu */}
           <div className="flex-1 flex flex-col items-center space-y-2 p-1">
@@ -632,12 +591,8 @@ const Sidebar = () => {
               <Search className="w-4 h-4" />
             </button>
           </div>          {/* Bottom Icons */}
-          <div 
-            className="p-1 space-y-2 flex flex-col items-center transition-colors duration-300" 
-            style={{ 
-              borderTop: '1px solid #808080'
-            }}
-          >
+          <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+            <Divider sx={{ borderColor: '#808080', width: '100%' }} />
             {/* New buttons */}
             <button 
               onClick={handleGDTopicsClick}
@@ -731,8 +686,8 @@ const Sidebar = () => {
             >
               <CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />
             </button>
-          </div>
-        </div>
+          </Box>
+        </Paper>
       )}
 
       {/* Books Modal */}

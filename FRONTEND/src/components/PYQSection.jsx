@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { ChevronDown, FileText, ChevronLeft, ChevronRight, Star } from 'lucide-react'
-import { useTheme } from '../contexts/ThemeContext'
+import { Box, Paper, Stack, Typography, IconButton, Chip, Divider, Button, Menu, MenuItem } from '@mui/material'
 import { useLayout } from '../contexts/LayoutContext'
 import { useDashboard } from '../contexts/DashboardContext'
 import apiService from '../services/api'
 import { ChevronFirst } from './icons/ChevronFirst'
 
 const PYQSection = () => {
-  const { theme } = useTheme()
   const { pyqVisible, togglePyq } = useLayout()
   const { trackInteraction } = useDashboard()
   const [searchResults, setSearchResults] = useState([])
@@ -17,12 +16,15 @@ const PYQSection = () => {
   const [selectedExam, setSelectedExam] = useState('all')
   const [selectedSubject, setSelectedSubject] = useState('all')
   const [showImportantOnly, setShowImportantOnly] = useState(false) // Filter for important questions only
-  const [showExamDropdown, setShowExamDropdown] = useState(false)
-  const [showSubjectDropdown, setShowSubjectDropdown] = useState(false)
+  const [examAnchorEl, setExamAnchorEl] = useState(null)
+  const [subjectAnchorEl, setSubjectAnchorEl] = useState(null)
   const [filteredQuestions, setFilteredQuestions] = useState([])
   const [userAnswers, setUserAnswers] = useState({}) // Track user selections for each question
   const [expandedExplanations, setExpandedExplanations] = useState({}) // Track expanded explanations
   const [importantQuestions, setImportantQuestions] = useState(new Set()) // Track important/bookmarked questions
+
+  const isExamMenuOpen = Boolean(examAnchorEl)
+  const isSubjectMenuOpen = Boolean(subjectAnchorEl)
 
   // Load available exams and subjects from current search results only
   const [availableExams, setAvailableExams] = useState([])
@@ -292,287 +294,234 @@ const PYQSection = () => {
   // Determine which questions to display based on search results or filtered API results
   const currentQuestions = searchResults.length > 0 ? filteredQuestions : filteredQuestions
 
-  // Sidebar-like style
-  const pyqStyle = {
-    backgroundColor: '#ffffff',
-    color: '#000000',
-    border: '1px solid #808080'
-  }
-
   return (
     <>
       {/* Full PYQ Section */}
       {pyqVisible && (
-        <div 
-          className="fixed right-1 top-[4rem] bottom-1 w-[450px] shadow-lg z-30 rounded-lg transition-colors duration-300"
-          style={pyqStyle}
+        <Paper
+          elevation={3}
+          sx={{
+            position: 'fixed',
+            right: 4,
+            top: '4rem',
+            bottom: 4,
+            width: 450,
+            zIndex: 30,
+            borderRadius: 2,
+            border: '1px solid #808080',
+            backgroundColor: '#ffffff',
+            color: '#000000',
+            overflow: 'hidden'
+          }}
         >
-          <div className="flex flex-col h-full">
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Toggle Button and Header */}
-            <div className="p-1 flex justify-between items-center">
-              <div 
-                onClick={togglePyq}
-                className="rounded transition-colors -m-2"
-                style={{ backgroundColor: 'transparent', transform: 'scaleX(-1)' }}
-                title="Hide PYQ Section"
-              >
-                <ChevronFirst 
-                  width={15} 
-                  height={15} 
-                  strokeWidth={2} 
-                  stroke={'#000000'} 
-                />
-              </div>
-              
-              <div className="flex items-center space-x-2 pr-1">
-                <span className="text-xs font-medium transition-colors duration-300" style={{ color: '#000000' }}>
+            <Box sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <IconButton onClick={togglePyq} size="small" title="Hide PYQ Section" sx={{ color: '#000000', transform: 'scaleX(-1)' }}>
+                <ChevronFirst width={15} height={15} strokeWidth={2} stroke={'#000000'} />
+              </IconButton>
+
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography variant="caption" sx={{ fontWeight: 600, color: '#000000' }}>
                   PYQs
-                </span>
-                <span className="text-xs transition-colors duration-300" style={{ color: '#000000', opacity: 0.7 }}>
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#000000', opacity: 0.7 }}>
                   ({filteredQuestions.length} Questions)
-                </span>
+                </Typography>
                 {importantQuestions.size > 0 && (
-                  <span className="text-xs flex items-center" style={{ color: '#FF921C' }}>
-                    <Star className="w-3 h-3 mr-1 fill-current" />
-                    {importantQuestions.size} important
-                  </span>
+                  <Chip
+                    size="small"
+                    icon={<Star className="w-3 h-3 fill-current" />}
+                    label={`${importantQuestions.size} important`}
+                    sx={{ backgroundColor: 'rgba(255, 146, 28, 0.15)', color: '#FF921C', fontSize: '0.7rem' }}
+                  />
                 )}
-              </div>
-            </div>
+              </Stack>
+            </Box>
 
             {/* Content Area */}
-            <div 
-              className="flex-1 flex flex-col rounded-lg m-2 mt-0 min-h-0 transition-colors duration-300" 
-              style={{ 
-                backgroundColor: '#ffffff'
-              }}
-            >
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', m: 1, mt: 0, minHeight: 0, backgroundColor: '#ffffff', borderRadius: 2 }}>
               {/* Sticky Header */}
-              <div 
-                className="sticky top-0 border-b z-10 rounded-t-lg flex-shrink-0 transition-colors duration-300" 
-                style={{ 
+              <Box
+                sx={{
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 10,
                   backgroundColor: '#ffffff',
-                  borderColor: '#d0d0d0'
+                  borderBottom: '1px solid #d0d0d0',
+                  borderTopLeftRadius: 8,
+                  borderTopRightRadius: 8
                 }}
               >
-                <div className="p-2 space-y-2">
+                <Box sx={{ p: 1.5 }}>
 
                   {/* Filters - Show only when we have search results with filter data */}
                   {!loadingFilters && searchResults.length > 0 && (availableExams.length > 0 || availableSubjects.length > 0) && (
-                    <div className="flex items-center space-x-1 mb-2">
+                    <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center" sx={{ mb: 2 }}>
                       {/* Exam Filter */}
-                      <div className="relative">
-                        <button 
-                          onClick={() => !loadingFilters && setShowExamDropdown(!showExamDropdown)}
-                          disabled={loadingFilters}
-                          className={`flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs whitespace-nowrap ${
-                            loadingFilters ? 'opacity-50 cursor-not-allowed' : ''
-                          }`}
-                          style={{ 
-                            backgroundColor: '#BAFF39', 
-                            color: '#000000' 
-                          }}
-                        >
-                          <span>
-                            {loadingFilters 
-                              ? 'Loading...' 
-                              : (exams.find(e => e.id === selectedExam)?.name || 'All Exams')
-                            }
-                          </span>
-                          <ChevronDown className="w-3 h-3" />
-                        </button>
-                        {showExamDropdown && !loadingFilters && (
-                          <div 
-                            className="absolute top-full left-0 mt-1 w-40 rounded-lg shadow-lg z-50"
-                            style={{ 
-                              backgroundColor: '#ffffff',
-                              border: '1px solid #e0e0e0'
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={(event) => !loadingFilters && setExamAnchorEl(event.currentTarget)}
+                        disabled={loadingFilters}
+                        endIcon={<ChevronDown className="w-3 h-3" />}
+                        sx={{ backgroundColor: '#BAFF39', color: '#000000', fontSize: '0.75rem', borderRadius: 999, '&:hover': { backgroundColor: '#B0F236' } }}
+                      >
+                        {loadingFilters ? 'Loading...' : (exams.find(e => e.id === selectedExam)?.name || 'All Exams')}
+                      </Button>
+                      <Menu
+                        anchorEl={examAnchorEl}
+                        open={isExamMenuOpen}
+                        onClose={() => setExamAnchorEl(null)}
+                        MenuListProps={{ dense: true }}
+                        PaperProps={{ sx: { border: '1px solid #e0e0e0' } }}
+                      >
+                        {exams.map((exam) => (
+                          <MenuItem
+                            key={exam.id}
+                            selected={selectedExam === exam.id}
+                            onClick={() => {
+                              setSelectedExam(exam.id)
+                              setExamAnchorEl(null)
                             }}
+                            sx={{ fontSize: '0.75rem' }}
                           >
-                            {exams.map((exam) => (
-                              <button
-                                key={exam.id}
-                                onClick={() => {
-                                  setSelectedExam(exam.id)
-                                  setShowExamDropdown(false)
-                                }}
-                                className={`w-full text-left px-3 py-1 text-xs first:rounded-t-lg last:rounded-b-lg ${
-                                  selectedExam === exam.id ? 'font-medium' : ''
-                                }`}
-                                style={{ 
-                                  color: '#000000',
-                                  backgroundColor: selectedExam === exam.id 
-                                    ? ('rgba(186, 255, 57, 0.15)')
-                                    : 'transparent'
-                                }}
-                                onMouseEnter={(e) => {
-                                  if (selectedExam !== exam.id) {
-                                    e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.1)'
-                                  }
-                                }}
-                                onMouseLeave={(e) => {
-                                  if (selectedExam !== exam.id) {
-                                    e.currentTarget.style.backgroundColor = 'transparent'
-                                  }
-                                }}
-                              >
-                                {exam.name}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                            {exam.name}
+                          </MenuItem>
+                        ))}
+                      </Menu>
 
                       {/* Subject Filter */}
-                      <div className="relative">
-                        <button 
-                          onClick={() => !loadingFilters && setShowSubjectDropdown(!showSubjectDropdown)}
-                          disabled={loadingFilters}
-                          className={`flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs whitespace-nowrap ${
-                            loadingFilters ? 'opacity-50 cursor-not-allowed' : ''
-                          }`}
-                          style={{ 
-                            backgroundColor: '#BAFF39', 
-                            color: '#000000' 
-                          }}
-                        >
-                          <span>
-                            {loadingFilters 
-                              ? 'Loading...' 
-                              : (subjects.find(s => s.id === selectedSubject)?.name || 'All Subjects')
-                            }
-                          </span>
-                          <ChevronDown className="w-3 h-3" />
-                        </button>
-                        {showSubjectDropdown && !loadingFilters && (
-                          <div 
-                            className="absolute top-full left-0 mt-1 w-40 rounded-lg shadow-lg z-50"
-                            style={{ 
-                              backgroundColor: '#ffffff',
-                              border: '1px solid #e0e0e0'
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={(event) => !loadingFilters && setSubjectAnchorEl(event.currentTarget)}
+                        disabled={loadingFilters}
+                        endIcon={<ChevronDown className="w-3 h-3" />}
+                        sx={{ backgroundColor: '#BAFF39', color: '#000000', fontSize: '0.75rem', borderRadius: 999, '&:hover': { backgroundColor: '#B0F236' } }}
+                      >
+                        {loadingFilters ? 'Loading...' : (subjects.find(s => s.id === selectedSubject)?.name || 'All Subjects')}
+                      </Button>
+                      <Menu
+                        anchorEl={subjectAnchorEl}
+                        open={isSubjectMenuOpen}
+                        onClose={() => setSubjectAnchorEl(null)}
+                        MenuListProps={{ dense: true }}
+                        PaperProps={{ sx: { border: '1px solid #e0e0e0' } }}
+                      >
+                        {subjects.map((subject) => (
+                          <MenuItem
+                            key={subject.id}
+                            selected={selectedSubject === subject.id}
+                            onClick={() => {
+                              setSelectedSubject(subject.id)
+                              setSubjectAnchorEl(null)
                             }}
+                            sx={{ fontSize: '0.75rem' }}
                           >
-                            {subjects.map((subject) => (
-                              <button
-                                key={subject.id}
-                                onClick={() => {
-                                  setSelectedSubject(subject.id)
-                                  setShowSubjectDropdown(false)
-                                }}
-                                className={`w-full text-left px-3 py-1 text-xs first:rounded-t-lg last:rounded-b-lg ${
-                                  selectedSubject === subject.id ? 'font-medium' : ''
-                                }`}
-                                style={{ 
-                                  color: '#000000',
-                                  backgroundColor: selectedSubject === subject.id 
-                                    ? ('rgba(186, 255, 57, 0.15)')
-                                    : 'transparent'
-                                }}
-                                onMouseEnter={(e) => {
-                                  if (selectedSubject !== subject.id) {
-                                    e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.1)'
-                                  }
-                                }}
-                                onMouseLeave={(e) => {
-                                  if (selectedSubject !== subject.id) {
-                                    e.currentTarget.style.backgroundColor = 'transparent'
-                                  }
-                                }}
-                              >
-                                {subject.name}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                            {subject.name}
+                          </MenuItem>
+                        ))}
+                      </Menu>
 
                       {/* Important Questions Filter */}
-                      <button
+                      <Button
+                        size="small"
+                        variant={showImportantOnly ? 'contained' : 'outlined'}
                         onClick={() => setShowImportantOnly(!showImportantOnly)}
-                        className={`flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs whitespace-nowrap transition-all duration-200 ${
-                          showImportantOnly
-                            ? 'bg-yellow-500 text-white shadow-md'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
+                        startIcon={<Star className={`w-3 h-3 ${showImportantOnly ? 'fill-current' : ''}`} />}
                         title={showImportantOnly ? 'Show all questions' : 'Show only important questions'}
+                        sx={{
+                          fontSize: '0.75rem',
+                          borderRadius: 999,
+                          backgroundColor: showImportantOnly ? '#f59e0b' : '#e5e7eb',
+                          color: showImportantOnly ? '#ffffff' : '#374151',
+                          borderColor: showImportantOnly ? '#f59e0b' : '#e5e7eb',
+                          '&:hover': { backgroundColor: showImportantOnly ? '#d97706' : '#d1d5db' }
+                        }}
                       >
-                        <Star className={`w-3 h-3 ${showImportantOnly ? 'fill-current' : ''}`} />
-                        <span>{showImportantOnly ? 'Important' : 'All'}</span>
-                      </button>
-                    </div>
+                        {showImportantOnly ? 'Important' : 'All'}
+                      </Button>
+                    </Stack>
                   )}
 
                   {/* Progress */}
                   {filteredQuestions.length > 0 && Object.keys(userAnswers).length > 0 && (
-                    <div className="flex items-center space-x-1 mb-1">
-                      <span className="text-xs font-medium whitespace-nowrap transition-colors duration-300" style={{ color: '#000000' }}>Progress:</span>
-                      <div className="flex items-center space-x-1 text-xs">
-                        <span className="whitespace-nowrap" style={{ color: '#00ff00' }}>
-                          {(() => {
-                            let correct = 0
-                            currentQuestions.forEach((q, idx) => {
-                              const questionId = q.id || `fallback_${idx}`
-                              const hasValidCorrectAnswer = 
-                                q.correct_answer !== undefined && 
-                                Number.isInteger(q.correct_answer) &&
-                                q.correct_answer >= 0 && 
-                                q.correct_answer < (q.options?.length || 0)
-                              if (hasValidCorrectAnswer && userAnswers[questionId] === q.correct_answer) correct++
-                            })
-                            return correct
-                          })()} Correct
-                        </span>
-                        <span className="whitespace-nowrap" style={{ color: '#ff4444' }}>
-                          {(() => {
-                            let wrong = 0
-                            currentQuestions.forEach((q, idx) => {
-                              const questionId = q.id || `fallback_${idx}`
-                              const userAnswer = userAnswers[questionId]
-                              const hasValidCorrectAnswer = 
-                                q.correct_answer !== undefined && 
-                                Number.isInteger(q.correct_answer) &&
-                                q.correct_answer >= 0 && 
-                                q.correct_answer < (q.options?.length || 0)
-                              if (hasValidCorrectAnswer && userAnswer !== undefined && userAnswer !== q.correct_answer) wrong++
-                            })
-                            return wrong
-                          })()} Wrong
-                        </span>
-                        <span className="whitespace-nowrap transition-colors duration-300" style={{ color: '#000000' }}>
-                          {Object.keys(userAnswers).length}/{currentQuestions.length} Answered
-                        </span>
-                      </div>
-                    </div>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1, flexWrap: 'wrap' }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#000000' }}>
+                        Progress:
+                      </Typography>
+                      <Chip
+                        size="small"
+                        label={`${(() => {
+                          let correct = 0
+                          currentQuestions.forEach((q, idx) => {
+                            const questionId = q.id || `fallback_${idx}`
+                            const hasValidCorrectAnswer = 
+                              q.correct_answer !== undefined && 
+                              Number.isInteger(q.correct_answer) &&
+                              q.correct_answer >= 0 && 
+                              q.correct_answer < (q.options?.length || 0)
+                            if (hasValidCorrectAnswer && userAnswers[questionId] === q.correct_answer) correct++
+                          })
+                          return correct
+                        })()} Correct`}
+                        sx={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#16a34a', fontSize: '0.7rem' }}
+                      />
+                      <Chip
+                        size="small"
+                        label={`${(() => {
+                          let wrong = 0
+                          currentQuestions.forEach((q, idx) => {
+                            const questionId = q.id || `fallback_${idx}`
+                            const userAnswer = userAnswers[questionId]
+                            const hasValidCorrectAnswer = 
+                              q.correct_answer !== undefined && 
+                              Number.isInteger(q.correct_answer) &&
+                              q.correct_answer >= 0 && 
+                              q.correct_answer < (q.options?.length || 0)
+                            if (hasValidCorrectAnswer && userAnswer !== undefined && userAnswer !== q.correct_answer) wrong++
+                          })
+                          return wrong
+                        })()} Wrong`}
+                        sx={{ backgroundColor: 'rgba(239,68,68,0.15)', color: '#dc2626', fontSize: '0.7rem' }}
+                      />
+                      <Chip
+                        size="small"
+                        label={`${Object.keys(userAnswers).length}/${currentQuestions.length} Answered`}
+                        sx={{ backgroundColor: 'rgba(0,0,0,0.06)', color: '#000000', fontSize: '0.7rem' }}
+                      />
+                    </Stack>
                   )}
-                </div>
-              </div>
+                </Box>
+              </Box>
 
               {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto p-2 min-h-0 pyq-content">
+              <Box className="pyq-content" sx={{ flex: 1, overflowY: 'auto', p: 1, minHeight: 0 }}>
                 {/* Questions */}
-                <div className="space-y-4">
+                <Stack spacing={2}>
                   {!lastSearchQuery && currentQuestions.length === 0 ? (
-                    <div className="text-center py-6">
-                      <FileText className="w-12 h-12 mx-auto mb-2 transition-colors duration-300" style={{ color: '#000000', opacity: 0.5 }} />
-                      <p className="text-xs transition-colors duration-300" style={{ color: '#000000', opacity: 0.7 }}>
+                    <Box sx={{ textAlign: 'center', py: 6 }}>
+                      <FileText className="w-12 h-12 mx-auto mb-2" style={{ color: '#000000', opacity: 0.4 }} />
+                      <Typography variant="caption" sx={{ display: 'block', color: '#000000', opacity: 0.7 }}>
                         Search for topics to find relevant PYQs
-                      </p>
-                      <p className="text-xs mt-1 transition-colors duration-300" style={{ color: '#000000', opacity: 0.5 }}>
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: '#000000', opacity: 0.5 }}>
                         Use the chat below to search for questions on any topic
-                      </p>
-                    </div>
+                      </Typography>
+                    </Box>
                   ) : lastSearchQuery && currentQuestions.length === 0 ? (
-                    <div className="text-center py-6">
-                      <FileText className="w-12 h-12 mx-auto mb-2 transition-colors duration-300" style={{ color: '#000000', opacity: 0.5 }} />
-                      <p className="text-xs transition-colors duration-300" style={{ color: '#000000', opacity: 0.7 }}>
+                    <Box sx={{ textAlign: 'center', py: 6 }}>
+                      <FileText className="w-12 h-12 mx-auto mb-2" style={{ color: '#000000', opacity: 0.4 }} />
+                      <Typography variant="caption" sx={{ display: 'block', color: '#000000', opacity: 0.7 }}>
                         No related questions found for "{lastSearchQuery}"
-                      </p>
-                      <p className="text-xs mt-1 transition-colors duration-300" style={{ color: '#000000', opacity: 0.5 }}>
+                      </Typography>
+                      <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: '#000000', opacity: 0.5 }}>
                         Try different keywords or remove filters
-                      </p>
-                    </div>
+                      </Typography>
+                    </Box>
                   ) : currentQuestions.length > 0 ? (
-                    <div className="space-y-4">
+                    <Stack spacing={2}>
                       {currentQuestions.map((question, questionIndex) => {
                         // Use the unique ID from backend, fallback to index-based ID if needed
                         const questionId = question.id || `fallback_${questionIndex}`
@@ -581,241 +530,251 @@ const PYQSection = () => {
                         const hasAnswered = userAnswer !== undefined
                         
                         return (
-                          <div 
-                            key={questionId} 
-                            className={`bg-white rounded-lg shadow-sm border ${hasAnswered ? (isCorrect ? 'border-green-200' : 'border-red-200') : 'border-gray-200'}`}
+                          <Paper
+                            key={questionId}
+                            elevation={0}
+                            sx={{
+                              borderRadius: 2,
+                              border: '1px solid',
+                              borderColor: hasAnswered ? (isCorrect ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)') : '#e5e7eb',
+                              backgroundColor: '#ffffff',
+                              overflow: 'hidden'
+                            }}
                           >
                             {/* Question Header */}
-                            <div className="p-3 border-b border-gray-100">
-                              <div className="flex justify-between items-start mb-1">
-                                <h3 className="text-xs font-medium text-gray-900 flex-1 pr-2">
+                            <Box sx={{ p: 2, borderBottom: '1px solid #f1f5f9' }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                                <Typography variant="body2" sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#111827', flex: 1 }}>
                                   {question.question}
-                                </h3>
-                                <div className="flex items-center space-x-1">
-                                  {/* Important/Bookmark Icon */}
-                                  <button
+                                </Typography>
+                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                  <IconButton
+                                    size="small"
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
                                       toggleImportantQuestion(questionId);
                                     }}
-                                    className={`p-1 rounded-full transition-colors duration-200 ${
-                                      importantQuestions.has(questionId)
-                                        ? 'text-yellow-500 hover:text-yellow-600 bg-yellow-50 hover:bg-yellow-100'
-                                        : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50'
-                                    }`}
                                     title={importantQuestions.has(questionId) ? 'Remove from important' : 'Mark as important'}
+                                    sx={{
+                                      color: importantQuestions.has(questionId) ? '#f59e0b' : '#9ca3af',
+                                      backgroundColor: importantQuestions.has(questionId) ? 'rgba(245, 158, 11, 0.12)' : 'transparent',
+                                      '&:hover': { backgroundColor: 'rgba(245, 158, 11, 0.12)' }
+                                    }}
                                   >
-                                    <Star 
-                                      className={`w-4 h-4 ${importantQuestions.has(questionId) ? 'fill-current' : ''}`} 
-                                    />
-                                  </button>
-                                  {/* Answer Status Icon */}
+                                    <Star className={`w-4 h-4 ${importantQuestions.has(questionId) ? 'fill-current' : ''}`} />
+                                  </IconButton>
                                   {hasAnswered && (
-                                    <span className={`flex items-center justify-center w-5 h-5 rounded-full ${isCorrect ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                                      {isCorrect ? '✓' : '✗'}
-                                    </span>
+                                    <Chip
+                                      size="small"
+                                      label={isCorrect ? '✓' : '✗'}
+                                      sx={{
+                                        fontSize: '0.7rem',
+                                        height: 20,
+                                        backgroundColor: isCorrect ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                                        color: isCorrect ? '#16a34a' : '#dc2626'
+                                      }}
+                                    />
                                   )}
-                                </div>
-                              </div>
-                              
+                                </Stack>
+                              </Box>
+
                               {/* Options */}
-                              <div className="space-y-1 mt-2">
+                              <Stack spacing={1} sx={{ mt: 1 }}>
                                 {question.options?.map((option, optionIndex) => {
                                   const isUserSelected = userAnswer === optionIndex
                                   const isCorrectAnswer = question.correct_answer === optionIndex
-                                  
-                                  let optionClass = "flex items-start p-2 border rounded-md cursor-pointer transition-colors"
-                                  
-                                  // Not answered yet
+
+                                  let borderColor = '#e5e7eb'
+                                  let backgroundColor = 'transparent'
                                   if (!hasAnswered) {
-                                    optionClass += " border-gray-200 hover:bg-gray-50"
+                                    backgroundColor = 'transparent'
+                                  } else if (isUserSelected) {
+                                    borderColor = isCorrect ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'
+                                    backgroundColor = isCorrect ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)'
+                                  } else if (isCorrectAnswer) {
+                                    borderColor = 'rgba(34,197,94,0.4)'
+                                    backgroundColor = 'rgba(34,197,94,0.08)'
                                   }
-                                  // Answered and this is user's selection
-                                  else if (isUserSelected) {
-                                    optionClass += isCorrect
-                                      ? " border-green-200 bg-green-50"
-                                      : " border-red-200 bg-red-50"
-                                  }
-                                  // Answered, not user's selection, but is correct answer
-                                  else if (isCorrectAnswer) {
-                                    optionClass += " border-green-200 bg-green-50"
-                                  }
-                                  // Answered, not selected by user, not correct answer
-                                  else {
-                                    optionClass += " border-gray-200"
-                                  }
-                                  
+
                                   return (
-                                    <div 
+                                    <Box
                                       key={optionIndex}
-                                      className={optionClass}
                                       onClick={(e) => {
-                                        if (!hasAnswered) {  // Only allow selection if not answered
+                                        if (!hasAnswered) {
                                           e.preventDefault();
                                           e.stopPropagation();
                                           handleOptionSelect(questionId, optionIndex);
                                         }
                                       }}
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        p: 1,
+                                        borderRadius: 1,
+                                        border: '1px solid',
+                                        borderColor,
+                                        backgroundColor,
+                                        cursor: hasAnswered ? 'default' : 'pointer',
+                                        transition: 'background-color 0.2s, border-color 0.2s',
+                                        '&:hover': !hasAnswered ? { backgroundColor: '#f9fafb' } : undefined
+                                      }}
                                     >
-                                      <div className="flex-shrink-0 mr-2 mt-0.5">
-                                        <div className={`w-4 h-4 flex items-center justify-center rounded-full border ${isUserSelected ? 'border-blue-500 bg-blue-500 text-white' : 'border-gray-300'}`}>
-                                          {isUserSelected && <div className="w-2 h-2 bg-white rounded-full" />}
-                                        </div>
-                                      </div>
-                                      <div className="flex-1 text-xs text-gray-900">
+                                      <Box sx={{ mr: 1, mt: 0.25 }}>
+                                        <Box
+                                          sx={{
+                                            width: 16,
+                                            height: 16,
+                                            borderRadius: '50%',
+                                            border: '1px solid',
+                                            borderColor: isUserSelected ? '#3b82f6' : '#d1d5db',
+                                            backgroundColor: isUserSelected ? '#3b82f6' : 'transparent',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                          }}
+                                        >
+                                          {isUserSelected && <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#ffffff' }} />}
+                                        </Box>
+                                      </Box>
+                                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#111827', flex: 1 }}>
                                         {option}
-                                      </div>
+                                      </Typography>
                                       {hasAnswered && isCorrectAnswer && !isUserSelected && (
-                                        <div className="flex-shrink-0 ml-1">
-                                          <div className="w-4 h-4 flex items-center justify-center rounded-full bg-green-100 text-green-600">
-                                            <div className="w-2 h-2 bg-green-600 rounded-full" />
-                                          </div>
-                                        </div>
+                                        <Box sx={{ ml: 1 }}>
+                                          <Box sx={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#16a34a' }} />
+                                          </Box>
+                                        </Box>
                                       )}
-                                    </div>
+                                    </Box>
                                   )
                                 })}
-                              </div>
-                            </div>
-                            
+                              </Stack>
+                            </Box>
+
                             {/* Question Footer with Metadata */}
-                            <div className="px-3 py-2 bg-gray-50 rounded-b-lg">
-                              <div className="flex items-center justify-between">
-                                {/* Left side - Metadata tags */}
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                                  {/* Exam Name */}
+                            <Box sx={{ px: 2, py: 1.5, backgroundColor: '#f9fafb' }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
                                   {(question.exam_name || question.metadata?.exam_name || question.metadata?.exam) && (
-                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                      {question.exam_name || question.metadata?.exam_name || question.metadata?.exam}
-                                    </span>
+                                    <Chip size="small" label={question.exam_name || question.metadata?.exam_name || question.metadata?.exam} sx={{ backgroundColor: '#dbeafe', color: '#1e40af', fontSize: '0.7rem' }} />
                                   )}
-                                  
-                                  {/* Year */}
                                   {(question.year || question.metadata?.year || question.metadata?.exam_year) && (
-                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                      {question.year || question.metadata?.year || question.metadata?.exam_year}
-                                    </span>
+                                    <Chip size="small" label={question.year || question.metadata?.year || question.metadata?.exam_year} sx={{ backgroundColor: '#dcfce7', color: '#166534', fontSize: '0.7rem' }} />
                                   )}
-                                  
-                                  {/* Term */}
                                   {(question.term || question.metadata?.term || question.metadata?.exam_term) && (
-                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                      {question.term || question.metadata?.term || question.metadata?.exam_term}
-                                    </span>
+                                    <Chip size="small" label={question.term || question.metadata?.term || question.metadata?.exam_term} sx={{ backgroundColor: '#ede9fe', color: '#5b21b6', fontSize: '0.7rem' }} />
                                   )}
-                                  
-                                  {/* Subject */}
                                   {(question.subject || question.metadata?.subject) && (
-                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                      {question.subject || question.metadata?.subject}
-                                    </span>
+                                    <Chip size="small" label={question.subject || question.metadata?.subject} sx={{ backgroundColor: '#ffedd5', color: '#9a3412', fontSize: '0.7rem' }} />
                                   )}
-                                </div>
-                                
-                                {/* Right side - Show Explanation button */}
-                                <button
+                                </Stack>
+
+                                <Button
+                                  size="small"
+                                  variant="text"
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    if (hasAnswered) {  // Only show explanation after answering
+                                    if (hasAnswered) {
                                       toggleExplanation(questionId);
                                     }
                                   }}
                                   disabled={!hasAnswered}
-                                  className={`text-xs flex items-center space-x-1 transition-all duration-200 px-2 py-1 rounded flex-shrink-0 ${
-                                    hasAnswered 
-                                      ? 'text-blue-600 hover:text-blue-800 hover:bg-blue-50 cursor-pointer' 
-                                      : 'text-gray-400 cursor-not-allowed'
-                                  }`}
+                                  endIcon={hasAnswered ? <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${expandedExplanations[questionId] ? 'rotate-180' : ''}`} /> : null}
+                                  sx={{
+                                    fontSize: '0.75rem',
+                                    color: hasAnswered ? '#2563eb' : '#9ca3af',
+                                    '&:hover': { backgroundColor: hasAnswered ? 'rgba(37,99,235,0.08)' : 'transparent' }
+                                  }}
                                 >
-                                  <span>
-                                    {hasAnswered 
-                                      ? (expandedExplanations[questionId] ? 'Hide Explanation' : 'Show Explanation')
-                                      : 'Answer to view explanation'
-                                    }
-                                  </span>
-                                  {hasAnswered && (
-                                    <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${expandedExplanations[questionId] ? 'rotate-180' : ''}`} />
-                                  )}
-                                </button>
-                              </div>
-                              
-                              {/* Explanation Dropdown */}
+                                  {hasAnswered
+                                    ? (expandedExplanations[questionId] ? 'Hide Explanation' : 'Show Explanation')
+                                    : 'Answer to view explanation'
+                                  }
+                                </Button>
+                              </Box>
+
                               {expandedExplanations[questionId] && question.explanation && (
-                                <div className="mt-3 pt-3 border-t border-gray-200 animate-in slide-in-from-top-1 duration-200">
-                                  <div className="text-xs text-gray-700">
-                                    <div className="flex items-center mb-2">
-                                      <p className="font-semibold text-blue-600">Explanation</p>
-                                    </div>
-                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border-l-4 border-blue-400 shadow-sm">
-                                      <p className="leading-relaxed text-gray-800">{question.explanation}</p>
-                                    </div>
-                                  </div>
-                                </div>
+                                <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #e5e7eb' }}>
+                                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#2563eb', display: 'block', mb: 1 }}>
+                                    Explanation
+                                  </Typography>
+                                  <Paper
+                                    elevation={0}
+                                    sx={{
+                                      p: 1.5,
+                                      borderRadius: 2,
+                                      borderLeft: '4px solid #60a5fa',
+                                      background: 'linear-gradient(90deg, #eff6ff 0%, #eef2ff 100%)'
+                                    }}
+                                  >
+                                    <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#1f2937', lineHeight: 1.6 }}>
+                                      {question.explanation}
+                                    </Typography>
+                                  </Paper>
+                                </Box>
                               )}
-                            </div>
-                          </div>
+                            </Box>
+                          </Paper>
                         )
                       })}
-                    </div>
+                    </Stack>
                   ) : !lastSearchQuery ? (
-                    <div className="text-center py-6">
-                      <FileText className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                      <p className="text-xs text-gray-500">
+                    <Box sx={{ textAlign: 'center', py: 6 }}>
+                      <FileText className="w-12 h-12 mx-auto mb-2" style={{ color: '#9ca3af' }} />
+                      <Typography variant="caption" sx={{ display: 'block', color: '#6b7280' }}>
                         Use the search bar below to find relevant PYQs
-                      </p>
-                    </div>
+                      </Typography>
+                    </Box>
                   ) : null}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+                </Stack>
+              </Box>
+            </Box>
+          </Box>
+        </Paper>
       )}
 
       {/* Collapsed PYQ Section (Icon Bar) */}
       {!pyqVisible && (
-        <div 
-          className="fixed right-1 top-[4rem] bottom-1 w-10 shadow-lg flex flex-col rounded-lg transition-colors duration-300"
-          style={{
-            ...pyqStyle,
-            border: '1px solid #808080'
+        <Paper
+          elevation={3}
+          sx={{
+            position: 'fixed',
+            right: 4,
+            top: '4rem',
+            bottom: 4,
+            width: 40,
+            zIndex: 30,
+            borderRadius: 2,
+            border: '1px solid #808080',
+            backgroundColor: '#ffffff',
+            color: '#000000',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
           {/* Toggle Button */}
-          <div className="p-1 flex justify-center -m-1">
-            <div 
-              onClick={togglePyq}
-              className="rounded transition-colors"
-              style={{ backgroundColor: 'transparent' }}
-              title="Show PYQ Section"
-            >
-              <ChevronFirst 
-                width={15} 
-                height={15} 
-                strokeWidth={2} 
-                stroke={'#000000'} 
-              />
-            </div>
-          </div>
+          <Box sx={{ p: 0.5, display: 'flex', justifyContent: 'center' }}>
+            <IconButton onClick={togglePyq} size="small" title="Show PYQ Section" sx={{ color: '#000000' }}>
+              <ChevronFirst width={15} height={15} strokeWidth={2} stroke={'#000000'} />
+            </IconButton>
+          </Box>
 
           {/* Icon */}
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <button 
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IconButton
               onClick={togglePyq}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'
-              }}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              size="small"
               title="Previous Year Questions"
+              sx={{ color: '#000000', '&:hover': { backgroundColor: 'rgba(186, 255, 57, 0.15)' } }}
             >
               <FileText className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+            </IconButton>
+          </Box>
+        </Paper>
       )}
     </>
   )

@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react'
-import { LogIn, UserPlus, Home, BarChart3, Info, Phone, LogOut, User, Target } from 'lucide-react'
+import { LogIn, UserPlus, Home, BarChart3, Info, Phone, LogOut, Target } from 'lucide-react'
+import { AppBar, Toolbar, Box, Typography, Button, Avatar, Stack, Container, Chip } from '@mui/material'
 import AuthModal from './AuthModal'
 import AboutUsModal from './AboutUsModal'
 import ContactModal from './ContactModal'
 import EditProfileModal from './EditProfileModal'
 import Clock from './Clock'
-import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
 
 const Navbar = ({ onViewChange, currentView }) => {
-  const { theme } = useTheme()
   const { currentUser, logout } = useAuth()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authMode, setAuthMode] = useState('login')
   const [showAboutModal, setShowAboutModal] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
   const [showEditProfile, setShowEditProfile] = useState(false)
+  const [loadTimeMs, setLoadTimeMs] = useState(null)
 
   // Close modal when user becomes authenticated
   useEffect(() => {
@@ -68,171 +68,204 @@ const Navbar = ({ onViewChange, currentView }) => {
       : names[0][0].toUpperCase()
   }
 
+  useEffect(() => {
+    const computeLoadTime = () => {
+      const entry = performance.getEntriesByType('navigation')[0]
+      if (entry && entry.duration) {
+        setLoadTimeMs(Math.round(entry.duration))
+        return
+      }
+      if (performance.timing) {
+        const timing = performance.timing
+        const duration = timing.loadEventEnd - timing.navigationStart
+        if (duration > 0) {
+          setLoadTimeMs(Math.round(duration))
+        }
+      }
+    }
+
+    if (document.readyState === 'complete') {
+      computeLoadTime()
+    } else {
+      const onLoad = () => computeLoadTime()
+      window.addEventListener('load', onLoad)
+      return () => window.removeEventListener('load', onLoad)
+    }
+  }, [])
+
+  const navButtonSx = (active) => ({
+    px: { xs: 0.5, sm: 1, md: 1.5 },
+    py: { xs: 0.25, sm: 0.5 },
+    borderRadius: active ? 2 : 1.5,
+    backgroundColor: active ? '#BAFF39' : 'transparent',
+    color: '#000000',
+    fontWeight: 700,
+    fontSize: { xs: '0.6rem', sm: '0.75rem' },
+    minWidth: 'auto',
+    '&:hover': {
+      backgroundColor: active ? '#BAFF39' : 'rgba(0, 0, 0, 0.04)'
+    }
+  })
+
   return (
-    <nav 
-      className="fixed top-1 left-1 right-1 z-50 h-14 rounded-lg transition-all duration-300"
-      style={{ 
+    <AppBar
+      position="fixed"
+      elevation={0}
+      sx={{
         backgroundColor: '#ffffff',
-        border: '1px solid #808080'
+        border: '1px solid #808080',
+        borderRadius: 2,
+        top: 4,
+        left: 4,
+        right: 4,
+        zIndex: 50
       }}
     >
-      <div className="flex items-center h-full relative">
-        {/* Left side - App name */}
-        <div className="flex items-center space-x-1 px-1 sm:px-2 md:px-3">
-          <img 
-            src="/mg.png" 
-            alt="MG Logo" 
-            className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
-            style={{ filter: 'brightness(0) saturate(100%) invert(88%) sepia(56%) saturate(839%) hue-rotate(20deg) brightness(104%) contrast(102%)' }}
-          />
-          <span
-            className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight truncate uppercase"
-            style={{ color: '#BAFF39' }}
-          >
-            GYAN SETU
-          </span>
-        </div>
-
-        {/* Center - Navigation perfectly centered using absolute positioning */}
-        <div className="hidden md:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          {/* Navigation buttons - centered */}
-          <div className="flex items-center space-x-0.5 sm:space-x-1 bg-white/90 px-1 sm:px-2 md:px-3 lg:px-6 py-2 rounded-lg shadow-sm h-10">
-            <button 
-              onClick={() => onViewChange('chat')}
-              className={`flex items-center px-1 sm:px-2 md:px-3 py-0.5 sm:py-1 transition-colors text-[10px] sm:text-xs font-bold ${
-                currentView === 'chat' 
-                  ? 'rounded-[10px]' 
-                  : 'rounded-md hover:bg-gray-100'
-              }`}
-              style={currentView === 'chat' ? { backgroundColor: '#BAFF39', color: '#000000' } : { color: '#000000' }}
-            >
-              <Home className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-              <span className="hidden sm:inline">Home</span>
-            </button>
-            <button 
-              onClick={() => onViewChange('dashboard')}
-              className={`flex items-center px-1 sm:px-2 md:px-3 py-0.5 sm:py-1 transition-colors text-[10px] sm:text-xs font-bold ${
-                currentView === 'dashboard' 
-                  ? 'rounded-[10px]' 
-                  : 'rounded-md hover:bg-gray-100'
-              }`}
-              style={currentView === 'dashboard' ? { backgroundColor: '#BAFF39', color: '#000000' } : { color: '#000000' }}
-            >
-              <BarChart3 className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </button>
-            <button 
-              onClick={() => onViewChange('pyq-practice')}
-              className={`flex items-center px-1 sm:px-2 md:px-3 py-0.5 sm:py-1 transition-colors text-[10px] sm:text-xs font-bold ${
-                currentView === 'pyq-practice' 
-                  ? 'rounded-[10px]' 
-                  : 'rounded-md hover:bg-gray-100'
-              }`}
-              style={currentView === 'pyq-practice' ? { backgroundColor: '#BAFF39', color: '#000000' } : { color: '#000000' }}
-            >
-              <Target className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-              <span className="hidden sm:inline">PYQ Practice</span>
-            </button>
-            <button 
-              onClick={() => setShowAboutModal(true)}
-              className="flex items-center px-1 sm:px-2 md:px-3 py-0.5 sm:py-1 rounded-md hover:bg-gray-100 transition-colors text-[10px] sm:text-xs font-bold"
-              style={{ color: '#000000' }}
-            >
-              <Info className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-              <span className="hidden sm:inline">About Us</span>
-            </button>
-            <button 
-              onClick={() => setShowContactModal(true)}
-              className="flex items-center px-1 sm:px-2 md:px-3 py-0.5 sm:py-1 rounded-md hover:bg-gray-100 transition-colors text-[10px] sm:text-xs font-bold"
-              style={{ color: '#000000' }}
-            >
-              <Phone className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-              <span className="hidden sm:inline">Contact</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Right side - flex-1 to push everything to the right */}
-        <div className="flex-1"></div>
-
-        {/* Clock positioned between navigation and right components - Hidden on mobile */}
-        <div className="hidden md:flex items-center mr-1">
-          <Clock />
-        </div>
-
-        {/* Right side - User actions */}
-        <div className="flex items-center space-x-0.5 sm:space-x-1 justify-end mr-2">
-          {/* Mobile Clock - Shown on mobile devices */}
-          <div className="md:hidden">
-            <Clock isMobile={true} />
-          </div>
-          
-          {/* Authentication Section */}
-          {currentUser ? (
-            <>
-              <div
-                className="hidden sm:flex items-center space-x-1 ml-0.5 cursor-pointer"
-                role="button"
-                onClick={() => setShowEditProfile(true)}
-                title="Edit profile"
+      <Toolbar disableGutters sx={{ minHeight: 56 }}>
+        <Container maxWidth={false} disableGutters sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%', minWidth: 0 }}>
+            {/* Left side - App name */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+              <img
+                src="/mg.png"
+                alt="MG Logo"
+                width={44}
+                height={44}
+                style={{
+                  objectFit: 'contain',
+                  filter: 'brightness(0) saturate(100%) invert(88%) sepia(56%) saturate(839%) hue-rotate(20deg) brightness(104%) contrast(102%)'
+                }}
+              />
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 800,
+                  letterSpacing: '0.02em',
+                  textTransform: 'uppercase',
+                  color: '#BAFF39',
+                  fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' },
+                  whiteSpace: 'nowrap'
+                }}
               >
-                <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: '#BAFF39' }}
-                >
-                  <span className="font-semibold text-xs" style={{ color: '#000000' }}>
-                    {getUserInitials(currentUser.displayName)}
-                  </span>
-                </div>
-                <span
-                  className="font-medium text-xs hidden md:inline"
-                  style={{ color: '#BAFF39' }}
-                >
-                  {currentUser.displayName || currentUser.email}
-                </span>
-              </div>
-              <button 
-                onClick={handleLogout}
-                className="flex items-center space-x-1 px-2 py-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors text-xs"
-              >
-                <LogOut className="w-3 h-3" />
-                <span className="hidden xs:inline">Logout</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <button 
-                onClick={() => handleAuthClick('login')}
-                className="flex items-center space-x-1 px-2 py-1 bg-gray-800 text-white rounded-full hover:bg-gray-700 transition-colors text-xs"
-              >
-                <LogIn className="w-3 h-3" />
-                <span className="hidden xs:inline">Log In</span>
-              </button>
-              <button 
-                onClick={() => handleAuthClick('signup')}
-                className="flex items-center space-x-1 px-2 py-1 rounded-full hover:opacity-90 transition-colors text-xs"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
-              >
-                <UserPlus className="w-3 h-3" />
-                <span className="hidden xs:inline">Sign up</span>
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+                GYAN SETU
+              </Typography>
+            </Box>
 
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
+            {/* Center - Navigation */}
+            <Box sx={{ flex: 1, display: { xs: 'none', md: 'flex' }, justifyContent: 'center', minWidth: 0 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, backgroundColor: 'rgba(255,255,255,0.9)', px: { sm: 1, md: 2, lg: 3 }, py: 1, borderRadius: 2, boxShadow: 1 }}>
+                <Button onClick={() => onViewChange('chat')} startIcon={<Home size={12} />} sx={navButtonSx(currentView === 'chat')}>
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Home</Box>
+                </Button>
+                <Button onClick={() => onViewChange('dashboard')} startIcon={<BarChart3 size={12} />} sx={navButtonSx(currentView === 'dashboard')}>
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Dashboard</Box>
+                </Button>
+                <Button onClick={() => onViewChange('pyq-practice')} startIcon={<Target size={12} />} sx={navButtonSx(currentView === 'pyq-practice')}>
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>PYQ Practice</Box>
+                </Button>
+                <Button onClick={() => setShowAboutModal(true)} startIcon={<Info size={12} />} sx={navButtonSx(false)}>
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>About Us</Box>
+                </Button>
+                <Button onClick={() => setShowContactModal(true)} startIcon={<Phone size={12} />} sx={navButtonSx(false)}>
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Contact</Box>
+                </Button>
+              </Box>
+            </Box>
+
+            {/* Right side - Clock and User actions */}
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ flexShrink: 0 }}>
+              <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+                <Clock />
+              </Box>
+              <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+                <Clock isMobile={true} />
+              </Box>
+              {loadTimeMs !== null && (
+                <Chip
+                  size="small"
+                  label={`Load: ${loadTimeMs}ms`}
+                  sx={{
+                    fontSize: '0.7rem',
+                    height: 22,
+                    backgroundColor: 'rgba(186, 255, 57, 0.2)',
+                    color: '#000000'
+                  }}
+                />
+              )}
+
+              {currentUser ? (
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Button
+                    onClick={() => setShowEditProfile(true)}
+                    size="small"
+                    variant="text"
+                    sx={{
+                      minWidth: 0,
+                      color: '#000000',
+                      px: 0.5,
+                      '&:hover': { backgroundColor: 'rgba(186, 255, 57, 0.15)' }
+                    }}
+                  >
+                    <Avatar sx={{ width: 24, height: 24, bgcolor: '#BAFF39', color: '#000000', fontSize: '0.75rem' }}>
+                      {getUserInitials(currentUser.displayName)}
+                    </Avatar>
+                    <Typography
+                      variant="caption"
+                      sx={{ ml: 0.75, color: '#BAFF39', display: { xs: 'none', md: 'inline' }, fontWeight: 600 }}
+                    >
+                      {currentUser.displayName || currentUser.email}
+                    </Typography>
+                  </Button>
+                  <Button
+                    onClick={handleLogout}
+                    size="small"
+                    variant="contained"
+                    color="error"
+                    startIcon={<LogOut size={14} />}
+                    sx={{ borderRadius: 999, fontSize: '0.75rem' }}
+                  >
+                    <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Logout</Box>
+                  </Button>
+                </Stack>
+              ) : (
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Button
+                    onClick={() => handleAuthClick('login')}
+                    size="small"
+                    variant="contained"
+                    startIcon={<LogIn size={14} />}
+                    sx={{ backgroundColor: '#1f2937', borderRadius: 999, fontSize: '0.75rem', '&:hover': { backgroundColor: '#374151' } }}
+                  >
+                    <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Log In</Box>
+                  </Button>
+                  <Button
+                    onClick={() => handleAuthClick('signup')}
+                    size="small"
+                    variant="contained"
+                    startIcon={<UserPlus size={14} />}
+                    sx={{ backgroundColor: '#BAFF39', color: '#000000', borderRadius: 999, fontSize: '0.75rem', '&:hover': { backgroundColor: '#B0F236' } }}
+                  >
+                    <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Sign up</Box>
+                  </Button>
+                </Stack>
+              )}
+            </Stack>
+          </Box>
+        </Container>
+      </Toolbar>
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
         initialMode={authMode}
       />
-      
-      <AboutUsModal 
+
+      <AboutUsModal
         isOpen={showAboutModal}
         onClose={() => setShowAboutModal(false)}
       />
-      
-      <ContactModal 
+
+      <ContactModal
         isOpen={showContactModal}
         onClose={() => setShowContactModal(false)}
       />
@@ -240,7 +273,7 @@ const Navbar = ({ onViewChange, currentView }) => {
         isOpen={showEditProfile}
         onClose={() => setShowEditProfile(false)}
       />
-    </nav>
+    </AppBar>
   )
 }
 
