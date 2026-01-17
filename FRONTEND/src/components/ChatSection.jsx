@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { User, Bot, ChevronDown, ChevronUp, Send, Loader2, MessageCircle, FileText, Hash } from 'lucide-react'
 import { Box, Paper, Stack, Typography, Alert, Chip, Divider, Avatar, IconButton, Button } from '@mui/material'
 import { alpha } from '@mui/material/styles'
@@ -28,6 +30,10 @@ const ChatSection = () => {
   const [rateLimitMessage, setRateLimitMessage] = useState('')
   const [expandedSources, setExpandedSources] = useState({}) // Track expanded sources for each message
   const [aiStatusText, setAiStatusText] = useState('')
+  const [typingVisible, setTypingVisible] = useState({})
+  const typingTimersRef = useRef({})
+  const typedMessageIdsRef = useRef(new Set())
+  const pendingBotIdRef = useRef(null)
 
   const toggleSources = useCallback((sourceKey) => {
     setExpandedSources(prev => {
@@ -174,8 +180,57 @@ const ChatSection = () => {
       if (window.chatTimeoutId) {
         clearTimeout(window.chatTimeoutId)
       }
+      Object.values(typingTimersRef.current).forEach(clearInterval)
+      typingTimersRef.current = {}
     }
   }, [])
+
+  // Typing animation for the latest bot response
+  useEffect(() => {
+    if (!pendingBotIdRef.current) return
+    const latestBotMessage = messages.find(
+      (msg) => msg.id === pendingBotIdRef.current && msg.type === 'bot' && !msg.isLoading && msg.content
+    )
+
+    if (!latestBotMessage) return
+    if (typedMessageIdsRef.current.has(latestBotMessage.id)) return
+    if (typingTimersRef.current[latestBotMessage.id]) return
+
+    const tokens = latestBotMessage.content.match(/\S+|\s+/g) || []
+    let index = 0
+
+    setTypingVisible((prev) => ({ ...prev, [latestBotMessage.id]: '' }))
+
+    typingTimersRef.current[latestBotMessage.id] = setInterval(() => {
+      index += 1
+      setTypingVisible((prev) => ({
+        ...prev,
+        [latestBotMessage.id]: tokens.slice(0, index).join('')
+      }))
+
+      if (index >= tokens.length) {
+        clearInterval(typingTimersRef.current[latestBotMessage.id])
+        delete typingTimersRef.current[latestBotMessage.id]
+        typedMessageIdsRef.current.add(latestBotMessage.id)
+        pendingBotIdRef.current = null
+        setTypingVisible((prev) => {
+          const { [latestBotMessage.id]: _removed, ...rest } = prev
+          return rest
+        })
+      }
+    }, 20)
+  }, [messages])
+
+  // Cleanup timers for removed messages
+  useEffect(() => {
+    const messageIds = new Set(messages.map((msg) => msg.id))
+    Object.keys(typingTimersRef.current).forEach((id) => {
+      if (!messageIds.has(Number(id))) {
+        clearInterval(typingTimersRef.current[id])
+        delete typingTimersRef.current[id]
+      }
+    })
+  }, [messages])
 
   // Handle guest chat saving
   const handleGuestChatSave = useCallback((messages) => {
@@ -261,6 +316,8 @@ const ChatSection = () => {
       isLoading: true,
       timestamp: new Date()
     }
+
+    pendingBotIdRef.current = tempBotMessage.id
 
     setMessages(prev => [...prev, tempBotMessage])
 
@@ -414,6 +471,94 @@ const ChatSection = () => {
     return pairs.reverse()
   }, [messages])
 
+  const getMarkdownComponents = useCallback((isUserMessage) => ({
+    p: ({ node, ...props }) => (
+      <Typography
+        variant="body2"
+        sx={{ fontSize: '0.75rem', lineHeight: 1.6, mb: 0.75, color: 'inherit' }}
+        {...props}
+      />
+    ),
+    h1: ({ node, ...props }) => (
+      <Typography
+        variant="h6"
+        sx={{ fontSize: '1rem', fontWeight: 700, mt: 0.5, mb: 0.75, color: 'inherit' }}
+        {...props}
+      />
+    ),
+    h2: ({ node, ...props }) => (
+      <Typography
+        variant="subtitle1"
+        sx={{ fontSize: '0.9rem', fontWeight: 700, mt: 0.5, mb: 0.5, color: 'inherit' }}
+        {...props}
+      />
+    ),
+    h3: ({ node, ...props }) => (
+      <Typography
+        variant="subtitle2"
+        sx={{ fontSize: '0.85rem', fontWeight: 700, mt: 0.5, mb: 0.5, color: 'inherit' }}
+        {...props}
+      />
+    ),
+    ul: ({ node, ...props }) => (
+      <Box component="ul" sx={{ pl: 2, mb: 0.75 }} {...props} />
+    ),
+    ol: ({ node, ...props }) => (
+      <Box component="ol" sx={{ pl: 2, mb: 0.75 }} {...props} />
+    ),
+    li: ({ node, ...props }) => (
+      <li>
+        <Typography
+          component="span"
+          variant="body2"
+          sx={{ fontSize: '0.75rem', lineHeight: 1.6, color: 'inherit' }}
+          {...props}
+        />
+      </li>
+    ),
+    blockquote: ({ node, ...props }) => (
+      <Box
+        component="blockquote"
+        sx={{
+          pl: 1.5,
+          ml: 0,
+          mr: 0,
+          mb: 0.75,
+          borderLeft: (theme) => `3px solid ${alpha(theme.palette.text.primary, 0.2)}`,
+          color: 'inherit',
+          opacity: isUserMessage ? 0.9 : 0.85
+        }}
+        {...props}
+      />
+    ),
+    code: ({ node, inline, ...props }) => (
+      <Box
+        component="code"
+        sx={{
+          fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+          fontSize: '0.72rem',
+          backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08),
+          px: inline ? 0.5 : 1,
+          py: inline ? 0 : 0.75,
+          borderRadius: 1,
+          display: inline ? 'inline' : 'block',
+          whiteSpace: inline ? 'pre-wrap' : 'pre',
+          overflowX: inline ? 'visible' : 'auto'
+        }}
+        {...props}
+      />
+    ),
+    a: ({ node, ...props }) => (
+      <Box
+        component="a"
+        sx={{ color: 'inherit', textDecoration: 'underline' }}
+        target="_blank"
+        rel="noreferrer"
+        {...props}
+      />
+    )
+  }), [])
+
   const renderMessage = (message) => (
     <Box key={message.id} sx={{ display: 'flex', justifyContent: message.type === 'user' ? 'flex-end' : 'flex-start' }}>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, maxWidth: '80%', flexDirection: message.type === 'user' ? 'row-reverse' : 'row' }}>
@@ -455,9 +600,11 @@ const ChatSection = () => {
               )}
             </Box>
           ) : (
-            <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-              {message.content}
-            </Typography>
+            <Box sx={{ fontSize: '0.75rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={getMarkdownComponents(message.type === 'user')}>
+                {typingVisible[message.id] ?? message.content}
+              </ReactMarkdown>
+            </Box>
           )}
 
           {/* Sources Section - Only for bot messages with sources */}
@@ -629,12 +776,21 @@ const ChatSection = () => {
           className="flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden transition-colors duration-300"
           sx={{
             backgroundColor: '#ffffff',
-            border: '1px solid #808080'
+            border: '1px solid #808080',
+            position: 'relative'
           }}
         >
           {/* Chat Header with Title */}
           {currentChatTitle && currentChatTitle !== 'New Chat' && (
-            <Box sx={{ mx: 2, mt: 2, mb: 1, backgroundColor: 'transparent', pointerEvents: 'none' }}>
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 12,
+                left: 16,
+                zIndex: 1,
+                pointerEvents: 'none'
+              }}
+            >
               <Chip
                 size="small"
                 icon={<MessageCircle size={12} />}
@@ -710,7 +866,7 @@ const ChatSection = () => {
               />
             )}
 
-            <div className="w-[80%] max-w-none mx-auto space-y-2 py-2 relative z-10">            
+            <div className="w-[90%] max-w-none mx-auto space-y-2 py-2 relative z-10">            
               {/* Welcome message when no messages exist */}
               {messages.length === 0 && (
                 <div className="text-center py-4 mt-2">
