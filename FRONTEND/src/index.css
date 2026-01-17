@@ -243,3 +243,10 @@ canvas {
   white-space: nowrap;
   width: fit-content;
 }
+
+/* DEV: force toolbar children to center vertically (remove in prod if necessary) */
+.MuiToolbar-root {
+  align-items: center !important;
+  min-height: 56px !important;
+  height: 56px !important;
+}

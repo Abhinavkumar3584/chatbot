@@ -96,13 +96,16 @@ const Navbar = ({ onViewChange, currentView }) => {
 
   const navButtonSx = (active) => ({
     px: { xs: 0.5, sm: 1, md: 1.5 },
-    py: { xs: 0.25, sm: 0.5 },
+    py: { xs: 0, sm: 0 },
     borderRadius: active ? 2 : 1.5,
     backgroundColor: active ? 'primary.main' : 'transparent',
     color: 'text.primary',
     fontWeight: 700,
     fontSize: { xs: '0.6rem', sm: '0.75rem' },
     minWidth: 'auto',
+    height: 40,
+    display: 'inline-flex',
+    alignItems: 'center',
     '&:hover': {
       backgroundColor: active ? 'primary.main' : 'action.hover'
     }
@@ -126,7 +129,16 @@ const Navbar = ({ onViewChange, currentView }) => {
       }}
     >
       <Toolbar disableGutters sx={{ minHeight: 56, height: 56, display: 'flex', alignItems: 'center', px: 0 }}>
-        <Container maxWidth={false} disableGutters sx={{ px: { xs: 0.5, sm: 0.75, md: 1 } }}>
+        <Container
+          maxWidth={false}
+          disableGutters
+          sx={{
+            px: { xs: 0.5, sm: 0.75, md: 1 },
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center'
+          }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%', minWidth: 0, height: '100%' }}>
             {/* Left side - App name */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0, height: '100%' }}>
@@ -136,6 +148,10 @@ const Navbar = ({ onViewChange, currentView }) => {
                 width={36}
                 height={36}
                 style={{
+                  display: 'block',
+                  height: 36,
+                  width: 36,
+                  margin: 'auto 0',
                   objectFit: 'contain',
                   filter: 'brightness(0) saturate(100%) invert(88%) sepia(56%) saturate(839%) hue-rotate(20deg) brightness(104%) contrast(102%)'
                 }}
@@ -148,7 +164,11 @@ const Navbar = ({ onViewChange, currentView }) => {
                   textTransform: 'uppercase',
                     color: 'primary.main',
                   fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' },
-                  whiteSpace: 'nowrap'
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  height: '100%',
+                  lineHeight: 1
                 }}
               >
                 GYAN SETU
@@ -157,7 +177,7 @@ const Navbar = ({ onViewChange, currentView }) => {
 
             {/* Center - Navigation */}
             <Box sx={{ flex: 1, display: { xs: 'none', md: 'flex' }, justifyContent: 'center', minWidth: 0, overflow: 'hidden', height: '100%', alignItems: 'center' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, backgroundColor: 'rgba(255,255,255,0.9)', px: { sm: 0.75, md: 1, lg: 1.5 }, py: 0.25, borderRadius: 2, boxShadow: 1, overflow: 'hidden', height: 'fit-content' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, backgroundColor: 'rgba(255,255,255,0.9)', px: { sm: 0.75, md: 1, lg: 1.5 }, py: 0, borderRadius: 2, boxShadow: 1, overflow: 'hidden', height: 40 }}>
                 <Button onClick={() => onViewChange('chat')} startIcon={<Home size={14} />} sx={navButtonSx(currentView === 'chat')}>
                   <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Home</Box>
                 </Button>
@@ -192,6 +212,7 @@ const Navbar = ({ onViewChange, currentView }) => {
                     display: { xs: 'none', lg: 'flex' },
                     fontSize: '0.65rem',
                     height: 20,
+                    alignSelf: 'center',
                       backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.18),
                       color: 'text.primary'
                   }}
@@ -199,7 +220,7 @@ const Navbar = ({ onViewChange, currentView }) => {
               )}
 
               {currentUser ? (
-                <Stack direction="row" alignItems="center" spacing={0.5}>
+                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ height: '100%', alignItems: 'center' }}>
                   <Button
                     onClick={() => setShowEditProfile(true)}
                     size="small"
@@ -208,15 +229,18 @@ const Navbar = ({ onViewChange, currentView }) => {
                       minWidth: 0,
                         color: 'text.primary',
                       px: 0.5,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        height: '100%',
                         '&:hover': { backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12) }
                     }}
                   >
-                      <Avatar sx={{ width: 24, height: 24, bgcolor: 'primary.main', color: 'primary.contrastText', fontSize: '0.75rem' }}>
+                      <Avatar sx={{ width: 24, height: 24, bgcolor: 'primary.main', color: 'primary.contrastText', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center' }}>
                       {getUserInitials(currentUser.displayName)}
                     </Avatar>
                     <Typography
                       variant="caption"
-                        sx={{ ml: 0.75, color: 'primary.main', display: { xs: 'none', lg: 'inline' }, fontWeight: 600 }}
+                        sx={{ ml: 0.75, color: 'primary.main', display: { xs: 'none', lg: 'inline' }, fontWeight: 600, lineHeight: 1 }}
                     >
                       {currentUser.displayName || currentUser.email}
                     </Typography>
@@ -227,19 +251,19 @@ const Navbar = ({ onViewChange, currentView }) => {
                     variant="contained"
                     color="error"
                     startIcon={<LogOut size={12} />}
-                    sx={{ borderRadius: 999, fontSize: '0.7rem', px: 1, py: 0.25 }}
+                    sx={{ borderRadius: 999, fontSize: '0.7rem', px: 1, py: 0.25, height: 32, display: 'inline-flex', alignItems: 'center' }}
                   >
                     <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Logout</Box>
                   </Button>
                 </Stack>
               ) : (
-                <Stack direction="row" alignItems="center" spacing={0.5}>
+                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ height: '100%', alignItems: 'center' }}>
                     <Button
                     onClick={() => handleAuthClick('login')}
                     size="small"
                     variant="contained"
                       startIcon={<LogIn size={14} />}
-                      sx={{ backgroundColor: 'secondary.main', color: 'secondary.contrastText', borderRadius: 999, fontSize: '0.7rem', px: 1, py: 0.25, '&:hover': { backgroundColor: 'secondary.dark' } }}
+                      sx={{ backgroundColor: 'secondary.main', color: 'secondary.contrastText', borderRadius: 999, fontSize: '0.7rem', px: 1, py: 0.25, height: 32, display: 'inline-flex', alignItems: 'center', '&:hover': { backgroundColor: 'secondary.dark' } }}
                   >
                     <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Log In</Box>
                   </Button>
@@ -248,7 +272,7 @@ const Navbar = ({ onViewChange, currentView }) => {
                     size="small"
                     variant="contained"
                       startIcon={<UserPlus size={14} />}
-                      sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', borderRadius: 999, fontSize: '0.7rem', px: 1, py: 0.25, '&:hover': { backgroundColor: 'primary.dark' } }}
+                      sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', borderRadius: 999, fontSize: '0.7rem', px: 1, py: 0.25, height: 32, display: 'inline-flex', alignItems: 'center', '&:hover': { backgroundColor: 'primary.dark' } }}
                   >
                     <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Sign up</Box>
                   </Button>
