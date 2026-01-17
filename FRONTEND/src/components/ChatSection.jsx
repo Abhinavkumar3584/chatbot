@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { User, Bot, ChevronDown, ChevronUp, Send, Loader2, MessageCircle, FileText, Hash } from 'lucide-react'
 import { Box, Paper, Stack, Typography, Alert, Chip, Divider, Avatar, IconButton, Button } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLayout } from '../contexts/LayoutContext'
 import { useSearchHistory } from '../contexts/SearchHistoryContext'
@@ -368,8 +369,8 @@ const ChatSection = () => {
   }, [messages, isLoading])
 
   // Calculate dynamic margins based on visibility (match fixed panel sizes)
-  const leftMarginPx = useMemo(() => (sidebarVisible ? 296 : 64), [sidebarVisible])
-  const rightMarginPx = useMemo(() => (pyqVisible ? 474 : 24), [pyqVisible])
+  const leftMarginPx = useMemo(() => (sidebarVisible ? 268 : 48), [sidebarVisible])
+  const rightMarginPx = useMemo(() => (pyqVisible ? 428 : 48), [pyqVisible])
 
   return (
     <Box
@@ -403,9 +404,9 @@ const ChatSection = () => {
                 icon={<MessageCircle size={12} />}
                 label={currentChatTitle}
                 sx={{
-                  backgroundColor: 'rgba(186, 255, 57, 0.15)',
-                  border: '1px solid rgba(186, 255, 57, 0.4)',
-                  color: '#000000',
+                  backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                  border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.35)}`,
+                  color: 'text.primary',
                   maxWidth: '100%'
                 }}
               />
@@ -457,8 +458,8 @@ const ChatSection = () => {
               <div
                 className="absolute inset-0 z-0 transition-opacity duration-300"
                 style={{
-                  backgroundImage: `linear-gradient(to right, rgba(186, 255, 57, 0.2) 1px, transparent 1px),
-                       linear-gradient(to bottom, rgba(186, 255, 57, 0.2) 1px, transparent 1px)`,
+                     backgroundImage: `linear-gradient(to right, rgba(58, 124, 165, 0.18) 1px, transparent 1px),
+                       linear-gradient(to bottom, rgba(58, 124, 165, 0.18) 1px, transparent 1px)`,
                   backgroundSize: "20px 30px",
                   WebkitMaskImage:
                     "radial-gradient(ellipse 70% 60% at 50% 0%, #000 60%, transparent 100%)",
@@ -684,7 +685,7 @@ const ChatSection = () => {
                     {/* Avatar */}
                     <Box sx={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {message.type === 'user' ? (
-                        <Avatar sx={{ width: 32, height: 32, bgcolor: '#BAFF39', color: '#000000' }}>
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
                           <User size={12} />
                         </Avatar>
                       ) : (
@@ -703,9 +704,9 @@ const ChatSection = () => {
                       sx={{
                         p: 1.5,
                         borderRadius: 2,
-                        backgroundColor: message.type === 'user' ? '#BAFF39' : '#ffffff',
-                        color: '#000000',
-                        border: message.type === 'user' ? 'none' : '1px solid #e0e0e0'
+                        backgroundColor: message.type === 'user' ? 'primary.main' : 'background.paper',
+                        color: message.type === 'user' ? 'primary.contrastText' : 'text.primary',
+                        border: message.type === 'user' ? 'none' : (theme) => `1px solid ${theme.palette.divider}`
                       }}
                     >
                       {/* Loading Indicator - Only for bot messages when loading */}
@@ -749,10 +750,24 @@ const ChatSection = () => {
                                     py: 0.25,
                                     borderRadius: 999,
                                     fontSize: '0.7rem',
-                                    backgroundColor: expandedSources[`${message.id}-${index}`] ? '#BAFF39' : '#f5f5f5',
-                                    borderColor: expandedSources[`${message.id}-${index}`] ? '#BAFF39' : '#d0d0d0',
-                                    color: '#000000',
-                                    '&:hover': { backgroundColor: expandedSources[`${message.id}-${index}`] ? '#B0F236' : '#e8e8e8' }
+                                    backgroundColor: (theme) =>
+                                      expandedSources[`${message.id}-${index}`]
+                                        ? theme.palette.primary.main
+                                        : theme.palette.background.default,
+                                    borderColor: (theme) =>
+                                      expandedSources[`${message.id}-${index}`]
+                                        ? theme.palette.primary.main
+                                        : theme.palette.divider,
+                                    color: (theme) =>
+                                      expandedSources[`${message.id}-${index}`]
+                                        ? theme.palette.primary.contrastText
+                                        : theme.palette.text.primary,
+                                    '&:hover': {
+                                      backgroundColor: (theme) =>
+                                        expandedSources[`${message.id}-${index}`]
+                                          ? theme.palette.primary.dark
+                                          : alpha(theme.palette.text.primary, 0.06)
+                                    }
                                   }}
                                 >
                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -787,7 +802,7 @@ const ChatSection = () => {
                                       <Chip
                                         size="small"
                                         label={`${(source.score * 100).toFixed(1)}%`}
-                                        sx={{ backgroundColor: '#BAFF39', color: '#000000', fontSize: '0.7rem' }}
+                                        sx={{ backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.2), color: 'text.primary', fontSize: '0.7rem' }}
                                       />
                                     )}
                                   </Box>
@@ -800,16 +815,16 @@ const ChatSection = () => {
                                 <Stack spacing={1}>
                                   <Stack direction="row" spacing={1} flexWrap="wrap">
                                     {source.subject && (
-                                      <Chip size="small" label={source.subject} sx={{ backgroundColor: '#BAFF39', color: '#000000', fontSize: '0.7rem' }} />
+                                      <Chip size="small" label={source.subject} sx={{ backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.18), color: 'text.primary', fontSize: '0.7rem' }} />
                                     )}
                                     {source.class && (
-                                      <Chip size="small" label={source.class} sx={{ backgroundColor: '#e0e0e0', color: '#000000', fontSize: '0.7rem' }} />
+                                      <Chip size="small" label={source.class} sx={{ backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08), color: 'text.primary', fontSize: '0.7rem' }} />
                                     )}
                                     {(source.chapter || source.chapter_name) && (
-                                      <Chip size="small" label={source.chapter_name || source.chapter} sx={{ backgroundColor: '#e0e0e0', color: '#000000', fontSize: '0.7rem' }} />
+                                      <Chip size="small" label={source.chapter_name || source.chapter} sx={{ backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08), color: 'text.primary', fontSize: '0.7rem' }} />
                                     )}
                                     {source.topic && (
-                                      <Chip size="small" label={source.topic} sx={{ backgroundColor: '#e0e0e0', color: '#000000', fontSize: '0.7rem' }} />
+                                      <Chip size="small" label={source.topic} sx={{ backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08), color: 'text.primary', fontSize: '0.7rem' }} />
                                     )}
                                   </Stack>
 

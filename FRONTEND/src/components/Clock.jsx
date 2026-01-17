@@ -47,8 +47,8 @@ const Clock = ({ isMobile = false }) => {
       <div 
         className="flex items-center space-x-0.5 px-1 py-0.5 rounded-md shadow-sm" 
         style={{ 
-          backgroundColor: 'rgba(186, 255, 57, 0.15)', 
-          border: '1px solid rgba(186, 255, 57, 0.3)' 
+          backgroundColor: 'rgba(58, 124, 165, 0.12)', 
+          border: '1px solid rgba(58, 124, 165, 0.3)' 
         }}
       >
         <div className="flex items-center space-x-0.5">
@@ -83,8 +83,8 @@ const Clock = ({ isMobile = false }) => {
     <div 
       className="flex items-center space-x-1 px-1.5 py-0.5 rounded-md shadow-sm" 
       style={{ 
-        backgroundColor: 'rgba(186, 255, 57, 0.15)', 
-        border: '1px solid rgba(186, 255, 57, 0.3)' 
+        backgroundColor: 'rgba(58, 124, 165, 0.12)', 
+        border: '1px solid rgba(58, 124, 165, 0.3)' 
       }}
     >
       <div className="flex items-center space-x-0.5">

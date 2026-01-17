@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react'
 import { MessageCircle, Search, BookOpen, FileText, Lightbulb, HelpCircle, ChevronLeft, ChevronRight, Trash2, Plus, Clock, Target, CheckCircle, GraduationCap, PenTool, MessagesSquare } from 'lucide-react'
 import { Box, Paper, Stack, Typography, Button, IconButton, Divider } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLayout } from '../contexts/LayoutContext'
 import { useSearchHistory } from '../contexts/SearchHistoryContext'
@@ -258,9 +259,9 @@ const Sidebar = () => {
             left: 8,
             top: 72,
             bottom: 8,
-            width: { xs: 208, sm: 240, md: 272 },
+            width: { xs: 220, sm: 240, md: 260 },
             zIndex: 30,
-            borderRadius: 2,
+            borderRadius: 1,
             border: '1px solid #808080',
             backgroundColor: '#ffffff',
             color: '#000000',
@@ -277,8 +278,11 @@ const Sidebar = () => {
                     px: 1,
                     py: 0.5,
                     borderRadius: 1,
-                    backgroundColor: 'rgba(186, 255, 57, 0.15)',
-                    color: '#000000'
+                    backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                    color: 'text.primary',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
                   }}
                 >
                   Sign in to sync your conversations
@@ -299,13 +303,13 @@ const Sidebar = () => {
                 variant="contained"
                 title="Start a new conversation"
                 sx={{
-                  backgroundColor: '#BAFF39',
-                  color: '#000000',
+                  backgroundColor: 'primary.main',
+                  color: 'primary.contrastText',
                   borderRadius: 2,
                   fontSize: '0.875rem',
                   fontWeight: 600,
                   py: 1,
-                  '&:hover': { backgroundColor: '#B0F236' }
+                  '&:hover': { backgroundColor: 'primary.dark' }
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -357,7 +361,7 @@ const Sidebar = () => {
                         key={chat.id}
                         className="w-full text-left p-2 rounded-lg transition-colors group relative"
                         style={{ color: '#000000' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       >
                         <div className="flex items-start space-x-2" onClick={() => handleChatSelect(chat)}>
@@ -461,7 +465,7 @@ const Sidebar = () => {
                         key={chat.id}
                         className="w-full text-left p-2 rounded-lg transition-colors group relative"
                         style={{ color: '#000000' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       >
                         <div className="flex items-start space-x-2" onClick={() => handleChatSelect(chat)}>
@@ -513,31 +517,31 @@ const Sidebar = () => {
               <Divider sx={{ borderColor: '#808080', mb: 1.5 }} />
               {/* New buttons */}
               <Stack spacing={1}>
-                <Button onClick={handleGDTopicsClick} variant="contained" startIcon={<MessagesSquare className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                <Button onClick={handleGDTopicsClick} variant="contained" startIcon={<MessagesSquare className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                   AI for GD Topics
                 </Button>
-                <Button onClick={handleEligibilityClick} variant="contained" startIcon={<CheckCircle className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                <Button onClick={handleEligibilityClick} variant="contained" startIcon={<CheckCircle className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                   Check Eligibility
                 </Button>
-                <Button onClick={handleSyllabusClick} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                <Button onClick={handleSyllabusClick} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                   Exam Syllabus
                 </Button>
-                <Button onClick={handleQuizClick} variant="contained" startIcon={<PenTool className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                <Button onClick={handleQuizClick} variant="contained" startIcon={<PenTool className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                   Attempt Quiz
                 </Button>
-                <Button onClick={handlePyqPracticeClick} variant="contained" startIcon={<Target className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                <Button onClick={handlePyqPracticeClick} variant="contained" startIcon={<Target className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                   PYQ Practice
                 </Button>
-                <Button onClick={handleBooksClick} variant="contained" startIcon={<BookOpen className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                <Button onClick={handleBooksClick} variant="contained" startIcon={<BookOpen className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                   Inserted Books
                 </Button>
-                <Button onClick={handlePyqsClick} variant="contained" startIcon={<FileText className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                <Button onClick={handlePyqsClick} variant="contained" startIcon={<FileText className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                   Inserted PYQs
                 </Button>
-                <Button onClick={handleWhatsNewClick} variant="contained" startIcon={<Lightbulb className="w-4 h-4" />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                <Button onClick={handleWhatsNewClick} variant="contained" startIcon={<Lightbulb className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                   What's New
                 </Button>
-                <Button onClick={handleHelpClick} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: '#BAFF39', color: '#000000', '&:hover': { backgroundColor: '#B0F236' } }}>
+                <Button onClick={handleHelpClick} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                   Help & Support
                 </Button>
               </Stack>
@@ -557,7 +561,7 @@ const Sidebar = () => {
             bottom: 8,
             width: 40,
             zIndex: 30,
-            borderRadius: 2,
+            borderRadius: 1,
             border: '1px solid #808080',
             backgroundColor: '#ffffff',
             color: '#000000',
@@ -578,7 +582,7 @@ const Sidebar = () => {
             <button 
               className="p-1 rounded-lg transition-colors"
               style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               title="New Chat"
             >
@@ -587,7 +591,7 @@ const Sidebar = () => {
             <button 
               className="p-1 rounded-lg transition-colors"
               style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               title="Search"
             >
@@ -601,7 +605,7 @@ const Sidebar = () => {
               onClick={handleGDTopicsClick}
               className="p-1 rounded-lg transition-colors"
               style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               title="AI for GD Topics"
             >
@@ -611,7 +615,7 @@ const Sidebar = () => {
               onClick={handleEligibilityClick}
               className="p-1 rounded-lg transition-colors"
               style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               title="Check Exams Eligibility and Attempts"
             >
@@ -621,7 +625,7 @@ const Sidebar = () => {
               onClick={handleSyllabusClick}
               className="p-1 rounded-lg transition-colors"
               style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               title="Exam Syllabus"
             >
@@ -631,7 +635,7 @@ const Sidebar = () => {
               onClick={handleQuizClick}
               className="p-1 rounded-lg transition-colors"
               style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               title="Attempt Quiz"
             >
@@ -643,7 +647,7 @@ const Sidebar = () => {
               onClick={handlePyqPracticeClick}
               className="p-1 rounded-lg transition-colors"
               style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               title="PYQ Practice"
             >
@@ -653,7 +657,7 @@ const Sidebar = () => {
               onClick={handleBooksClick}
               className="p-1 rounded-lg transition-colors"
               style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               title="Inserted Books"
             >
@@ -663,7 +667,7 @@ const Sidebar = () => {
               onClick={handlePyqsClick}
               className="p-1 rounded-lg transition-colors"
               style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               title="Inserted PYQs"
             >

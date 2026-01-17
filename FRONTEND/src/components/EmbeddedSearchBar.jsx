@@ -92,7 +92,7 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <form onSubmit={handleSubmit} className="rounded-2xl shadow-sm p-1.5" style={{ backgroundColor: '#000000', border: '1px solid #BAFF39' }}>
+      <form onSubmit={handleSubmit} className="rounded-2xl shadow-sm p-1.5" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E3E7ED' }}>
         <div className="flex items-center space-x-1.5">
           {/* Subject Dropdown - Compact for mobile */}
           <div className="relative flex-shrink-0" ref={dropdownRef}>
@@ -101,8 +101,8 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
               onClick={() => setShowDropdown(!showDropdown)}
               className="flex items-center justify-between space-x-1 px-2 py-1.5 rounded-md text-xs hover:opacity-90 transition-opacity min-w-[80px] max-w-[120px]"
               style={{ 
-                backgroundColor: '#BAFF39', 
-                color: '#000000' 
+                backgroundColor: '#3A7CA5', 
+                color: '#FFFFFF' 
               }}
               disabled={isLoadingSubjects}
             >
@@ -119,7 +119,7 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
 
             {/* Dropdown Menu */}
             {showDropdown && !isLoadingSubjects && (
-              <div className="absolute bottom-full left-0 mb-1 w-40 rounded-md shadow-lg z-[60]" style={{ backgroundColor: '#000000', border: '1px solid #BAFF39' }}>
+              <div className="absolute bottom-full left-0 mb-1 w-40 rounded-md shadow-lg z-[60]" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E3E7ED' }}>
                 <div className="py-1">
                   {availableSubjects.map((subject, index) => (
                     <button
@@ -128,13 +128,13 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
                       onClick={() => handleSubjectSelect(subject)}
                       className="w-full text-left px-2 py-1.5 text-xs transition-colors"
                       style={{
-                        backgroundColor: selectedSubject === subject ? 'rgba(186, 255, 57, 0.2)' : 'transparent',
-                        color: selectedSubject === subject ? '#BAFF39' : '#BAFF39',
-                        fontWeight: selectedSubject === subject ? '500' : '400'
+                        backgroundColor: selectedSubject === subject ? 'rgba(58, 124, 165, 0.12)' : 'transparent',
+                        color: '#1F2933',
+                        fontWeight: selectedSubject === subject ? '600' : '400'
                       }}
                       onMouseEnter={(e) => {
                         if (selectedSubject !== subject) {
-                          e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.1)'
+                          e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.08)'
                         }
                       }}
                       onMouseLeave={(e) => {
@@ -146,7 +146,7 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
                       <div className="flex items-center justify-between">
                         <span>{subject}</span>
                         {subject !== 'All Subjects' && (
-                          <span className="text-xs font-medium" style={{ color: '#00ff00' }}>✓</span>
+                          <span className="text-xs font-medium" style={{ color: '#3A7CA5' }}>✓</span>
                         )}
                       </div>
                     </button>
@@ -154,8 +154,8 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
                 </div>
                 
                 {/* Footer info */}
-                <div className="px-2 py-1" style={{ borderTop: '1px solid rgba(186, 255, 57, 0.3)' }}>
-                  <div className="text-xs" style={{ color: '#BAFF39', opacity: 0.7 }}>
+                <div className="px-2 py-1" style={{ borderTop: '1px solid #E3E7ED' }}>
+                  <div className="text-xs" style={{ color: '#52616B' }}>
                     {availableSubjects.length - 1} indexed subjects
                   </div>
                 </div>
@@ -165,29 +165,18 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
 
           {/* Search Input - Takes remaining space */}
           <div className="flex-1 relative">
-            <style>
-              {`
-                .dark-search-input::placeholder {
-                  color: rgba(186, 255, 57, 0.5);
-                  opacity: 1;
-                }
-                .dark-search-input:focus {
-                  ring-color: #BAFF39;
-                }
-              `}
-            </style>
             <input
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder="Ask a Question to get answers and Related PYQ..."
-              className="dark-search-input w-full px-2 py-1.5 text-xs rounded-md focus:outline-none focus:ring-1 focus:border-transparent"
+              className="w-full px-2 py-1.5 text-xs rounded-md focus:outline-none focus:ring-1 focus:border-transparent"
               style={{
-                backgroundColor: '#6E6E6E',
-                border: '1px solid #BAFF39',
-                color: '#BAFF39',
-                caretColor: '#BAFF39'
+                backgroundColor: '#FAFBFC',
+                border: '1px solid #E3E7ED',
+                color: '#1F2933',
+                caretColor: '#3A7CA5'
               }}
               disabled={isLoading}
               autoComplete="off"
@@ -200,16 +189,8 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
             disabled={isLoading || !inputValue.trim()}
             className="flex-shrink-0 p-1.5 rounded-md transition-colors disabled:opacity-50"
             style={{ 
-              backgroundColor: '#BAFF39',
-              color: '#000000'
-            }}
-            onMouseOver={(e) => {
-              if (!isLoading && inputValue.trim()) {
-                e.target.style.backgroundColor = '#FF921C'
-              }
-            }}
-            onMouseOut={(e) => {
-              e.target.style.backgroundColor = '#BAFF39'
+              backgroundColor: '#3A7CA5',
+              color: '#FFFFFF'
             }}
           >
             <Search className="w-3 h-3" />

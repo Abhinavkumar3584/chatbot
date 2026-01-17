@@ -2,6 +2,7 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react'
 import { Box, Skeleton } from '@mui/material'
 import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles'
+import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { LayoutProvider } from './contexts/LayoutContext'
 import { SearchHistoryProvider } from './contexts/SearchHistoryContext'
@@ -22,15 +23,45 @@ const GDTopicsSection = lazy(() => import('./components/GDTopicsSection'))
 
 const muiTheme = createTheme({
   palette: {
-    primary: { main: '#BAFF39' },
-    text: { primary: '#000000' },
-    background: { default: '#f5f5f5', paper: '#ffffff' }
+    mode: 'light',
+    primary: { main: '#3A7CA5' },
+    secondary: { main: '#6B7C93' },
+    error: { main: '#D46A6A' },
+    warning: { main: '#E2B93B' },
+    success: { main: '#8DBE7F' },
+    background: { default: '#F6F7F9', paper: '#FFFFFF' },
+    text: { primary: '#1F2933', secondary: '#52616B' },
+    divider: '#E3E7ED'
   },
   typography: {
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
-    button: { textTransform: 'none', fontWeight: 600 }
+    fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+    h1: { fontSize: '28px', lineHeight: '36px', fontWeight: 600 },
+    h2: { fontSize: '22px', lineHeight: '30px', fontWeight: 600 },
+    h3: { fontSize: '18px', lineHeight: '26px', fontWeight: 600 },
+    subtitle1: { fontSize: '16px', lineHeight: '24px', fontWeight: 500 },
+    body1: { fontSize: '15px', lineHeight: '24px', fontWeight: 400 },
+    body2: { fontSize: '13.5px', lineHeight: '22px', fontWeight: 400 },
+    caption: { fontSize: '12px', lineHeight: '18px', fontWeight: 400 },
+    button: { textTransform: 'none', fontWeight: 600, fontSize: '14px', lineHeight: '20px' }
   },
-  shape: { borderRadius: 8 }
+  shape: { borderRadius: 10 },
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: { border: '1px solid #E3E7ED' }
+      }
+    },
+    MuiDivider: {
+      styleOverrides: {
+        root: { borderColor: '#E3E7ED' }
+      }
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: { borderRadius: 10, minHeight: 40 }
+      }
+    }
+  }
 })
 
 function AppContent() {
@@ -198,6 +229,7 @@ function App() {
             <SearchHistoryProvider>
               <DashboardProvider>
                 <MuiThemeProvider theme={muiTheme}>
+                  <CssBaseline />
                   <AppContent />
                 </MuiThemeProvider>
               </DashboardProvider>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { ChevronDown, FileText, ChevronLeft, ChevronRight, Star } from 'lucide-react'
 import { Box, Paper, Stack, Typography, IconButton, Chip, Divider, Button, Menu, MenuItem } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { useLayout } from '../contexts/LayoutContext'
 import { useDashboard } from '../contexts/DashboardContext'
 import apiService from '../services/api'
@@ -330,9 +331,9 @@ const PYQSection = () => {
             right: 8,
             top: 72,
             bottom: 8,
-            width: 450,
+            width: 420,
             zIndex: 30,
-            borderRadius: 2,
+            borderRadius: 1,
             border: '1px solid #808080',
             backgroundColor: '#ffffff',
             color: '#000000',
@@ -390,7 +391,7 @@ const PYQSection = () => {
                         onClick={(event) => !loadingFilters && setExamAnchorEl(event.currentTarget)}
                         disabled={loadingFilters}
                         endIcon={<ChevronDown className="w-3 h-3" />}
-                        sx={{ backgroundColor: '#BAFF39', color: '#000000', fontSize: '0.75rem', borderRadius: 999, '&:hover': { backgroundColor: '#B0F236' } }}
+                        sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', fontSize: '0.75rem', borderRadius: 999, '&:hover': { backgroundColor: 'primary.dark' } }}
                       >
                         {loadingFilters ? 'Loading...' : (exams.find(e => e.id === selectedExam)?.name || 'All Exams')}
                       </Button>
@@ -423,7 +424,7 @@ const PYQSection = () => {
                         onClick={(event) => !loadingFilters && setSubjectAnchorEl(event.currentTarget)}
                         disabled={loadingFilters}
                         endIcon={<ChevronDown className="w-3 h-3" />}
-                        sx={{ backgroundColor: '#BAFF39', color: '#000000', fontSize: '0.75rem', borderRadius: 999, '&:hover': { backgroundColor: '#B0F236' } }}
+                        sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', fontSize: '0.75rem', borderRadius: 999, '&:hover': { backgroundColor: 'primary.dark' } }}
                       >
                         {loadingFilters ? 'Loading...' : (subjects.find(s => s.id === selectedSubject)?.name || 'All Subjects')}
                       </Button>
@@ -747,7 +748,7 @@ const PYQSection = () => {
             bottom: 8,
             width: 40,
             zIndex: 30,
-            borderRadius: 2,
+            borderRadius: 1,
             border: '1px solid #808080',
             backgroundColor: '#ffffff',
             color: '#000000',
@@ -769,7 +770,7 @@ const PYQSection = () => {
               onClick={togglePyq}
               size="small"
               title="Previous Year Questions"
-              sx={{ color: '#000000', '&:hover': { backgroundColor: 'rgba(186, 255, 57, 0.15)' } }}
+              sx={{ color: 'text.primary', '&:hover': { backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12) } }}
             >
               <FileText className="w-4 h-4" />
             </IconButton>
