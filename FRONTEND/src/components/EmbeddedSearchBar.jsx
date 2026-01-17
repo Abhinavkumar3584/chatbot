@@ -91,7 +91,7 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-[80%] max-w-none mx-auto">
       <form onSubmit={handleSubmit} className="rounded-2xl shadow-sm p-1.5" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E3E7ED' }}>
         <div className="flex items-center space-x-1.5">
           {/* Subject Dropdown - Compact for mobile */}

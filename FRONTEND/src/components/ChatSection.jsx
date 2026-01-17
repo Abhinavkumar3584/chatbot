@@ -18,7 +18,8 @@ const ChatSection = () => {
   const { addToSearchHistory, addGuestChat, updateGuestChat, getGuestChat } = useSearchHistory()
   const { currentUser, saveMessage, getChatMessages, createNewChat, updateChatTitle, updateChatMessageCount } = useAuth()
   const { trackInteraction } = useDashboard()
-  const messagesEndRef = useRef(null)
+  const scrollContainerRef = useRef(null)
+  const scrollStateRef = useRef({ scrollTop: 0, scrollHeight: 0, isAtTop: true })
   const [messages, setMessages] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [systemStatus, setSystemStatus] = useState({ initialized: false, healthy: false })
@@ -361,12 +362,247 @@ const ChatSection = () => {
     trackInteraction
   ])
 
-  // Auto scroll to bottom when messages change, but only if there are messages
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+    scrollStateRef.current.scrollTop = container.scrollTop
+    scrollStateRef.current.scrollHeight = container.scrollHeight
+    scrollStateRef.current.isAtTop = container.scrollTop <= 8
+  }, [])
+
+  // Preserve scroll position on new messages (no auto-scroll)
   useEffect(() => {
-    if (messagesEndRef.current && messages.length > 0) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const prevHeight = scrollStateRef.current.scrollHeight
+    const nextHeight = container.scrollHeight
+    const delta = nextHeight - prevHeight
+
+    if (!scrollStateRef.current.isAtTop && delta > 0) {
+      container.scrollTop = container.scrollTop + delta
     }
-  }, [messages, isLoading])
+
+    scrollStateRef.current.scrollHeight = nextHeight
+  }, [messages.length])
+
+  const messagePairs = useMemo(() => {
+    const pairs = []
+    let currentPair = null
+
+    messages.forEach((message) => {
+      if (message.type === 'user') {
+        if (currentPair) pairs.push(currentPair)
+        currentPair = { user: message, bot: null }
+        return
+      }
+
+      if (!currentPair) {
+        currentPair = { user: null, bot: message }
+        return
+      }
+
+      if (!currentPair.bot) {
+        currentPair.bot = message
+      } else {
+        pairs.push(currentPair)
+        currentPair = { user: null, bot: message }
+      }
+    })
+
+    if (currentPair) pairs.push(currentPair)
+    return pairs.reverse()
+  }, [messages])
+
+  const renderMessage = (message) => (
+    <Box key={message.id} sx={{ display: 'flex', justifyContent: message.type === 'user' ? 'flex-end' : 'flex-start' }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, maxWidth: '80%', flexDirection: message.type === 'user' ? 'row-reverse' : 'row' }}>
+        {/* Avatar */}
+        <Box sx={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {message.type === 'user' ? (
+            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
+              <User size={12} />
+            </Avatar>
+          ) : (
+            <Box
+              component="img"
+              src="/mg.png"
+              alt="MG Bot"
+              sx={{ width: 48, height: 48, objectFit: 'contain' }}
+            />
+          )}
+        </Box>
+
+        {/* Message content */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 1.5,
+            borderRadius: 2,
+            backgroundColor: message.type === 'user' ? 'primary.main' : 'background.paper',
+            color: message.type === 'user' ? 'primary.contrastText' : 'text.primary',
+            border: message.type === 'user' ? 'none' : (theme) => `1px solid ${theme.palette.divider}`
+          }}
+        >
+          {/* Loading Indicator - Only for bot messages when loading */}
+          {message.type === 'bot' && message.isLoading ? (
+            <Box>
+              <SearchProgressIndicator isVisible={true} />
+              {aiStatusText && (
+                <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: '#6b7280' }}>
+                  {aiStatusText}
+                </Typography>
+              )}
+            </Box>
+          ) : (
+            <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              {message.content}
+            </Typography>
+          )}
+
+          {/* Sources Section - Only for bot messages with sources */}
+          {message.type === 'bot' && message.sources && message.sources.length > 0 && (
+            <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #e0e0e0' }}>
+              {/* Sources Header with Individual Source Buttons */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <FileText className="w-2.5 h-2.5" style={{ color: '#000000', opacity: 0.6 }} />
+                  <Typography variant="caption" sx={{ color: '#000000', opacity: 0.7, fontWeight: 600 }}>
+                    Sources ({message.sources.length}):
+                  </Typography>
+                </Box>
+
+                <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                  {message.sources.map((source, index) => (
+                    <Button
+                      key={index}
+                      size="small"
+                      variant={expandedSources[`${message.id}-${index}`] ? 'contained' : 'outlined'}
+                      onClick={() => toggleSources(`${message.id}-${index}`)}
+                      sx={{
+                        minWidth: 0,
+                        px: 1,
+                        py: 0.25,
+                        borderRadius: 999,
+                        fontSize: '0.7rem',
+                        backgroundColor: (theme) =>
+                          expandedSources[`${message.id}-${index}`]
+                            ? theme.palette.primary.main
+                            : theme.palette.background.default,
+                        borderColor: (theme) =>
+                          expandedSources[`${message.id}-${index}`]
+                            ? theme.palette.primary.main
+                            : theme.palette.divider,
+                        color: (theme) =>
+                          expandedSources[`${message.id}-${index}`]
+                            ? theme.palette.primary.contrastText
+                            : theme.palette.text.primary,
+                        '&:hover': {
+                          backgroundColor: (theme) =>
+                            expandedSources[`${message.id}-${index}`]
+                              ? theme.palette.primary.dark
+                              : alpha(theme.palette.text.primary, 0.06)
+                        }
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Hash className="w-2.5 h-2.5" />
+                        <span>{index + 1}</span>
+                        {source.score && (
+                          <span style={{ opacity: 0.75 }}>({(source.score * 100).toFixed(0)}%)</span>
+                        )}
+                      </Box>
+                    </Button>
+                  ))}
+                </Stack>
+              </Box>
+
+              {/* Individual Source Content - Only show the specific expanded source */}
+              {message.sources.map((source, index) => {
+                const sourceKey = `${message.id}-${index}`
+                return expandedSources[sourceKey] ? (
+                  <Paper
+                    key={index}
+                    elevation={0}
+                    sx={{ mt: 2, p: 1.5, borderRadius: 2, backgroundColor: '#f9f9f9', border: '1px solid #e0e0e0' }}
+                  >
+                    {/* Source Header */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Hash className="w-2.5 h-2.5" style={{ color: '#000000', opacity: 0.6 }} />
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: '#000000' }}>
+                          Source {index + 1}
+                        </Typography>
+                        {source.score && (
+                          <Chip
+                            size="small"
+                            label={`${(source.score * 100).toFixed(1)}%`}
+                            sx={{ backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.2), color: 'text.primary', fontSize: '0.7rem' }}
+                          />
+                        )}
+                      </Box>
+                      <IconButton onClick={() => toggleSources(sourceKey)} size="small" sx={{ color: '#000000', opacity: 0.6 }}>
+                        <ChevronUp className="w-2.5 h-2.5" />
+                      </IconButton>
+                    </Box>
+
+                    {/* Source Details */}
+                    <Stack spacing={1}>
+                      <Stack direction="row" spacing={1} flexWrap="wrap">
+                        {source.subject && (
+                          <Chip size="small" label={source.subject} sx={{ backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.18), color: 'text.primary', fontSize: '0.7rem' }} />
+                        )}
+                        {source.class && (
+                          <Chip size="small" label={source.class} sx={{ backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08), color: 'text.primary', fontSize: '0.7rem' }} />
+                        )}
+                        {(source.chapter || source.chapter_name) && (
+                          <Chip size="small" label={source.chapter_name || source.chapter} sx={{ backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08), color: 'text.primary', fontSize: '0.7rem' }} />
+                        )}
+                        {source.topic && (
+                          <Chip size="small" label={source.topic} sx={{ backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08), color: 'text.primary', fontSize: '0.7rem' }} />
+                        )}
+                      </Stack>
+
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: '0.7rem', pt: 1, borderTop: '1px solid #e0e0e0', color: '#000000', opacity: 0.6 }}>
+                        {source.chunk && (
+                          <span><strong>Chunk:</strong> {source.chunk}</span>
+                        )}
+                        <span><strong>Score:</strong> {(source.score * 100).toFixed(1)}%</span>
+                      </Box>
+
+                      {(source.content || source.text_preview || source.text || source.full_text) && (
+                        <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2, backgroundColor: '#f5f5f5', border: '1px solid #e0e0e0', maxHeight: 256, overflowY: 'auto' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: '#000000', display: 'block', mb: 1 }}>
+                            Content:
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.5, whiteSpace: 'pre-wrap', color: '#000000', opacity: 0.8 }}>
+                            {source.content || source.full_text || source.text_preview || source.text || 'No content available'}
+                          </Typography>
+                        </Paper>
+                      )}
+                    </Stack>
+                  </Paper>
+                ) : null
+              })}
+            </Box>
+          )}
+
+          {/* Legacy sources display (fallback) */}
+          {message.type === 'bot' && message.sources && typeof message.sources === 'string' && (
+            <Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#6b7280', borderTop: '1px solid #e5e7eb', pt: 1 }}>
+              {message.sources}
+            </Typography>
+          )}
+
+          {message.error && (
+            <Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#ef4444' }}>
+              Error processing request
+            </Typography>
+          )}
+        </Paper>
+      </Box>
+    </Box>
+  )
 
   // Calculate dynamic margins based on visibility (match fixed panel sizes)
   const leftMarginPx = useMemo(() => (sidebarVisible ? 268 : 48), [sidebarVisible])
@@ -398,7 +634,7 @@ const ChatSection = () => {
         >
           {/* Chat Header with Title */}
           {currentChatTitle && currentChatTitle !== 'New Chat' && (
-            <Box sx={{ mx: 2, mt: 2, mb: 1 }}>
+            <Box sx={{ mx: 2, mt: 2, mb: 1, backgroundColor: 'transparent', pointerEvents: 'none' }}>
               <Chip
                 size="small"
                 icon={<MessageCircle size={12} />}
@@ -452,7 +688,12 @@ const ChatSection = () => {
           )}
           
           {/* Scrollable Messages Container */}
-          <Box className="flex-1 overflow-y-auto px-3 pb-2 chat-messages-container relative" style={{ overscrollBehavior: 'none' }}>
+          <Box
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto px-3 pb-2 chat-messages-container relative"
+            style={{ overscrollBehavior: 'none' }}
+          >
             {/* Grid background for empty welcome state - spans full chat width */}
             {messages.length === 0 && (
               <div
@@ -469,7 +710,7 @@ const ChatSection = () => {
               />
             )}
 
-            <div className="max-w-4xl mx-auto space-y-2 py-2 relative z-10">            
+            <div className="w-[80%] max-w-none mx-auto space-y-2 py-2 relative z-10">            
               {/* Welcome message when no messages exist */}
               {messages.length === 0 && (
                 <div className="text-center py-4 mt-2">
@@ -679,198 +920,10 @@ const ChatSection = () => {
                 </div>
               )}
 
-              {messages.map((message) => (
-                <Box key={message.id} sx={{ display: 'flex', justifyContent: message.type === 'user' ? 'flex-end' : 'flex-start' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, maxWidth: '40rem', flexDirection: message.type === 'user' ? 'row-reverse' : 'row' }}>
-                    {/* Avatar */}
-                    <Box sx={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {message.type === 'user' ? (
-                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
-                          <User size={12} />
-                        </Avatar>
-                      ) : (
-                        <Box
-                          component="img"
-                          src="/mg.png"
-                          alt="MG Bot"
-                          sx={{ width: 48, height: 48, objectFit: 'contain' }}
-                        />
-                      )}
-                    </Box>
-
-                    {/* Message content */}
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        p: 1.5,
-                        borderRadius: 2,
-                        backgroundColor: message.type === 'user' ? 'primary.main' : 'background.paper',
-                        color: message.type === 'user' ? 'primary.contrastText' : 'text.primary',
-                        border: message.type === 'user' ? 'none' : (theme) => `1px solid ${theme.palette.divider}`
-                      }}
-                    >
-                      {/* Loading Indicator - Only for bot messages when loading */}
-                      {message.type === 'bot' && message.isLoading ? (
-                        <Box>
-                          <SearchProgressIndicator isVisible={true} />
-                          {aiStatusText && (
-                            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: '#6b7280' }}>
-                              {aiStatusText}
-                            </Typography>
-                          )}
-                        </Box>
-                      ) : (
-                        <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                          {message.content}
-                        </Typography>
-                      )}
-
-                      {/* Sources Section - Only for bot messages with sources */}
-                      {message.type === 'bot' && message.sources && message.sources.length > 0 && (
-                        <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #e0e0e0' }}>
-                          {/* Sources Header with Individual Source Buttons */}
-                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <FileText className="w-2.5 h-2.5" style={{ color: '#000000', opacity: 0.6 }} />
-                              <Typography variant="caption" sx={{ color: '#000000', opacity: 0.7, fontWeight: 600 }}>
-                                Sources ({message.sources.length}):
-                              </Typography>
-                            </Box>
-
-                            <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                              {message.sources.map((source, index) => (
-                                <Button
-                                  key={index}
-                                  size="small"
-                                  variant={expandedSources[`${message.id}-${index}`] ? 'contained' : 'outlined'}
-                                  onClick={() => toggleSources(`${message.id}-${index}`)}
-                                  sx={{
-                                    minWidth: 0,
-                                    px: 1,
-                                    py: 0.25,
-                                    borderRadius: 999,
-                                    fontSize: '0.7rem',
-                                    backgroundColor: (theme) =>
-                                      expandedSources[`${message.id}-${index}`]
-                                        ? theme.palette.primary.main
-                                        : theme.palette.background.default,
-                                    borderColor: (theme) =>
-                                      expandedSources[`${message.id}-${index}`]
-                                        ? theme.palette.primary.main
-                                        : theme.palette.divider,
-                                    color: (theme) =>
-                                      expandedSources[`${message.id}-${index}`]
-                                        ? theme.palette.primary.contrastText
-                                        : theme.palette.text.primary,
-                                    '&:hover': {
-                                      backgroundColor: (theme) =>
-                                        expandedSources[`${message.id}-${index}`]
-                                          ? theme.palette.primary.dark
-                                          : alpha(theme.palette.text.primary, 0.06)
-                                    }
-                                  }}
-                                >
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <Hash className="w-2.5 h-2.5" />
-                                    <span>{index + 1}</span>
-                                    {source.score && (
-                                      <span style={{ opacity: 0.75 }}>({(source.score * 100).toFixed(0)}%)</span>
-                                    )}
-                                  </Box>
-                                </Button>
-                              ))}
-                            </Stack>
-                          </Box>
-
-                          {/* Individual Source Content - Only show the specific expanded source */}
-                          {message.sources.map((source, index) => {
-                            const sourceKey = `${message.id}-${index}`
-                            return expandedSources[sourceKey] ? (
-                              <Paper
-                                key={index}
-                                elevation={0}
-                                sx={{ mt: 2, p: 1.5, borderRadius: 2, backgroundColor: '#f9f9f9', border: '1px solid #e0e0e0' }}
-                              >
-                                {/* Source Header */}
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <Hash className="w-2.5 h-2.5" style={{ color: '#000000', opacity: 0.6 }} />
-                                    <Typography variant="caption" sx={{ fontWeight: 600, color: '#000000' }}>
-                                      Source {index + 1}
-                                    </Typography>
-                                    {source.score && (
-                                      <Chip
-                                        size="small"
-                                        label={`${(source.score * 100).toFixed(1)}%`}
-                                        sx={{ backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.2), color: 'text.primary', fontSize: '0.7rem' }}
-                                      />
-                                    )}
-                                  </Box>
-                                  <IconButton onClick={() => toggleSources(sourceKey)} size="small" sx={{ color: '#000000', opacity: 0.6 }}>
-                                    <ChevronUp className="w-2.5 h-2.5" />
-                                  </IconButton>
-                                </Box>
-
-                                {/* Source Details */}
-                                <Stack spacing={1}>
-                                  <Stack direction="row" spacing={1} flexWrap="wrap">
-                                    {source.subject && (
-                                      <Chip size="small" label={source.subject} sx={{ backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.18), color: 'text.primary', fontSize: '0.7rem' }} />
-                                    )}
-                                    {source.class && (
-                                      <Chip size="small" label={source.class} sx={{ backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08), color: 'text.primary', fontSize: '0.7rem' }} />
-                                    )}
-                                    {(source.chapter || source.chapter_name) && (
-                                      <Chip size="small" label={source.chapter_name || source.chapter} sx={{ backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08), color: 'text.primary', fontSize: '0.7rem' }} />
-                                    )}
-                                    {source.topic && (
-                                      <Chip size="small" label={source.topic} sx={{ backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08), color: 'text.primary', fontSize: '0.7rem' }} />
-                                    )}
-                                  </Stack>
-
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: '0.7rem', pt: 1, borderTop: '1px solid #e0e0e0', color: '#000000', opacity: 0.6 }}>
-                                    {source.chunk && (
-                                      <span><strong>Chunk:</strong> {source.chunk}</span>
-                                    )}
-                                    <span><strong>Score:</strong> {(source.score * 100).toFixed(1)}%</span>
-                                  </Box>
-
-                                  {(source.content || source.text_preview || source.text || source.full_text) && (
-                                    <Paper elevation={0} sx={{ p: 1.5, borderRadius: 2, backgroundColor: '#f5f5f5', border: '1px solid #e0e0e0', maxHeight: 256, overflowY: 'auto' }}>
-                                      <Typography variant="caption" sx={{ fontWeight: 700, color: '#000000', display: 'block', mb: 1 }}>
-                                        Content:
-                                      </Typography>
-                                      <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.5, whiteSpace: 'pre-wrap', color: '#000000', opacity: 0.8 }}>
-                                        {source.content || source.full_text || source.text_preview || source.text || 'No content available'}
-                                      </Typography>
-                                    </Paper>
-                                  )}
-                                </Stack>
-                              </Paper>
-                            ) : null
-                          })}
-                        </Box>
-                      )}
-
-                      {/* Legacy sources display (fallback) */}
-                      {message.type === 'bot' && message.sources && typeof message.sources === 'string' && (
-                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#6b7280', borderTop: '1px solid #e5e7eb', pt: 1 }}>
-                          {message.sources}
-                        </Typography>
-                      )}
-
-                      {message.error && (
-                        <Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#ef4444' }}>
-                          Error processing request
-                        </Typography>
-                      )}
-                    </Paper>
-                  </Box>
-                </Box>
-              ))}
-              
-              {/* Scroll anchor */}
-              <div ref={messagesEndRef} />
+              {messagePairs.flatMap((pair) => [
+                pair.user ? renderMessage(pair.user) : null,
+                pair.bot ? renderMessage(pair.bot) : null
+              ])}
             </div>
           </Box>
 
