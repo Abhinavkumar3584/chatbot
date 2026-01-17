@@ -334,6 +334,29 @@ def get_prompt(context: str, query: str):
     
     return prompt
 
+def build_fallback_response(context: str, sources: list, query: str) -> str:
+    """Build a simple fallback response when LLM is unavailable"""
+    if sources:
+        bullets = []
+        for i, source in enumerate(sources, 1):
+            preview = source.get('text_preview') or source.get('full_text') or ''
+            if preview:
+                bullets.append(f"{i}. {preview}")
+        if bullets:
+            return (
+                "I couldn't reach the AI model, but here are the most relevant excerpts from the documents:\n\n"
+                + "\n".join(bullets)
+            )
+    if context and context.strip():
+        return (
+            "I couldn't reach the AI model, but here's the relevant context I found:\n\n"
+            f"{context.strip()}"
+        )
+    return (
+        "I couldn't reach the AI model and no relevant context was found for your question. "
+        "Please try again later."
+    )
+
 @app.route("/api/health", methods=["GET"])
 def health_check():
     """Enhanced health check endpoint"""
@@ -371,6 +394,9 @@ def health_check():
                 components['mcq_model'] = {"status": "healthy"}
             if 'client' in search_components:
                 components['groq_client'] = {"status": "healthy"}
+            else:
+                components['groq_client'] = {"status": "unavailable"}
+                health_status["status"] = "degraded"
                 
         except Exception as e:
             health_status["status"] = "degraded"
@@ -396,12 +422,6 @@ def search():
         }), 500
     
     # Check if essential components are available
-    if 'client' not in search_components:
-        return jsonify({
-            "error": "AI service not available",
-            "message": "GROQ_API_KEY is not configured. Please set your API key in the .env file."
-        }), 500
-    
     if 'rag_index' not in search_components:
         return jsonify({
             "error": "Search index not available",
@@ -483,24 +503,35 @@ def search():
                 print(f"DEBUG: Broader search failed: {e}")
         
         # Generate RAG response using Groq with optimized parameters
-        prompt = get_prompt(context, query)
-        chat_completion = search_components['client'].chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an expert educational assistant for NCERT content and competitive exam preparation. Provide detailed, accurate, and well-structured responses to help students learn effectively."
-                },
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            model="llama-3.1-8b-instant",  # Reliable and fast Groq model
-            max_tokens=1500,  # Increased for more detailed responses
-            temperature=0.3,  # Lower temperature for more focused, accurate responses
-            top_p=0.9,       # Better coherence
-        )
-        rag_response = chat_completion.choices[0].message.content
+        rag_response = None
+        warning = None
+        if 'client' in search_components:
+            try:
+                prompt = get_prompt(context, query)
+                chat_completion = search_components['client'].chat.completions.create(
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are an expert educational assistant for NCERT content and competitive exam preparation. Provide detailed, accurate, and well-structured responses to help students learn effectively."
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt,
+                        }
+                    ],
+                    model="llama-3.1-8b-instant",  # Reliable and fast Groq model
+                    max_tokens=1500,  # Increased for more detailed responses
+                    temperature=0.3,  # Lower temperature for more focused, accurate responses
+                    top_p=0.9,       # Better coherence
+                )
+                rag_response = chat_completion.choices[0].message.content
+            except Exception as e:
+                warning = f"LLM unavailable: {str(e)}"
+                print(f"⚠️ Groq call failed, using fallback response: {e}")
+                rag_response = build_fallback_response(context, sources, query)
+        else:
+            warning = "LLM client not configured (missing GROQ_API_KEY)"
+            rag_response = build_fallback_response(context, sources, query)
         
         # MCQ search for related questions
         mcq_results = query_mcq(
@@ -511,14 +542,18 @@ def search():
             mcq_limit
         )
         
-        return jsonify({
+        response_payload = {
             "rag_response": rag_response,
             "sources": sources,
             "mcq_results": mcq_results,
             "query": query,
             "namespace_used": namespace if namespace else "all",
             "timestamp": time.time()
-        }), 200
+        }
+        if warning:
+            response_payload["warning"] = warning
+
+        return jsonify(response_payload), 200
         
     except Exception as e:
         print(f"Error in search: {str(e)}")
