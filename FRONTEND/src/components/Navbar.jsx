@@ -119,16 +119,17 @@ const Navbar = ({ onViewChange, currentView }) => {
         top: 8,
         left: 8,
         right: 8,
+        width: 'calc(100% - 16px)',
         height: 56,
-        zIndex: 50,
+        zIndex: (theme) => theme.zIndex.appBar + 10,
         overflow: 'hidden'
       }}
     >
-      <Toolbar disableGutters sx={{ minHeight: 56, display: 'flex', alignItems: 'center' }}>
-        <Container maxWidth={false} disableGutters sx={{ px: { xs: 1, sm: 1.25, md: 1.5 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%', minWidth: 0 }}>
+      <Toolbar disableGutters sx={{ minHeight: 56, height: 56, display: 'flex', alignItems: 'center', px: 0 }}>
+        <Container maxWidth={false} disableGutters sx={{ px: { xs: 0.5, sm: 0.75, md: 1 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%', minWidth: 0, height: '100%' }}>
             {/* Left side - App name */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0, height: '100%' }}>
               <img
                 src="/mg.png"
                 alt="MG Logo"
@@ -155,8 +156,8 @@ const Navbar = ({ onViewChange, currentView }) => {
             </Box>
 
             {/* Center - Navigation */}
-            <Box sx={{ flex: 1, display: { xs: 'none', md: 'flex' }, justifyContent: 'center', minWidth: 0, overflow: 'hidden' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, backgroundColor: 'rgba(255,255,255,0.9)', px: { sm: 0.75, md: 1, lg: 1.5 }, py: 0.25, borderRadius: 2, boxShadow: 1, overflow: 'hidden' }}>
+            <Box sx={{ flex: 1, display: { xs: 'none', md: 'flex' }, justifyContent: 'center', minWidth: 0, overflow: 'hidden', height: '100%', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, backgroundColor: 'rgba(255,255,255,0.9)', px: { sm: 0.75, md: 1, lg: 1.5 }, py: 0.25, borderRadius: 2, boxShadow: 1, overflow: 'hidden', height: 'fit-content' }}>
                 <Button onClick={() => onViewChange('chat')} startIcon={<Home size={14} />} sx={navButtonSx(currentView === 'chat')}>
                   <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Home</Box>
                 </Button>
@@ -176,20 +177,21 @@ const Navbar = ({ onViewChange, currentView }) => {
             </Box>
 
             {/* Right side - Clock and User actions */}
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ flexShrink: 0 }}>
-              <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flexShrink: 0, height: '100%' }}>
+              <Box sx={{ display: { xs: 'none', lg: 'flex' } }}>
                 <Clock />
               </Box>
-              <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+              <Box sx={{ display: { xs: 'flex', lg: 'none' } }}>
                 <Clock isMobile={true} />
               </Box>
               {loadTimeMs !== null && (
                 <Chip
                   size="small"
-                  label={`Load: ${loadTimeMs}ms`}
+                  label={`${loadTimeMs}ms`}
                   sx={{
-                    fontSize: '0.7rem',
-                    height: 22,
+                    display: { xs: 'none', lg: 'flex' },
+                    fontSize: '0.65rem',
+                    height: 20,
                       backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.18),
                       color: 'text.primary'
                   }}
@@ -197,7 +199,7 @@ const Navbar = ({ onViewChange, currentView }) => {
               )}
 
               {currentUser ? (
-                <Stack direction="row" alignItems="center" spacing={1}>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Button
                     onClick={() => setShowEditProfile(true)}
                     size="small"
@@ -214,7 +216,7 @@ const Navbar = ({ onViewChange, currentView }) => {
                     </Avatar>
                     <Typography
                       variant="caption"
-                        sx={{ ml: 0.75, color: 'primary.main', display: { xs: 'none', md: 'inline' }, fontWeight: 600 }}
+                        sx={{ ml: 0.75, color: 'primary.main', display: { xs: 'none', lg: 'inline' }, fontWeight: 600 }}
                     >
                       {currentUser.displayName || currentUser.email}
                     </Typography>
@@ -224,20 +226,20 @@ const Navbar = ({ onViewChange, currentView }) => {
                     size="small"
                     variant="contained"
                     color="error"
-                    startIcon={<LogOut size={14} />}
-                    sx={{ borderRadius: 999, fontSize: '0.75rem' }}
+                    startIcon={<LogOut size={12} />}
+                    sx={{ borderRadius: 999, fontSize: '0.7rem', px: 1, py: 0.25 }}
                   >
                     <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Logout</Box>
                   </Button>
                 </Stack>
               ) : (
-                <Stack direction="row" alignItems="center" spacing={1}>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
                     <Button
                     onClick={() => handleAuthClick('login')}
                     size="small"
                     variant="contained"
-                      startIcon={<LogIn size={16} />}
-                      sx={{ backgroundColor: 'secondary.main', color: 'secondary.contrastText', borderRadius: 999, fontSize: '0.75rem', '&:hover': { backgroundColor: 'secondary.dark' } }}
+                      startIcon={<LogIn size={14} />}
+                      sx={{ backgroundColor: 'secondary.main', color: 'secondary.contrastText', borderRadius: 999, fontSize: '0.7rem', px: 1, py: 0.25, '&:hover': { backgroundColor: 'secondary.dark' } }}
                   >
                     <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Log In</Box>
                   </Button>
@@ -245,8 +247,8 @@ const Navbar = ({ onViewChange, currentView }) => {
                     onClick={() => handleAuthClick('signup')}
                     size="small"
                     variant="contained"
-                      startIcon={<UserPlus size={16} />}
-                      sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', borderRadius: 999, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}
+                      startIcon={<UserPlus size={14} />}
+                      sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', borderRadius: 999, fontSize: '0.7rem', px: 1, py: 0.25, '&:hover': { backgroundColor: 'primary.dark' } }}
                   >
                     <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Sign up</Box>
                   </Button>
