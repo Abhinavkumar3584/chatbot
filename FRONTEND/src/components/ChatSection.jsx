@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, Fragment } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { User, Bot, ChevronDown, ChevronUp, Send, Loader2, MessageCircle, FileText, Hash } from 'lucide-react'
+import { User, ChevronUp, MessageCircle, FileText, Hash } from 'lucide-react'
 import { Box, Paper, Stack, Typography, Alert, Chip, Divider, Avatar, IconButton, Button } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useTheme } from '../contexts/ThemeContext'
@@ -9,16 +9,16 @@ import { useLayout } from '../contexts/LayoutContext'
 import { useSearchHistory } from '../contexts/SearchHistoryContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useDashboard } from '../contexts/DashboardContext'
-import { validateSearchQuery, sanitizeHtml } from '../utils/validation'
 import apiService from '../services/api'
 import SearchProgressIndicator from './SearchProgressIndicator'
 import EmbeddedSearchBar from './EmbeddedSearchBar'
 
 const ChatSection = () => {
   const { theme } = useTheme()
+  const isDarkMode = theme?.mode === 'dark'
   const { sidebarVisible, pyqVisible } = useLayout()
-  const { addToSearchHistory, addGuestChat, updateGuestChat, getGuestChat } = useSearchHistory()
-  const { currentUser, saveMessage, getChatMessages, createNewChat, updateChatTitle, updateChatMessageCount } = useAuth()
+  const { addToSearchHistory, addGuestChat, updateGuestChat } = useSearchHistory()
+  const { currentUser, saveMessage, getChatMessages, updateChatTitle, updateChatMessageCount } = useAuth()
   const { trackInteraction } = useDashboard()
   const scrollContainerRef = useRef(null)
   const scrollStateRef = useRef({ scrollTop: 0, scrollHeight: 0, isAtTop: true })
@@ -27,7 +27,7 @@ const ChatSection = () => {
   const [systemStatus, setSystemStatus] = useState({ initialized: false, healthy: false })
   const [currentChatId, setCurrentChatId] = useState(null)
   const [currentChatTitle, setCurrentChatTitle] = useState('New Chat')
-  const [rateLimitMessage, setRateLimitMessage] = useState('')
+  const [rateLimitMessage] = useState('')
   const [expandedSources, setExpandedSources] = useState({}) // Track expanded sources for each message
   const [aiStatusText, setAiStatusText] = useState('')
   const [typingVisible, setTypingVisible] = useState({})
@@ -214,7 +214,8 @@ const ChatSection = () => {
         typedMessageIdsRef.current.add(latestBotMessage.id)
         pendingBotIdRef.current = null
         setTypingVisible((prev) => {
-          const { [latestBotMessage.id]: _removed, ...rest } = prev
+          const rest = { ...prev }
+          delete rest[latestBotMessage.id]
           return rest
         })
       }
@@ -306,7 +307,9 @@ const ChatSection = () => {
 
     try {
       addToSearchHistory(query)
-    } catch {}
+    } catch (error) {
+      console.error('❌ Failed to update search history:', error)
+    }
 
     // Create initial bot message with loading state
     const tempBotMessage = {
@@ -372,7 +375,9 @@ const ChatSection = () => {
             try {
               await saveMessage(activeChatId, botMessage)
               await updateChatMessageCount(activeChatId, 1)
-            } catch {}
+            } catch (error) {
+              console.error('❌ Failed to save bot message:', error)
+            }
           }, 100)
         } else {
           handleGuestChatSave(newMessages)
@@ -472,96 +477,105 @@ const ChatSection = () => {
   }, [messages])
 
   const getMarkdownComponents = useCallback((isUserMessage) => ({
-    p: ({ node, ...props }) => (
-      <Typography
-        variant="body2"
-        sx={{ fontSize: '0.75rem', lineHeight: 1.6, mb: 0.75, color: 'inherit' }}
-        {...props}
-      />
-    ),
-    h1: ({ node, ...props }) => (
-      <Typography
-        variant="h6"
-        sx={{ fontSize: '1rem', fontWeight: 700, mt: 0.5, mb: 0.75, color: 'inherit' }}
-        {...props}
-      />
-    ),
-    h2: ({ node, ...props }) => (
-      <Typography
-        variant="subtitle1"
-        sx={{ fontSize: '0.9rem', fontWeight: 700, mt: 0.5, mb: 0.5, color: 'inherit' }}
-        {...props}
-      />
-    ),
-    h3: ({ node, ...props }) => (
-      <Typography
-        variant="subtitle2"
-        sx={{ fontSize: '0.85rem', fontWeight: 700, mt: 0.5, mb: 0.5, color: 'inherit' }}
-        {...props}
-      />
-    ),
-    ul: ({ node, ...props }) => (
-      <Box component="ul" sx={{ pl: 2, mb: 0.75 }} {...props} />
-    ),
-    ol: ({ node, ...props }) => (
-      <Box component="ol" sx={{ pl: 2, mb: 0.75 }} {...props} />
-    ),
-    li: ({ node, ...props }) => (
-      <li>
+    p: ({ ...props }) => (
         <Typography
-          component="span"
           variant="body2"
-          sx={{ fontSize: '0.75rem', lineHeight: 1.6, color: 'inherit' }}
+          sx={{ fontSize: '0.75rem', lineHeight: 1.6, mb: 0.75, color: 'inherit' }}
           {...props}
         />
-      </li>
     ),
-    blockquote: ({ node, ...props }) => (
-      <Box
-        component="blockquote"
-        sx={{
-          pl: 1.5,
-          ml: 0,
-          mr: 0,
-          mb: 0.75,
-          borderLeft: (theme) => `3px solid ${alpha(theme.palette.text.primary, 0.2)}`,
-          color: 'inherit',
-          opacity: isUserMessage ? 0.9 : 0.85
-        }}
-        {...props}
-      />
+    h1: ({ ...props }) => (
+        <Typography
+          variant="h6"
+          sx={{ fontSize: '1rem', fontWeight: 700, mt: 0.5, mb: 0.75, color: 'inherit' }}
+          {...props}
+        />
     ),
-    code: ({ node, inline, ...props }) => (
-      <Box
-        component="code"
-        sx={{
-          fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-          fontSize: '0.72rem',
-          backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08),
-          px: inline ? 0.5 : 1,
-          py: inline ? 0 : 0.75,
-          borderRadius: 1,
-          display: inline ? 'inline' : 'block',
-          whiteSpace: inline ? 'pre-wrap' : 'pre',
-          overflowX: inline ? 'visible' : 'auto'
-        }}
-        {...props}
-      />
+    h2: ({ ...props }) => (
+        <Typography
+          variant="subtitle1"
+          sx={{ fontSize: '0.9rem', fontWeight: 700, mt: 0.5, mb: 0.5, color: 'inherit' }}
+          {...props}
+        />
     ),
-    a: ({ node, ...props }) => (
-      <Box
-        component="a"
-        sx={{ color: 'inherit', textDecoration: 'underline' }}
-        target="_blank"
-        rel="noreferrer"
-        {...props}
-      />
+    h3: ({ ...props }) => (
+        <Typography
+          variant="subtitle2"
+          sx={{ fontSize: '0.85rem', fontWeight: 700, mt: 0.5, mb: 0.5, color: 'inherit' }}
+          {...props}
+        />
+    ),
+    ul: ({ ...props }) => (
+      <Box component="ul" sx={{ pl: 2, mb: 0.75 }} {...props} />
+    ),
+    ol: ({ ...props }) => (
+      <Box component="ol" sx={{ pl: 2, mb: 0.75 }} {...props} />
+    ),
+    li: ({ ...props }) => (
+        <li>
+          <Typography
+            component="span"
+            variant="body2"
+            sx={{ fontSize: '0.75rem', lineHeight: 1.6, color: 'inherit' }}
+            {...props}
+          />
+        </li>
+    ),
+    blockquote: ({ ...props }) => (
+        <Box
+          component="blockquote"
+          sx={{
+            pl: 1.5,
+            ml: 0,
+            mr: 0,
+            mb: 0.75,
+            borderLeft: (theme) => `3px solid ${alpha(theme.palette.text.primary, 0.2)}`,
+            color: 'inherit',
+            opacity: isUserMessage ? 0.9 : 0.85
+          }}
+          {...props}
+        />
+    ),
+    code: ({ inline, ...props }) => (
+        <Box
+          component="code"
+          sx={{
+            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+            fontSize: '0.72rem',
+            backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08),
+            px: inline ? 0.5 : 1,
+            py: inline ? 0 : 0.75,
+            borderRadius: 1,
+            display: inline ? 'inline' : 'block',
+            whiteSpace: inline ? 'pre-wrap' : 'pre',
+            overflowX: inline ? 'visible' : 'auto'
+          }}
+          {...props}
+        />
+    ),
+    a: ({ ...props }) => (
+        <Box
+          component="a"
+          sx={{ color: 'inherit', textDecoration: 'underline' }}
+          target="_blank"
+          rel="noreferrer"
+          {...props}
+        />
     )
   }), [])
 
   const renderMessage = (message) => (
     <Box key={message.id} sx={{ display: 'flex', justifyContent: message.type === 'user' ? 'flex-end' : 'flex-start' }}>
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, maxWidth: '80%', flexDirection: message.type === 'user' ? 'row-reverse' : 'row' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 1,
+          width: { xs: '100%', md: 'auto' },
+          maxWidth: { xs: '100%', md: '80%' },
+          flexDirection: message.type === 'user' ? 'row-reverse' : 'row'
+        }}
+      >
         {/* Avatar */}
         <Box sx={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           {message.type === 'user' ? (
@@ -583,6 +597,7 @@ const ChatSection = () => {
           elevation={0}
           sx={{
             p: 1.5,
+            width: { xs: '100%', md: 'auto' },
             borderRadius: 2,
             backgroundColor: message.type === 'user' ? 'primary.main' : 'background.paper',
             color: message.type === 'user' ? 'primary.contrastText' : 'text.primary',
@@ -766,8 +781,8 @@ const ChatSection = () => {
         pl: 1,
         pr: 1,
         pb: 1,
-        ml: { xs: 2, md: `${leftMarginPx}px` },
-        mr: { xs: 2, md: `${rightMarginPx}px` }
+        ml: { xs: 0, md: `${leftMarginPx}px` },
+        mr: { xs: 0, md: `${rightMarginPx}px` }
       }}
     >
         {/* Main Chat Container with Theme-aware Background */}
@@ -775,8 +790,8 @@ const ChatSection = () => {
           elevation={1}
           className="flex-1 rounded-lg shadow-sm flex flex-col overflow-hidden transition-colors duration-300"
           sx={{
-            backgroundColor: '#ffffff',
-            border: '1px solid #808080',
+            backgroundColor: { xs: 'transparent', md: '#ffffff' },
+            border: { xs: 'none', md: '1px solid #808080' },
             position: 'relative'
           }}
         >
@@ -788,6 +803,7 @@ const ChatSection = () => {
                 top: 12,
                 left: 16,
                 zIndex: 1,
+                display: { xs: 'none', md: 'block' },
                 pointerEvents: 'none'
               }}
             >
@@ -849,6 +865,7 @@ const ChatSection = () => {
             onScroll={handleScroll}
             className="flex-1 overflow-y-auto px-3 pb-2 chat-messages-container relative"
             style={{ overscrollBehavior: 'none' }}
+            sx={{ pb: { xs: 12, md: 2 } }}
           >
             {/* Grid background for empty welcome state - spans full chat width */}
             {messages.length === 0 && (
@@ -866,7 +883,7 @@ const ChatSection = () => {
               />
             )}
 
-            <div className="w-[90%] max-w-none mx-auto space-y-2 py-2 relative z-10">            
+            <div className="w-full md:w-[90%] max-w-none md:mx-auto space-y-2 py-2 relative z-10">
               {/* Welcome message when no messages exist */}
               {messages.length === 0 && (
                 <div className="text-center py-4 mt-2">
@@ -934,10 +951,10 @@ const ChatSection = () => {
                           <div className="features-scroll-content flex items-center gap-4 animate-scroll-features">
                             {/* Duplicate the feature items twice for seamless loop */}
                             {[1, 2].map((iteration) => (
-                              <React.Fragment key={iteration}>
+                              <Fragment key={iteration}>
                                 {/* Subject Selection */}
                                 <div className={`p-5 rounded-[15px] group cursor-pointer transition-all duration-300 flex-shrink-0 min-w-[240px] ${
-                                  'dark' 
+                                  isDarkMode 
                                     ? 'bg-gradient-to-br from-purple-100 to-purple-200 hover:from-purple-50 hover:to-purple-100 shadow-lg shadow-purple-200/20' 
                                     : 'bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-25 hover:to-purple-50 shadow-lg shadow-purple-200/30'
                                 }`}>
@@ -960,7 +977,7 @@ const ChatSection = () => {
 
                                 {/* NCERT Content */}
                                 <div className={`p-5 rounded-[15px] group cursor-pointer transition-all duration-300 flex-shrink-0 min-w-[220px] ${
-                                  'dark' 
+                                  isDarkMode 
                                     ? 'bg-gradient-to-br from-emerald-100 to-emerald-200 hover:from-emerald-50 hover:to-emerald-100 shadow-lg shadow-emerald-200/20' 
                                     : 'bg-gradient-to-br from-emerald-50 to-emerald-100 hover:from-emerald-25 hover:to-emerald-50 shadow-lg shadow-emerald-200/30'
                                 }`}>
@@ -981,7 +998,7 @@ const ChatSection = () => {
 
                                 {/* Previous Year Questions */}
                                 <div className={`p-5 rounded-[15px] group cursor-pointer transition-all duration-300 flex-shrink-0 min-w-[260px] ${
-                                  'dark' 
+                                  isDarkMode 
                                     ? 'bg-gradient-to-br from-blue-100 to-blue-200 hover:from-blue-50 hover:to-blue-100 shadow-lg shadow-blue-200/20' 
                                     : 'bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-25 hover:to-blue-50 shadow-lg shadow-blue-200/30'
                                 }`}>
@@ -1004,7 +1021,7 @@ const ChatSection = () => {
 
                                 {/* AI Analysis */}
                                 <div className={`p-5 rounded-[15px] group cursor-pointer transition-all duration-300 flex-shrink-0 min-w-[220px] ${
-                                  'dark' 
+                                  isDarkMode 
                                     ? 'bg-gradient-to-br from-orange-100 to-orange-200 hover:from-orange-50 hover:to-orange-100 shadow-lg shadow-orange-200/20' 
                                     : 'bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-25 hover:to-orange-50 shadow-lg shadow-orange-200/30'
                                 }`}>
@@ -1025,7 +1042,7 @@ const ChatSection = () => {
 
                                 {/* Comprehensive Learning */}
                                 <div className={`p-5 rounded-[15px] group cursor-pointer transition-all duration-300 flex-shrink-0 min-w-[220px] ${
-                                  'dark' 
+                                  isDarkMode 
                                     ? 'bg-gradient-to-br from-teal-100 to-teal-200 hover:from-teal-50 hover:to-teal-100 shadow-lg shadow-teal-200/20' 
                                     : 'bg-gradient-to-br from-teal-50 to-teal-100 hover:from-teal-25 hover:to-teal-50 shadow-lg shadow-teal-200/30'
                                 }`}>
@@ -1046,7 +1063,7 @@ const ChatSection = () => {
 
                                 {/* Quick Response */}
                                 <div className={`p-5 rounded-[15px] group cursor-pointer transition-all duration-300 flex-shrink-0 min-w-[220px] ${
-                                  'dark' 
+                                  isDarkMode 
                                     ? 'bg-gradient-to-br from-rose-100 to-rose-200 hover:from-rose-50 hover:to-rose-100 shadow-lg shadow-rose-200/20' 
                                     : 'bg-gradient-to-br from-rose-50 to-rose-100 hover:from-rose-25 hover:to-rose-50 shadow-lg shadow-rose-200/30'
                                 }`}>
@@ -1064,7 +1081,7 @@ const ChatSection = () => {
                                     </div>
                                   </div>
                                 </div>
-                              </React.Fragment>
+                              </Fragment>
                             ))}
                           </div>
                         </div>
@@ -1084,13 +1101,17 @@ const ChatSection = () => {
           </Box>
 
           {/* Embedded Search Bar at Bottom */}
-          <Divider sx={{ borderColor: '#e0e0e0' }} />
+          <Divider sx={{ borderColor: '#e0e0e0', display: { xs: 'none', md: 'block' } }} />
           <Box
             sx={{
-              p: 1,
-              position: 'relative',
-              zIndex: 50,
-              backgroundColor: '#ffffff'
+              p: { xs: 0, md: 1 },
+              position: { xs: 'fixed', md: 'relative' },
+              left: { xs: 0, md: 'auto' },
+              right: { xs: 0, md: 'auto' },
+              bottom: { xs: 0, md: 'auto' },
+              zIndex: 120,
+              backgroundColor: '#ffffff',
+              borderTop: { xs: '1px solid #e0e0e0', md: 'none' }
             }}
           >
             <EmbeddedSearchBar onSendMessage={sendMessage} isLoading={isLoading} />

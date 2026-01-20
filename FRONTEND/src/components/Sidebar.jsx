@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react'
-import { MessageCircle, Search, BookOpen, FileText, Lightbulb, ChevronRight, Trash2, Clock, Target, CheckCircle, PenTool, MessagesSquare } from 'lucide-react'
+import { MessageCircle, Search, BookOpen, FileText, Lightbulb, Trash2, Clock, Target, CheckCircle, PenTool, MessagesSquare } from 'lucide-react'
 import { Box, Paper, Stack, Typography, Button, IconButton, Divider } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useLayout } from '../contexts/LayoutContext'
@@ -557,27 +557,7 @@ const Sidebar = () => {
       {/* Collapsed Sidebar (Icon Bar) */}
       {!sidebarVisible && (
         <>
-          <IconButton
-            onClick={toggleSidebar}
-            sx={{
-              display: { xs: 'inline-flex', md: 'none' },
-              position: 'fixed',
-              bottom: 16,
-              left: 16,
-              zIndex: 40,
-              width: 48,
-              height: 48,
-              borderRadius: '999px',
-              backgroundColor: '#ffffff',
-              border: '1px solid #d1d5db',
-              boxShadow: 3,
-              color: '#000000',
-              '&:hover': { backgroundColor: '#f9fafb' }
-            }}
-            aria-label="Open sidebar"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </IconButton>
+          {/* Mobile sidebar trigger moved to ask bar */}
           <Paper
             elevation={3}
             sx={{
