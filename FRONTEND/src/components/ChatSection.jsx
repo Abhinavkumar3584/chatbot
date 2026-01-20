@@ -865,7 +865,7 @@ const ChatSection = () => {
             onScroll={handleScroll}
             className="flex-1 overflow-y-auto px-3 pb-2 chat-messages-container relative"
             style={{ overscrollBehavior: 'none' }}
-            sx={{ pb: { xs: 12, md: 2 } }}
+            sx={{ pb: { xs: 8, md: 2 } }}
           >
             {/* Grid background for empty welcome state - spans full chat width */}
             {messages.length === 0 && (
@@ -886,17 +886,14 @@ const ChatSection = () => {
             <div className="w-full md:w-[90%] max-w-none md:mx-auto space-y-2 py-2 relative z-10">
               {/* Welcome message when no messages exist */}
               {messages.length === 0 && (
-                <div className="text-center py-4 mt-2">
+                <div className="text-center py-3 mt-1">
                   <div className="max-w-3xl mx-auto">
                     {/* Logo and Welcome Header */}
                     <div className="mb-2">
                       <img 
-                        src="/mg.png" 
+                        src="/pg.png" 
                         alt="MG Logo" 
                         className="w-40 h-40 mx-auto object-contain mb-3 mg-logo-shake transition-all duration-300"
-                        style={{ 
-                          filter: 'brightness(0) saturate(100%) invert(88%) sepia(56%) saturate(839%) hue-rotate(20deg) brightness(104%) contrast(102%)'
-                        }}
                       />
                       <h3 
                         className="text-lg font-semibold mb-2 transition-colors duration-300" 
@@ -916,7 +913,7 @@ const ChatSection = () => {
                     </div>
 
                     {/* Features Section */}
-                    <div className="mb-6">
+                    <div className="mb-3 md:mb-6">
                       <h3 
                         className="text-lg font-semibold text-center mb-4 transition-colors duration-300" 
                         style={{ color: '#000000' }}

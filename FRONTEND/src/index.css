@@ -30,6 +30,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+@media (max-width: 767px) {
+  body {
+    font-size: 15px;
+  }
+}
+
 /* Custom slider styles */
 input[type="range"] {
   -webkit-appearance: none;

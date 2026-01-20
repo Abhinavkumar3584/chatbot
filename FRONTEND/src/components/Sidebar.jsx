@@ -250,7 +250,7 @@ const Sidebar = () => {
     <>
       {sidebarVisible && isMobile && (
         <div
-          className="md:hidden fixed top-14 left-0 right-0 bottom-0 bg-black/40 backdrop-blur-sm z-30"
+          className="md:hidden fixed top-14 left-0 right-0 bottom-0 bg-black/40 backdrop-blur-sm z-[150]"
           onClick={toggleSidebar}
         />
       )}
@@ -264,7 +264,7 @@ const Sidebar = () => {
             top: isMobile ? 56 : 72,
             bottom: isMobile ? 0 : 8,
             width: isMobile ? '85vw' : { xs: 220, sm: 240, md: 260 },
-            zIndex: isMobile ? 40 : 30,
+            zIndex: isMobile ? 160 : 30,
             borderRadius: isMobile ? 0 : 1,
             border: '1px solid #808080',
             backgroundColor: '#ffffff',

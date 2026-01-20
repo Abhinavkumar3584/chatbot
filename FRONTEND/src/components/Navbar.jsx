@@ -13,7 +13,7 @@ import { useLayout } from '../contexts/LayoutContext'
 
 const Navbar = ({ onViewChange, currentView }) => {
   const { currentUser, logout } = useAuth()
-  const { mobileMenuOpen, openMobileMenu, closeMobileMenu } = useLayout()
+  const { mobileMenuOpen, openMobileMenu, closeMobileMenu, closeAllOverlays } = useLayout()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authMode, setAuthMode] = useState('login')
   const [showAboutModal, setShowAboutModal] = useState(false)
@@ -64,6 +64,11 @@ const Navbar = ({ onViewChange, currentView }) => {
   const handleMobileModalOpen = (modalSetter) => {
     modalSetter(true)
     closeMobileMenu()
+  }
+
+  const handleHomeClick = () => {
+    onViewChange('chat')
+    closeAllOverlays()
   }
 
   const handleLogout = async () => {
@@ -154,10 +159,22 @@ const Navbar = ({ onViewChange, currentView }) => {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%', minWidth: 0, height: '100%' }}>
             {/* Left side - App name */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0, height: '100%' }}>
+            <Box
+              onClick={handleHomeClick}
+              role="button"
+              title="Go to Home"
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.75,
+                minWidth: 0,
+                height: '100%',
+                cursor: 'pointer'
+              }}
+            >
               <img
-                src="/mg.png"
-                alt="MG Logo"
+                src="/pg.png"
+                alt="GS Logo"
                 width={36}
                 height={36}
                 style={{
@@ -166,7 +183,7 @@ const Navbar = ({ onViewChange, currentView }) => {
                   width: 36,
                   margin: 'auto 0',
                   objectFit: 'contain',
-                  filter: 'brightness(0) saturate(100%) invert(88%) sepia(56%) saturate(839%) hue-rotate(20deg) brightness(104%) contrast(102%)'
+                  
                 }}
               />
               <Typography

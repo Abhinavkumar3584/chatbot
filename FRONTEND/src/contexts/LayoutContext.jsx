@@ -56,6 +56,12 @@ export const LayoutProvider = ({ children }) => {
 
   const closeMobileMenu = () => setMobileMenuOpen(false)
 
+  const closeAllOverlays = () => {
+    setSidebarVisible(false)
+    setPyqVisible(false)
+    setMobileMenuOpen(false)
+  }
+
   return (
     <LayoutContext.Provider value={{
       sidebarVisible,
@@ -65,7 +71,8 @@ export const LayoutProvider = ({ children }) => {
       toggleSidebar,
       togglePyq,
       openMobileMenu,
-      closeMobileMenu
+      closeMobileMenu,
+      closeAllOverlays
     }}>
       {children}
     </LayoutContext.Provider>
