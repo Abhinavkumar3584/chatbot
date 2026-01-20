@@ -26,7 +26,7 @@ import { useDashboard } from "../contexts/DashboardContext";
 const Dashboard = () => {
   const { theme } = useTheme();
   const { currentUser, getUserQuizHistory, getQuizStatistics } = useAuth();
-  const { sidebarVisible } = useLayout();
+  const { sidebarVisible, isMobile } = useLayout();
   const {
     stats,
     subjectStats,
@@ -55,7 +55,11 @@ const Dashboard = () => {
   });
 
   // Calculate dynamic margins based on sidebar visibility
-  const leftMargin = sidebarVisible ? "ml-52 sm:ml-60 md:ml-68" : "ml-12";
+  const leftMargin = isMobile
+    ? "ml-0"
+    : sidebarVisible
+      ? "ml-52 sm:ml-60 md:ml-68"
+      : "ml-12";
 
   // Fetch quiz statistics
   useEffect(() => {
@@ -89,9 +93,9 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div
-        className={`flex-1 ${leftMargin} transition-all duration-300 p-4 overflow-y-auto`}
+        className={`dashboard-page flex-1 ${leftMargin} transition-all duration-300 p-2 md:p-4 overflow-y-auto`}
       >
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-none mx-0 md:max-w-7xl md:mx-auto">
           <div className="flex items-center justify-center h-64">
             <div className="flex items-center space-x-2">
               <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
@@ -107,9 +111,9 @@ const Dashboard = () => {
   if (error) {
     return (
       <div
-        className={`flex-1 ${leftMargin} transition-all duration-300 p-4 overflow-y-auto`}
+        className={`dashboard-page flex-1 ${leftMargin} transition-all duration-300 p-2 md:p-4 overflow-y-auto`}
       >
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-none mx-0 md:max-w-7xl md:mx-auto">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="text-red-600 mb-4">
@@ -403,7 +407,7 @@ const Dashboard = () => {
 
   return (
     <div
-      className={`flex-1 ${leftMargin} mr-4 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}
+      className={`dashboard-page flex-1 ${leftMargin} mr-0 md:mr-4 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}
     >
       {/* Main Dashboard Container */}
       <div className="flex-1 bg-white border border-gray-400 rounded-lg shadow-sm flex flex-col overflow-hidden">
@@ -437,7 +441,7 @@ const Dashboard = () => {
 
         {/* Dashboard Content with Expandable Sections */}
         <div className="flex-1 overflow-y-auto p-3">
-          <div className="max-w-full mx-auto space-y-3">
+          <div className="max-w-none mx-0 md:max-w-full md:mx-auto space-y-3">
             
             {/* Overview Stats - Always Visible */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">

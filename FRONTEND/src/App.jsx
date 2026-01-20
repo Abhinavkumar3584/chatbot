@@ -95,11 +95,16 @@ function AppContent() {
       setCurrentView('gd-topics')
     }
 
+    const handleSwitchToChat = () => {
+      setCurrentView('chat')
+    }
+
     window.addEventListener('switchToPyqPractice', handleSwitchToPyqPractice)
     window.addEventListener('switchToEligibility', handleSwitchToEligibility)
     window.addEventListener('switchToSyllabus', handleSwitchToSyllabus)
     window.addEventListener('switchToQuiz', handleSwitchToQuiz)
     window.addEventListener('switchToGDTopics', handleSwitchToGDTopics)
+    window.addEventListener('switchToChat', handleSwitchToChat)
     
     return () => {
       window.removeEventListener('switchToPyqPractice', handleSwitchToPyqPractice)
@@ -107,6 +112,7 @@ function AppContent() {
       window.removeEventListener('switchToSyllabus', handleSwitchToSyllabus)
       window.removeEventListener('switchToQuiz', handleSwitchToQuiz)
       window.removeEventListener('switchToGDTopics', handleSwitchToGDTopics)
+      window.removeEventListener('switchToChat', handleSwitchToChat)
     }
   }, [])
 

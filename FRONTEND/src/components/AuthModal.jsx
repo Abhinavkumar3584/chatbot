@@ -213,14 +213,14 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in p-0 md:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
       <div 
         ref={modalRef}
-        className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto relative transform transition-all duration-300 ease-out animate-slide-up"
+        className="bg-white w-full h-full max-w-none max-h-none rounded-none md:rounded-lg md:max-w-md md:h-auto md:max-h-[90vh] md:p-8 p-6 md:mx-4 overflow-y-auto relative transform transition-all duration-300 ease-out animate-slide-up"
         role="document"
       >
         {/* Close Button */}

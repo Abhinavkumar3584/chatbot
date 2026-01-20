@@ -19,12 +19,16 @@ import apiService from "../services/api";
 
 const QuizSection = () => {
   const { theme } = useTheme();
-  const { sidebarVisible } = useLayout();
+  const { sidebarVisible, isMobile } = useLayout();
   const { currentUser, saveQuizResult } = useAuth();
   const { trackInteraction } = useDashboard();
 
   // Calculate dynamic margins based on sidebar visibility
-  const leftMargin = sidebarVisible ? "ml-52 sm:ml-60 md:ml-68" : "ml-12";
+  const leftMargin = isMobile
+    ? "ml-0"
+    : sidebarVisible
+      ? "ml-52 sm:ml-60 md:ml-68"
+      : "ml-12";
 
   // Quiz states
   const [selectedExam, setSelectedExam] = useState(null);
@@ -292,7 +296,7 @@ const QuizSection = () => {
   if (quizCompleted && quizResults) {
     return (
       <div
-        className={`flex-1 ${leftMargin} mr-4 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}
+        className={`flex-1 ${leftMargin} mr-0 md:mr-4 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}
       >
         <div className="flex-1 bg-white border border-gray-400 rounded-lg shadow-sm flex flex-col overflow-hidden">
           {/* Results Header */}
@@ -318,7 +322,7 @@ const QuizSection = () => {
 
           {/* Results Content */}
           <div className="flex-1 overflow-y-auto p-6 min-h-0">
-            <div className="max-w-4xl mx-auto space-y-6">
+            <div className="max-w-none mx-0 md:max-w-4xl md:mx-auto space-y-6">
               {/* Login Prompt Banner */}
               {!currentUser && showLoginPrompt && (
                 <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg p-6 shadow-lg">
@@ -497,7 +501,7 @@ const QuizSection = () => {
 
     return (
       <div
-        className={`flex-1 ${leftMargin} mr-4 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}
+        className={`flex-1 ${leftMargin} mr-0 md:mr-4 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}
       >
         <div className="flex-1 bg-white border border-gray-400 rounded-lg shadow-sm flex flex-col overflow-hidden">
           {/* Quiz Header */}
@@ -570,7 +574,7 @@ const QuizSection = () => {
 
           {/* Question Content */}
           <div className="flex-1 overflow-y-auto p-6 min-h-0">
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-none mx-0 md:max-w-3xl md:mx-auto">
               {/* Question */}
               <div className="bg-gradient-to-br from-gray-50 to-blue-50 border border-gray-200 rounded-lg p-6 mb-6">
                 <h2 className="text-lg font-medium text-gray-900 leading-relaxed">
@@ -657,7 +661,7 @@ const QuizSection = () => {
   // Exam Selection Screen
   return (
     <div
-      className={`flex-1 ${leftMargin} mr-4 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}
+      className={`flex-1 ${leftMargin} mr-0 md:mr-4 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}
     >
       <div className="flex-1 bg-white border border-gray-400 rounded-lg shadow-sm flex flex-col overflow-hidden">
         {/* Header */}
@@ -682,7 +686,7 @@ const QuizSection = () => {
 
         {/* Exam Selection */}
         <div className="flex-1 overflow-y-auto p-6 min-h-0">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-none mx-0 md:max-w-4xl md:mx-auto">
             {isLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">

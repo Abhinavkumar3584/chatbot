@@ -5,10 +5,14 @@ import { MessageSquare, Sparkles, Send, Mic, Paperclip, Globe, Smile, Image } fr
 
 const GDTopicsSection = () => {
   const { theme } = useTheme()
-  const { sidebarVisible } = useLayout()
+  const { sidebarVisible, isMobile } = useLayout()
   
   // Calculate dynamic margins based on sidebar visibility
-  const leftMargin = sidebarVisible ? 'ml-52 sm:ml-60 md:ml-68' : 'ml-12'
+  const leftMargin = isMobile
+    ? 'ml-0'
+    : sidebarVisible
+      ? 'ml-52 sm:ml-60 md:ml-68'
+      : 'ml-12'
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -48,17 +52,17 @@ const GDTopicsSection = () => {
   }
 
   return (
-    <div className={`flex-1 ${leftMargin} mr-4 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}>
+    <div className={`flex-1 ${leftMargin} mr-0 md:mr-4 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}>
       {/* Entire section with gradient background */}
       <div 
-        className="flex-1 border border-gray-400 rounded-lg shadow-sm flex flex-col overflow-hidden"
+        className="flex-1 md:border md:border-gray-400 md:rounded-lg shadow-sm flex flex-col overflow-hidden"
         style={{
           background: 'linear-gradient(to bottom, #87CEEB 0%, #FFB6D9 35%, #FFA07A 65%, #FF6B6B 100%)'
         }}
       >
         {/* Centered input area container */}
-        <div className="flex-1 flex items-center justify-center px-6">
-          <div className="w-full max-w-2xl">
+        <div className="flex-1 flex items-center justify-center px-2 md:px-6">
+          <div className="w-full max-w-none md:max-w-2xl">
             <div 
               className="relative overflow-hidden transition-all duration-300"
               style={{

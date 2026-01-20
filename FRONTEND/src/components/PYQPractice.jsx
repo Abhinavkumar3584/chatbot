@@ -15,12 +15,16 @@ import apiService from '../services/api'
 
 const PYQPractice = () => {
   const { theme } = useTheme()
-  const { sidebarVisible } = useLayout()
+  const { sidebarVisible, isMobile } = useLayout()
   const { currentUser } = useAuth()
   const { trackInteraction } = useDashboard()
   
   // Calculate dynamic margins based on sidebar visibility
-  const leftMargin = sidebarVisible ? 'ml-52 sm:ml-60 md:ml-68' : 'ml-12'
+  const leftMargin = isMobile
+    ? 'ml-0'
+    : sidebarVisible
+      ? 'ml-52 sm:ml-60 md:ml-68'
+      : 'ml-12'
 
   // State for filters
   const [selectedExam, setSelectedExam] = useState('all')
@@ -300,7 +304,7 @@ const PYQPractice = () => {
   const totalPages = Math.ceil(filteredQuestions.length / parseInt(questionsPerPage))
 
   return (
-    <div className={`flex-1 ${leftMargin} mr-4 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}>
+    <div className={`pyq-practice-page flex-1 ${leftMargin} mr-0 md:mr-4 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}>
       {/* Main Container */}
       <div className="flex-1 bg-white border border-gray-400 rounded-lg shadow-sm flex flex-col overflow-hidden">
         
@@ -408,7 +412,7 @@ const PYQPractice = () => {
             </div>
           ) : filteredQuestions.length === 0 ? (
             <div className="flex items-center justify-center h-64">
-              <div className="text-center max-w-md">
+              <div className="text-center max-w-none md:max-w-md">
                 <div className="mb-4">
                   <Target className="w-16 h-16 mx-auto text-blue-500 opacity-50" />
                 </div>

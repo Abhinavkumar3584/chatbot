@@ -34,6 +34,19 @@ body {
   body {
     font-size: 15px;
   }
+
+  .dashboard-page .border,
+  .dashboard-page .border-b,
+  .dashboard-page .border-t,
+  .dashboard-page .border-l,
+  .dashboard-page .border-r,
+  .pyq-practice-page .border,
+  .pyq-practice-page .border-b,
+  .pyq-practice-page .border-t,
+  .pyq-practice-page .border-l,
+  .pyq-practice-page .border-r {
+    border-width: 0 !important;
+  }
 }
 
 /* Custom slider styles */
