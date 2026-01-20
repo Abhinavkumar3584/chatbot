@@ -1,16 +1,19 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react'
-import { LogIn, UserPlus, Home, BarChart3, Info, Phone, LogOut, Target } from 'lucide-react'
-import { AppBar, Toolbar, Box, Typography, Button, Avatar, Stack, Container, Chip } from '@mui/material'
+import { useState, useEffect, lazy, Suspense } from 'react'
+import { LogIn, UserPlus, Home, BarChart3, Info, Phone, LogOut, Target, Menu, ChevronLeft, User } from 'lucide-react'
+import { AppBar, Toolbar, Box, Typography, Button, Avatar, Stack, Container, Chip, IconButton, Divider } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import PropTypes from 'prop-types'
 const AuthModal = lazy(() => import('./AuthModal'))
 const AboutUsModal = lazy(() => import('./AboutUsModal'))
 const ContactModal = lazy(() => import('./ContactModal'))
 const EditProfileModal = lazy(() => import('./EditProfileModal'))
 import Clock from './Clock'
 import { useAuth } from '../contexts/AuthContext'
+import { useLayout } from '../contexts/LayoutContext'
 
 const Navbar = ({ onViewChange, currentView }) => {
   const { currentUser, logout } = useAuth()
+  const { mobileMenuOpen, openMobileMenu, closeMobileMenu } = useLayout()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authMode, setAuthMode] = useState('login')
   const [showAboutModal, setShowAboutModal] = useState(false)
@@ -51,6 +54,16 @@ const Navbar = ({ onViewChange, currentView }) => {
   const handleAuthClick = (mode) => {
     setAuthMode(mode)
     setShowAuthModal(true)
+  }
+
+  const handleMobileViewChange = (view) => {
+    onViewChange(view)
+    closeMobileMenu()
+  }
+
+  const handleMobileModalOpen = (modalSetter) => {
+    modalSetter(true)
+    closeMobileMenu()
   }
 
   const handleLogout = async () => {
@@ -118,11 +131,11 @@ const Navbar = ({ onViewChange, currentView }) => {
       sx={{
         backgroundColor: '#ffffff',
         border: '1px solid #808080',
-        borderRadius: 1,
-        top: 8,
-        left: 8,
-        right: 8,
-        width: 'calc(100% - 16px)',
+        borderRadius: { xs: 0, md: 1 },
+        top: { xs: 0, md: 8 },
+        left: { xs: 0, md: 8 },
+        right: { xs: 0, md: 8 },
+        width: { xs: '100%', md: 'calc(100% - 16px)' },
         height: 56,
         zIndex: (theme) => theme.zIndex.appBar + 10,
         overflow: 'hidden'
@@ -175,6 +188,19 @@ const Navbar = ({ onViewChange, currentView }) => {
               </Typography>
             </Box>
 
+            {/* Mobile - Clock + Menu */}
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ display: { xs: 'flex', md: 'none' }, ml: 'auto' }}>
+              <Clock isMobile={true} />
+              <IconButton
+                onClick={openMobileMenu}
+                size="small"
+                aria-label="Open menu"
+                sx={{ color: 'text.primary', border: '1px solid', borderColor: 'divider', borderRadius: 2, width: 34, height: 34 }}
+              >
+                <Menu size={18} />
+              </IconButton>
+            </Stack>
+
             {/* Center - Navigation */}
             <Box sx={{ flex: 1, display: { xs: 'none', md: 'flex' }, justifyContent: 'center', minWidth: 0, overflow: 'hidden', height: '100%', alignItems: 'center' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, backgroundColor: 'rgba(255,255,255,0.9)', px: { sm: 0.75, md: 1, lg: 1.5 }, py: 0, borderRadius: 2, boxShadow: 1, overflow: 'hidden', height: 40 }}>
@@ -197,12 +223,9 @@ const Navbar = ({ onViewChange, currentView }) => {
             </Box>
 
             {/* Right side - Clock and User actions */}
-            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flexShrink: 0, height: '100%' }}>
+            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flexShrink: 0, height: '100%', display: { xs: 'none', md: 'flex' } }}>
               <Box sx={{ display: { xs: 'none', lg: 'flex' } }}>
                 <Clock />
-              </Box>
-              <Box sx={{ display: { xs: 'flex', lg: 'none' } }}>
-                <Clock isMobile={true} />
               </Box>
               {loadTimeMs !== null && (
                 <Chip
@@ -283,6 +306,123 @@ const Navbar = ({ onViewChange, currentView }) => {
         </Container>
       </Toolbar>
 
+      {/* Mobile Menu Drawer */}
+      {mobileMenuOpen && (
+        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+          <Box
+            onClick={closeMobileMenu}
+            sx={{
+              position: 'fixed',
+              top: 56,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(6px)',
+              zIndex: (theme) => theme.zIndex.modal + 1
+            }}
+          />
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 56,
+              right: 0,
+              bottom: 0,
+              width: '80vw',
+              maxWidth: 320,
+              backgroundColor: '#ffffff',
+              borderLeft: '1px solid #e5e7eb',
+              boxShadow: 6,
+              zIndex: (theme) => theme.zIndex.modal + 2,
+              p: 2,
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <Button
+              onClick={closeMobileMenu}
+              startIcon={<ChevronLeft size={18} />}
+              sx={{ justifyContent: 'flex-start', color: 'text.primary', mb: 1 }}
+            >
+              Back
+            </Button>
+            <Divider sx={{ mb: 1.5 }} />
+            <Stack spacing={1} sx={{ flex: 1 }}>
+              <Button onClick={() => handleMobileViewChange('chat')} startIcon={<Home size={16} />} variant="outlined" sx={{ justifyContent: 'flex-start' }}>
+                Home
+              </Button>
+              <Button onClick={() => handleMobileViewChange('dashboard')} startIcon={<BarChart3 size={16} />} variant="outlined" sx={{ justifyContent: 'flex-start' }}>
+                Dashboard
+              </Button>
+              <Button onClick={() => handleMobileViewChange('pyq-practice')} startIcon={<Target size={16} />} variant="outlined" sx={{ justifyContent: 'flex-start' }}>
+                PYQ Practice
+              </Button>
+              <Button onClick={() => handleMobileModalOpen(setShowAboutModal)} startIcon={<Info size={16} />} variant="outlined" sx={{ justifyContent: 'flex-start' }}>
+                About Us
+              </Button>
+              <Button onClick={() => handleMobileModalOpen(setShowContactModal)} startIcon={<Phone size={16} />} variant="outlined" sx={{ justifyContent: 'flex-start' }}>
+                Contact
+              </Button>
+            </Stack>
+            <Divider sx={{ my: 1.5 }} />
+            {currentUser ? (
+              <Stack spacing={1}>
+                <Button
+                  onClick={() => {
+                    setShowEditProfile(true)
+                    closeMobileMenu()
+                  }}
+                  startIcon={<User size={16} />}
+                  variant="outlined"
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Profile
+                </Button>
+                <Button
+                  onClick={() => {
+                    handleLogout()
+                    closeMobileMenu()
+                  }}
+                  startIcon={<LogOut size={16} />}
+                  variant="contained"
+                  color="error"
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Logout
+                </Button>
+              </Stack>
+            ) : (
+              <Stack spacing={1}>
+                <Button
+                  onClick={() => {
+                    handleAuthClick('login')
+                    closeMobileMenu()
+                  }}
+                  startIcon={<LogIn size={16} />}
+                  variant="contained"
+                  color="secondary"
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Log In
+                </Button>
+                <Button
+                  onClick={() => {
+                    handleAuthClick('signup')
+                    closeMobileMenu()
+                  }}
+                  startIcon={<UserPlus size={16} />}
+                  variant="contained"
+                  color="primary"
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Sign up
+                </Button>
+              </Stack>
+            )}
+          </Box>
+        </Box>
+      )}
+
       <Suspense fallback={null}>
         <AuthModal
           isOpen={showAuthModal}
@@ -309,3 +449,8 @@ const Navbar = ({ onViewChange, currentView }) => {
 }
 
 export default Navbar
+
+Navbar.propTypes = {
+  onViewChange: PropTypes.func.isRequired,
+  currentView: PropTypes.string.isRequired
+}

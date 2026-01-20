@@ -8,7 +8,7 @@ import apiService from '../services/api'
 import { ChevronFirst } from './icons/ChevronFirst'
 
 const PYQSection = () => {
-  const { pyqVisible, togglePyq } = useLayout()
+  const { pyqVisible, togglePyq, isMobile } = useLayout()
   const { trackInteraction } = useDashboard()
   const [searchResults, setSearchResults] = useState([])
   const [lastSearchQuery, setLastSearchQuery] = useState('')
@@ -328,12 +328,13 @@ const PYQSection = () => {
           elevation={3}
           sx={{
             position: 'fixed',
-            right: 8,
-            top: 72,
-            bottom: 8,
-            width: 420,
-            zIndex: 30,
-            borderRadius: 1,
+            right: isMobile ? 0 : 8,
+            left: isMobile ? 0 : 'auto',
+            top: isMobile ? 56 : 72,
+            bottom: isMobile ? 0 : 8,
+            width: isMobile ? '100%' : 420,
+            zIndex: isMobile ? 1400 : 30,
+            borderRadius: isMobile ? 0 : 1,
             border: '1px solid #808080',
             backgroundColor: '#ffffff',
             color: '#000000',
@@ -342,10 +343,12 @@ const PYQSection = () => {
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Toggle Button and Header */}
-            <Box sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <IconButton onClick={togglePyq} size="small" title="Hide PYQ Section" sx={{ color: '#000000', transform: 'scaleX(-1)' }}>
-                <ChevronFirst width={15} height={15} strokeWidth={2} stroke={'#000000'} />
-              </IconButton>
+            <Box sx={{ p: 1, display: 'flex', justifyContent: isMobile ? 'center' : 'space-between', alignItems: 'center' }}>
+              {!isMobile && (
+                <IconButton onClick={togglePyq} size="small" title="Hide PYQ Section" sx={{ color: '#000000', transform: 'scaleX(-1)' }}>
+                  <ChevronFirst width={15} height={15} strokeWidth={2} stroke={'#000000'} />
+                </IconButton>
+              )}
 
               <Stack direction="row" spacing={1} alignItems="center">
                 <Typography variant="caption" sx={{ fontWeight: 600, color: '#000000' }}>
@@ -498,7 +501,7 @@ const PYQSection = () => {
               </Box>
 
               {/* Scrollable Content */}
-              <Box className="pyq-content" sx={{ flex: 1, overflowY: 'auto', p: 1, minHeight: 0 }}>
+              <Box className="pyq-content" sx={{ flex: 1, overflowY: 'auto', p: 1, minHeight: 0, pb: isMobile ? 10 : 1 }}>
                 {/* Questions */}
                 <Stack spacing={2}>
                   {!lastSearchQuery && currentQuestions.length === 0 ? (
@@ -737,45 +740,86 @@ const PYQSection = () => {
         </Paper>
       )}
 
-      {/* Collapsed PYQ Section (Icon Bar) */}
-      {!pyqVisible && (
-        <Paper
-          elevation={3}
+      {pyqVisible && isMobile && (
+        <Box
           sx={{
             position: 'fixed',
-            right: 8,
-            top: 72,
-            bottom: 8,
-            width: 40,
-            zIndex: 30,
-            borderRadius: 1,
-            border: '1px solid #808080',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1401,
+            p: 1.5,
             backgroundColor: '#ffffff',
-            color: '#000000',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
+            borderTop: '1px solid #e5e7eb'
           }}
         >
-          {/* Toggle Button */}
-          <Box sx={{ p: 0.5, display: 'flex', justifyContent: 'center' }}>
-            <IconButton onClick={togglePyq} size="small" title="Show PYQ Section" sx={{ color: '#000000' }}>
-              <ChevronFirst width={15} height={15} strokeWidth={2} stroke={'#000000'} />
-            </IconButton>
-          </Box>
+          <Button fullWidth variant="contained" onClick={togglePyq} sx={{ borderRadius: 2, fontWeight: 600 }}>
+            Back to chat
+          </Button>
+        </Box>
+      )}
 
-          {/* Icon */}
-          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <IconButton
+      {/* Collapsed PYQ Section (Icon Bar) */}
+      {!pyqVisible && (
+        <>
+          {isMobile ? (
+            <Button
               onClick={togglePyq}
-              size="small"
-              title="Previous Year Questions"
-              sx={{ color: 'text.primary', '&:hover': { backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12) } }}
+              variant="contained"
+              startIcon={<FileText className="w-4 h-4" />}
+              sx={{
+                position: 'fixed',
+                right: 16,
+                bottom: 16,
+                zIndex: 40,
+                borderRadius: 999,
+                px: 2,
+                py: 1,
+                fontWeight: 700
+              }}
             >
-              <FileText className="w-4 h-4" />
-            </IconButton>
-          </Box>
-        </Paper>
+              PYQ
+            </Button>
+          ) : (
+            <Paper
+              elevation={3}
+              sx={{
+                position: 'fixed',
+                right: 8,
+                top: 72,
+                bottom: 8,
+                width: 40,
+                zIndex: 30,
+                borderRadius: 1,
+                border: '1px solid #808080',
+                backgroundColor: '#ffffff',
+                color: '#000000',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
+              {/* Toggle Button */}
+              <Box sx={{ p: 0.5, display: 'flex', justifyContent: 'center' }}>
+                <IconButton onClick={togglePyq} size="small" title="Show PYQ Section" sx={{ color: '#000000' }}>
+                  <ChevronFirst width={15} height={15} strokeWidth={2} stroke={'#000000'} />
+                </IconButton>
+              </Box>
+
+              {/* Icon */}
+              <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IconButton
+                  onClick={togglePyq}
+                  size="small"
+                  title="Previous Year Questions"
+                  sx={{ color: 'text.primary', '&:hover': { backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12) } }}
+                >
+                  <FileText className="w-4 h-4" />
+                </IconButton>
+              </Box>
+            </Paper>
+          )}
+        </>
       )}
     </>
   )

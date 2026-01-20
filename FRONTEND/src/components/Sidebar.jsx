@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react'
-import { MessageCircle, Search, BookOpen, FileText, Lightbulb, HelpCircle, ChevronLeft, ChevronRight, Trash2, Plus, Clock, Target, CheckCircle, GraduationCap, PenTool, MessagesSquare } from 'lucide-react'
+import { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react'
+import { MessageCircle, Search, BookOpen, FileText, Lightbulb, ChevronRight, Trash2, Clock, Target, CheckCircle, PenTool, MessagesSquare } from 'lucide-react'
 import { Box, Paper, Stack, Typography, Button, IconButton, Divider } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { useTheme } from '../contexts/ThemeContext'
 import { useLayout } from '../contexts/LayoutContext'
 import { useSearchHistory } from '../contexts/SearchHistoryContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -14,9 +13,8 @@ import { CircleHelp } from './icons/CircleHelp'
 import { Network } from './icons/Network'
 
 const Sidebar = () => {
-  const { theme } = useTheme()
-  const { sidebarVisible, toggleSidebar } = useLayout()
-  const { searchHistory, clearSearchHistory, guestChatHistory, addGuestChat, updateGuestChat, getGuestChat, deleteGuestChat } = useSearchHistory()
+  const { sidebarVisible, toggleSidebar, isMobile } = useLayout()
+  const { guestChatHistory, deleteGuestChat } = useSearchHistory()
   const { currentUser, getChatHistory, createNewChat, deleteChat } = useAuth()
   const [books, setBooks] = useState([])
   const [insertedPyqs, setInsertedPyqs] = useState([])
@@ -250,18 +248,24 @@ const Sidebar = () => {
 
   return (
     <>
+      {sidebarVisible && isMobile && (
+        <div
+          className="md:hidden fixed top-14 left-0 right-0 bottom-0 bg-black/40 backdrop-blur-sm z-30"
+          onClick={toggleSidebar}
+        />
+      )}
       {/* Full Sidebar */}
       {sidebarVisible && (
        <Paper
           elevation={3}
           sx={{
             position: 'fixed',
-            left: 8,
-            top: 72,
-            bottom: 8,
-            width: { xs: 220, sm: 240, md: 260 },
-            zIndex: 30,
-            borderRadius: 1,
+            left: isMobile ? 0 : 8,
+            top: isMobile ? 56 : 72,
+            bottom: isMobile ? 0 : 8,
+            width: isMobile ? '85vw' : { xs: 220, sm: 240, md: 260 },
+            zIndex: isMobile ? 40 : 30,
+            borderRadius: isMobile ? 0 : 1,
             border: '1px solid #808080',
             backgroundColor: '#ffffff',
             color: '#000000',
@@ -539,7 +543,7 @@ const Sidebar = () => {
                   Inserted PYQs
                 </Button>
                 <Button onClick={handleWhatsNewClick} variant="contained" startIcon={<Lightbulb className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
-                  What's New
+                  What&apos;s New
                 </Button>
                 <Button onClick={handleHelpClick} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                   Help & Support
@@ -552,149 +556,173 @@ const Sidebar = () => {
 
       {/* Collapsed Sidebar (Icon Bar) */}
       {!sidebarVisible && (
-        <Paper
-          elevation={3}
-          sx={{
-            position: 'fixed',
-            left: 8,
-            top: 72,
-            bottom: 8,
-            width: 40,
-            zIndex: 30,
-            borderRadius: 1,
-            border: '1px solid #808080',
-            backgroundColor: '#ffffff',
-            color: '#000000',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
-          }}
-        >
-          {/* Toggle Button */}
-          <Box sx={{ p: 0.5, display: 'flex', justifyContent: 'center' }}>
-            <IconButton onClick={toggleSidebar} size="small" title="Show Sidebar" sx={{ color: '#000000', transform: 'scaleX(-1)' }}>
-              <ChevronFirst width={15} height={15} strokeWidth={2} stroke="#000000" />
-            </IconButton>
-          </Box>
+        <>
+          <IconButton
+            onClick={toggleSidebar}
+            sx={{
+              display: { xs: 'inline-flex', md: 'none' },
+              position: 'fixed',
+              bottom: 16,
+              left: 16,
+              zIndex: 40,
+              width: 48,
+              height: 48,
+              borderRadius: '999px',
+              backgroundColor: '#ffffff',
+              border: '1px solid #d1d5db',
+              boxShadow: 3,
+              color: '#000000',
+              '&:hover': { backgroundColor: '#f9fafb' }
+            }}
+            aria-label="Open sidebar"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </IconButton>
+          <Paper
+            elevation={3}
+            sx={{
+              display: { xs: 'none', md: 'flex' },
+              position: 'fixed',
+              left: 8,
+              top: 72,
+              bottom: 8,
+              width: 40,
+              zIndex: 30,
+              borderRadius: 1,
+              border: '1px solid #808080',
+              backgroundColor: '#ffffff',
+              color: '#000000',
+              overflow: 'hidden',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Toggle Button */}
+            <Box sx={{ p: 0.5, display: 'flex', justifyContent: 'center' }}>
+              <IconButton onClick={toggleSidebar} size="small" title="Show Sidebar" sx={{ color: '#000000', transform: 'scaleX(-1)' }}>
+                <ChevronFirst width={15} height={15} strokeWidth={2} stroke="#000000" />
+              </IconButton>
+            </Box>
 
-            {/* Icon Menu */}
-          <div className="flex-1 flex flex-col items-center space-y-2 p-1">
-            <button 
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="New Chat"
-            >
-              <MessageCircle className="w-4 h-4" />
-            </button>
-            <button 
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Search"
-            >
-              <Search className="w-4 h-4" />
-            </button>
-          </div>          {/* Bottom Icons */}
-          <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-            <Divider sx={{ borderColor: '#808080', width: '100%' }} />
-            {/* New buttons */}
-            <button 
-              onClick={handleGDTopicsClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="AI for GD Topics"
-            >
-              <MessagesSquare className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handleEligibilityClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Check Exams Eligibility and Attempts"
-            >
-              <CheckCircle className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handleSyllabusClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Exam Syllabus"
-            >
-              <Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />
-            </button>
-            <button 
-              onClick={handleQuizClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Attempt Quiz"
-            >
-              <PenTool className="w-4 h-4" />
-            </button>
-            
-            {/* Existing buttons */}
-            <button 
-              onClick={handlePyqPracticeClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="PYQ Practice"
-            >
-              <Target className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handleBooksClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Inserted Books"
-            >
-              <BookOpen className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handlePyqsClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Inserted PYQs"
-            >
-              <FileText className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handleWhatsNewClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="What's New"
-            >
-              <Lightbulb className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handleHelpClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Help & Support"
-            >
-              <CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />
-            </button>
-          </Box>
-        </Paper>
+              {/* Icon Menu */}
+            <div className="flex-1 flex flex-col items-center space-y-2 p-1">
+              <button 
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="New Chat"
+              >
+                <MessageCircle className="w-4 h-4" />
+              </button>
+              <button 
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Search"
+              >
+                <Search className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Bottom Icons */}
+            <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <Divider sx={{ borderColor: '#808080', width: '100%' }} />
+              {/* New buttons */}
+              <button 
+                onClick={handleGDTopicsClick}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="AI for GD Topics"
+              >
+                <MessagesSquare className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={handleEligibilityClick}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Check Exams Eligibility and Attempts"
+              >
+                <CheckCircle className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={handleSyllabusClick}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Exam Syllabus"
+              >
+                <Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />
+              </button>
+              <button 
+                onClick={handleQuizClick}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Attempt Quiz"
+              >
+                <PenTool className="w-4 h-4" />
+              </button>
+              
+              {/* Existing buttons */}
+              <button 
+                onClick={handlePyqPracticeClick}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="PYQ Practice"
+              >
+                <Target className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={handleBooksClick}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Inserted Books"
+              >
+                <BookOpen className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={handlePyqsClick}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Inserted PYQs"
+              >
+                <FileText className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={handleWhatsNewClick}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="What's New"
+              >
+                <Lightbulb className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={handleHelpClick}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Help & Support"
+              >
+                <CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />
+              </button>
+            </Box>
+          </Paper>
+        </>
       )}
 
       {/* Books Modal */}
@@ -970,7 +998,7 @@ const Sidebar = () => {
 
             {/* Description */}
             <p className="text-gray-600 mb-6">
-              We're working hard to bring you this amazing feature. Stay tuned for updates!
+              We&apos;re working hard to bring you this amazing feature. Stay tuned for updates!
             </p>
 
             {/* Decorative Elements */}

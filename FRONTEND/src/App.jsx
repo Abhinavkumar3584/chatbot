@@ -118,7 +118,7 @@ function AppContent() {
       }}
     >
       <Navbar onViewChange={handleViewChange} currentView={currentView} />
-      <div className="flex flex-col md:flex-row h-full" style={{ paddingTop: 72 }}>
+      <div className="flex flex-col md:flex-row h-full pt-14 md:pt-[72px]">
         <Suspense
           fallback={
             <Box sx={{ width: 240, p: 2 }}>
