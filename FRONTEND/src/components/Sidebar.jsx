@@ -168,55 +168,94 @@ const Sidebar = () => {
     }
   }, [])
 
+  const closeTransientOverlays = useCallback(() => {
+    setShowBooksModal(false)
+    setShowPyqsModal(false)
+    setShowHelpModal(false)
+    setShowWhatsNewModal(false)
+    setShowComingSoonModal(false)
+  }, [])
+
   const handleBooksClick = useCallback(() => {
+    if (isMobile) closeTransientOverlays()
     setShowBooksModal(true)
     loadBooks()
-  }, [loadBooks])
+  }, [closeTransientOverlays, isMobile, loadBooks])
 
   const handlePyqsClick = useCallback(() => {
+    if (isMobile) closeTransientOverlays()
     setShowPyqsModal(true)
     loadInsertedPyqs()
-  }, [loadInsertedPyqs])
+  }, [closeTransientOverlays, isMobile, loadInsertedPyqs])
 
   const handleHelpClick = () => {
+    if (isMobile) closeTransientOverlays()
     setShowHelpModal(true)
   }
 
   const handleWhatsNewClick = () => {
+    if (isMobile) closeTransientOverlays()
     setShowWhatsNewModal(true)
   }
 
   const handlePyqPracticeClick = () => {
+    if (isMobile) closeTransientOverlays()
     // Emit event to switch to PYQ practice view
     window.dispatchEvent(new CustomEvent('switchToPyqPractice'))
   }
 
   const handleEligibilityClick = () => {
+    if (isMobile) closeTransientOverlays()
     // Show coming soon modal
     setComingSoonFeature('Check Eligibility')
     setShowComingSoonModal(true)
   }
 
   const handleSyllabusClick = () => {
+    if (isMobile) closeTransientOverlays()
     // Show coming soon modal
     setComingSoonFeature('Exam Syllabus')
     setShowComingSoonModal(true)
   }
 
   const handleQuizClick = () => {
+    if (isMobile) closeTransientOverlays()
     // Emit event to switch to quiz view
     window.dispatchEvent(new CustomEvent('switchToQuiz'))
   }
 
   const handleGDTopicsClick = () => {
+    if (isMobile) closeTransientOverlays()
     // Show coming soon modal
     setComingSoonFeature('AI for GD Topics')
     setShowComingSoonModal(true)
   }
 
   const handleHomeClick = () => {
+    if (isMobile) closeTransientOverlays()
     window.dispatchEvent(new CustomEvent('switchToChat'))
   }
+
+  useEffect(() => {
+    if (!isMobile) return
+    const handleNavigation = () => {
+      closeTransientOverlays()
+    }
+    window.addEventListener('switchToChat', handleNavigation)
+    window.addEventListener('switchToPyqPractice', handleNavigation)
+    window.addEventListener('switchToEligibility', handleNavigation)
+    window.addEventListener('switchToSyllabus', handleNavigation)
+    window.addEventListener('switchToQuiz', handleNavigation)
+    window.addEventListener('switchToGDTopics', handleNavigation)
+    return () => {
+      window.removeEventListener('switchToChat', handleNavigation)
+      window.removeEventListener('switchToPyqPractice', handleNavigation)
+      window.removeEventListener('switchToEligibility', handleNavigation)
+      window.removeEventListener('switchToSyllabus', handleNavigation)
+      window.removeEventListener('switchToQuiz', handleNavigation)
+      window.removeEventListener('switchToGDTopics', handleNavigation)
+    }
+  }, [closeTransientOverlays, isMobile])
 
   // Load books and inserted PYQs on component mount
   useEffect(() => {
@@ -968,7 +1007,7 @@ const Sidebar = () => {
       {/* Coming Soon Modal */}
       {showComingSoonModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in"
+          className="fixed top-14 left-0 right-0 bottom-0 md:inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in"
           onClick={(e) => { if (e.target === e.currentTarget) setShowComingSoonModal(false) }}
         >
           <div
