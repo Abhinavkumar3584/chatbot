@@ -84,7 +84,9 @@ canvas {
   image-rendering: crisp-edges;
 }
 
-/* Scrollbar styles for modal */
+/* Legacy/unused (kept for safety) */
+/*
+Scrollbar styles for color picker modal
 .color-picker-modal {
   scrollbar-width: thin;
   scrollbar-color: var(--color-primary) #f1f1f1;
@@ -108,15 +110,16 @@ canvas {
   background: var(--color-dark);
 }
 
-/* Hide scrollbars but keep them functional */
+Hide scrollbars but keep them functional
 .hide-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;  
+  scrollbar-width: none;  
 }
 
 .hide-scrollbar::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
+  display: none;  
 }
+*/
 
 /* Apply to main scrollable areas */
 .chat-messages-container {
@@ -193,7 +196,7 @@ canvas {
   animation: slide-up 0.3s ease-out forwards;
 }
 
-/* Smooth transitions for modal interactions */
+/* Legacy/unused modal transitions (kept for safety)
 .modal-backdrop {
   transition: opacity 0.3s ease-out;
 }
@@ -201,6 +204,7 @@ canvas {
 .modal-content {
   transition: transform 0.3s ease-out, opacity 0.3s ease-out;
 }
+*/
 
 /* MG Logo slow shaking animation */
 @keyframes slow-shake {
