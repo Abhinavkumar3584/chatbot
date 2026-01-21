@@ -71,6 +71,7 @@ else:
 search_components = {}
 system_initialized = False
 rate_limit_storage = {}
+_init_lock = threading.Lock()
 
 # Simple in-memory cache for expensive read-only operations
 _cache_store = {}
@@ -305,6 +306,19 @@ def initialize_search_system():
         system_initialized = True  # Still mark as initialized to allow API endpoints to work
         return False
 
+def ensure_initialized():
+    """Initialize the search system once (safe under Gunicorn)."""
+    global system_initialized
+    if system_initialized:
+        return
+    with _init_lock:
+        if not system_initialized:
+            initialize_search_system()
+
+@app.before_request
+def _initialize_on_first_request():
+    ensure_initialized()
+
 # Search functions (adapted from search_query.py)
 def semantic_search(index, model, query: str, n_results: int = 2, namespace: str = "", query_embedding=None):
     """Perform semantic search on Pinecone index"""
@@ -435,6 +449,8 @@ def build_fallback_response(context: str, sources: list, query: str) -> str:
 @app.route("/api/health", methods=["GET"])
 def health_check():
     """Enhanced health check endpoint"""
+    if not system_initialized:
+        ensure_initialized()
     health_status = {
         "status": "healthy",
         "system_initialized": system_initialized,
