@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react'
 import { MessageCircle, Search, BookOpen, FileText, Lightbulb, Trash2, Clock, Target, CheckCircle, PenTool, MessagesSquare, Home } from 'lucide-react'
-import { Box, Paper, Typography, Button, IconButton, Divider } from '@mui/material'
+import { Box, Paper, Stack, Typography, Button, IconButton, Divider } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useLayout } from '../contexts/LayoutContext'
 import { useSearchHistory } from '../contexts/SearchHistoryContext'
@@ -562,57 +562,89 @@ const Sidebar = () => {
             {/* Bottom section - Fixed at bottom */}
             <Box sx={{ p: 2 }}>
               <Divider sx={{ borderColor: '#808080', mb: 1.5 }} />
-              {/* New buttons */}
-              <Box
-                sx={{
-                  display: { xs: 'grid', md: 'block' },
-                  gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'none' },
-                  gap: { xs: 1, md: 0 }
-                }}
-              >
-                <Button onClick={() => { handleGDTopicsClick(); if (isMobile) toggleSidebar(); }} variant="contained" startIcon={<MessagesSquare className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: { xs: 0.75, md: 1 }, fontSize: { xs: '0.75rem', md: '0.875rem' }, '&:hover': { backgroundColor: 'primary.dark' } }}>
-                  AI for GD Topics
-                </Button>
-                <Button onClick={() => { handleEligibilityClick(); if (isMobile) toggleSidebar(); }} variant="contained" startIcon={<CheckCircle className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: { xs: 0.75, md: 1 }, fontSize: { xs: '0.75rem', md: '0.875rem' }, '&:hover': { backgroundColor: 'primary.dark' } }}>
-                  Check Eligibility
-                </Button>
-                <Button onClick={() => { handleSyllabusClick(); if (isMobile) toggleSidebar(); }} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: { xs: 0.75, md: 1 }, fontSize: { xs: '0.75rem', md: '0.875rem' }, '&:hover': { backgroundColor: 'primary.dark' } }}>
-                  Exam Syllabus
-                </Button>
-                <Button onClick={() => { handleQuizClick(); if (isMobile) toggleSidebar(); }} variant="contained" startIcon={<PenTool className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: { xs: 0.75, md: 1 }, fontSize: { xs: '0.75rem', md: '0.875rem' }, '&:hover': { backgroundColor: 'primary.dark' } }}>
-                  Attempt Quiz
-                </Button>
-                <Button onClick={() => { handlePyqPracticeClick(); if (isMobile) toggleSidebar(); }} variant="contained" startIcon={<Target className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: { xs: 0.75, md: 1 }, fontSize: { xs: '0.75rem', md: '0.875rem' }, '&:hover': { backgroundColor: 'primary.dark' } }}>
-                  PYQ Practice
-                </Button>
-                <Button onClick={() => { handleBooksClick(); if (isMobile) toggleSidebar(); }} variant="contained" startIcon={<BookOpen className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: { xs: 0.75, md: 1 }, fontSize: { xs: '0.75rem', md: '0.875rem' }, '&:hover': { backgroundColor: 'primary.dark' } }}>
-                  Inserted Books
-                </Button>
-                <Button onClick={() => { handlePyqsClick(); if (isMobile) toggleSidebar(); }} variant="contained" startIcon={<FileText className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: { xs: 0.75, md: 1 }, fontSize: { xs: '0.75rem', md: '0.875rem' }, '&:hover': { backgroundColor: 'primary.dark' } }}>
-                  Inserted PYQs
-                </Button>
-                <Button onClick={() => { handleWhatsNewClick(); if (isMobile) toggleSidebar(); }} variant="contained" startIcon={<Lightbulb className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: { xs: 0.75, md: 1 }, fontSize: { xs: '0.75rem', md: '0.875rem' }, '&:hover': { backgroundColor: 'primary.dark' } }}>
-                  What&apos;s New
-                </Button>
-                <Button onClick={() => { handleHelpClick(); if (isMobile) toggleSidebar(); }} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: { xs: 0.75, md: 1 }, fontSize: { xs: '0.75rem', md: '0.875rem' }, '&:hover': { backgroundColor: 'primary.dark' } }}>
-                  Help & Support
-                </Button>
-                <Button
-                  onClick={() => { handleHomeClick(); if (isMobile) toggleSidebar(); }}
-                  variant="contained"
-                  startIcon={<Home className="w-4 h-4" />}
+              {/* Mobile grid, desktop stack */}
+              {isMobile ? (
+                <Box
                   sx={{
-                    backgroundColor: '#111827',
-                    color: '#ffffff',
-                    py: { xs: 0.75, md: 1 },
-                    fontSize: { xs: '0.75rem', md: '0.875rem' },
-                    gridColumn: { xs: '2 / 3', md: 'auto' },
-                    '&:hover': { backgroundColor: '#000000' }
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                    gap: 1
                   }}
                 >
-                  Home
-                </Button>
-              </Box>
+                  <Button onClick={() => { handleGDTopicsClick(); toggleSidebar(); }} variant="contained" startIcon={<MessagesSquare className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    AI for GD Topics
+                  </Button>
+                  <Button onClick={() => { handleEligibilityClick(); toggleSidebar(); }} variant="contained" startIcon={<CheckCircle className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Check Eligibility
+                  </Button>
+                  <Button onClick={() => { handleSyllabusClick(); toggleSidebar(); }} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Exam Syllabus
+                  </Button>
+                  <Button onClick={() => { handleQuizClick(); toggleSidebar(); }} variant="contained" startIcon={<PenTool className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Attempt Quiz
+                  </Button>
+                  <Button onClick={() => { handlePyqPracticeClick(); toggleSidebar(); }} variant="contained" startIcon={<Target className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    PYQ Practice
+                  </Button>
+                  <Button onClick={() => { handleBooksClick(); toggleSidebar(); }} variant="contained" startIcon={<BookOpen className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Inserted Books
+                  </Button>
+                  <Button onClick={() => { handlePyqsClick(); toggleSidebar(); }} variant="contained" startIcon={<FileText className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Inserted PYQs
+                  </Button>
+                  <Button onClick={() => { handleWhatsNewClick(); toggleSidebar(); }} variant="contained" startIcon={<Lightbulb className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    What&apos;s New
+                  </Button>
+                  <Button onClick={() => { handleHelpClick(); toggleSidebar(); }} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Help & Support
+                  </Button>
+                  <Button
+                    onClick={() => { handleHomeClick(); toggleSidebar(); }}
+                    variant="contained"
+                    startIcon={<Home className="w-4 h-4" />}
+                    sx={{
+                      backgroundColor: '#111827',
+                      color: '#ffffff',
+                      py: 0.75,
+                      fontSize: '0.75rem',
+                      gridColumn: '2 / 3',
+                      '&:hover': { backgroundColor: '#000000' }
+                    }}
+                  >
+                    Home
+                  </Button>
+                </Box>
+              ) : (
+                <Stack spacing={1}>
+                  <Button onClick={handleGDTopicsClick} variant="contained" startIcon={<MessagesSquare className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    AI for GD Topics
+                  </Button>
+                  <Button onClick={handleEligibilityClick} variant="contained" startIcon={<CheckCircle className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Check Eligibility
+                  </Button>
+                  <Button onClick={handleSyllabusClick} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Exam Syllabus
+                  </Button>
+                  <Button onClick={handleQuizClick} variant="contained" startIcon={<PenTool className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Attempt Quiz
+                  </Button>
+                  <Button onClick={handlePyqPracticeClick} variant="contained" startIcon={<Target className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    PYQ Practice
+                  </Button>
+                  <Button onClick={handleBooksClick} variant="contained" startIcon={<BookOpen className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Inserted Books
+                  </Button>
+                  <Button onClick={handlePyqsClick} variant="contained" startIcon={<FileText className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Inserted PYQs
+                  </Button>
+                  <Button onClick={handleWhatsNewClick} variant="contained" startIcon={<Lightbulb className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    What&apos;s New
+                  </Button>
+                  <Button onClick={handleHelpClick} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Help & Support
+                  </Button>
+                </Stack>
+              )}
             </Box>
           </Box>
         </Paper>

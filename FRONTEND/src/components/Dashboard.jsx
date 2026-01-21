@@ -412,26 +412,38 @@ const Dashboard = () => {
       {/* Main Dashboard Container */}
       <div className="flex-1 bg-white border border-gray-400 rounded-lg shadow-sm flex flex-col overflow-hidden">
         {/* Dashboard Header */}
-        <div className="border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
+        <div className="border-b border-gray-200 px-4 py-3 md:px-6 md:py-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0">
+            <div className="w-full">
               <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600 mt-1">
+              <p
+                className="text-gray-600 mt-1 leading-snug md:leading-normal w-full"
+                style={
+                  isMobile
+                    ? {
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }
+                    : undefined
+                }
+              >
                 Welcome back, {currentUser?.displayName || "Student"}! Here's
                 your learning overview.
               </p>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-2 w-full md:w-auto flex-nowrap">
               <select
                 value={selectedTimeframe}
                 onChange={(e) => setSelectedTimeframe(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 md:flex-none min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="week">This Week</option>
                 <option value="month">This Month</option>
                 <option value="year">This Year</option>
               </select>
-              <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm flex items-center">
+              <button className="shrink-0 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm flex items-center">
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </button>
