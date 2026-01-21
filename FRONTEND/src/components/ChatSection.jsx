@@ -31,6 +31,11 @@ const STOP_WORDS = new Set([
   'this', 'that', 'these', 'those', 'topic', 'concept', 'question', 'answer'
 ])
 
+const isPlaceholderTitle = (title) => {
+  if (!title) return true
+  return title.startsWith('New Chat')
+}
+
 const buildConciseTitle = (input) => {
   if (!input) return 'New Chat'
 
@@ -627,13 +632,13 @@ const ChatSection = () => {
   }, [messages])
 
   // Handle guest chat saving
-  const handleGuestChatSave = useCallback((messages) => {
+  const handleGuestChatSave = useCallback((messages, titleSource) => {
     if (currentUser) return // Don't save guest chats for authenticated users
     
     if (!currentChatId || !currentChatId.startsWith('guest-')) {
       // Create a new guest chat
       const firstMessage = messages.find(msg => msg.type === 'user')?.content || 'New Chat'
-      const baseTitle = buildConciseTitle(firstMessage)
+      const baseTitle = titleSource ? buildConciseTitle(titleSource) : 'New Chat'
       const existingTitles = (guestChatHistory || []).map(chat => chat.title || '')
       const uniqueTitle = ensureUniqueTitle(baseTitle, existingTitles)
       const newChat = addGuestChat({
@@ -647,21 +652,26 @@ const ChatSection = () => {
     } else {
       // Update existing guest chat
       const firstMessage = messages.find(msg => msg.type === 'user')?.content || 'New Chat'
-      const baseTitle = buildConciseTitle(firstMessage)
-      const existingTitles = (guestChatHistory || [])
-        .filter(chat => chat.id !== currentChatId)
-        .map(chat => chat.title || '')
-      const title = ensureUniqueTitle(baseTitle, existingTitles)
+      let nextTitle = currentChatTitle
+      if (isPlaceholderTitle(currentChatTitle) && titleSource) {
+        const baseTitle = buildConciseTitle(titleSource)
+        const existingTitles = (guestChatHistory || [])
+          .filter(chat => chat.id !== currentChatId)
+          .map(chat => chat.title || '')
+        nextTitle = ensureUniqueTitle(baseTitle, existingTitles)
+      }
       
       updateGuestChat(currentChatId, {
-        title: title,
+        title: nextTitle,
         firstMessage: firstMessage,
         messages: messages
       })
-      setCurrentChatTitle(title)
+      if (nextTitle && nextTitle !== currentChatTitle) {
+        setCurrentChatTitle(nextTitle)
+      }
       console.log('✅ Updated guest chat:', currentChatId)
     }
-  }, [currentUser, currentChatId, addGuestChat, updateGuestChat, guestChatHistory])
+  }, [currentUser, currentChatId, currentChatTitle, addGuestChat, updateGuestChat, guestChatHistory])
 
   // Handle sending messages - can be called from EmbeddedSearchBar
   const sendMessage = useCallback(async (query, selectedSubject = 'all') => {
@@ -695,23 +705,7 @@ const ChatSection = () => {
       try {
         await saveMessage(activeChatId, userMessage)
         await updateChatMessageCount(activeChatId, 1)
-        // If this is the first message, update the chat title to a concise, unique name
-        if (messages.length === 0) {
-          const baseTitle = buildConciseTitle(query)
-          let uniqueTitle = baseTitle
-          try {
-            const existingChats = await getChatHistory()
-            const existingTitles = (existingChats || [])
-              .filter(chat => chat.id !== activeChatId)
-              .map(chat => chat.title || '')
-            uniqueTitle = ensureUniqueTitle(baseTitle, existingTitles)
-          } catch (error) {
-            console.error('❌ Failed to load chat titles for uniqueness:', error)
-          }
-          await updateChatTitle(activeChatId, uniqueTitle)
-          setCurrentChatTitle(uniqueTitle)
-          window.dispatchEvent(new CustomEvent('refreshChatList'))
-        }
+        // Title will be set after assistant response to avoid user-input noise
       } catch (error) {
         console.error('❌ Failed to save user message:', error)
       }
@@ -787,12 +781,30 @@ const ChatSection = () => {
             try {
               await saveMessage(activeChatId, botMessage)
               await updateChatMessageCount(activeChatId, 1)
+
+              if (isPlaceholderTitle(currentChatTitle)) {
+                const baseTitle = buildConciseTitle(botMessage.content)
+                let uniqueTitle = baseTitle
+                try {
+                  const existingChats = await getChatHistory()
+                  const existingTitles = (existingChats || [])
+                    .filter(chat => chat.id !== activeChatId)
+                    .map(chat => chat.title || '')
+                  uniqueTitle = ensureUniqueTitle(baseTitle, existingTitles)
+                } catch (error) {
+                  console.error('❌ Failed to load chat titles for uniqueness:', error)
+                }
+                await updateChatTitle(activeChatId, uniqueTitle)
+                setCurrentChatTitle(uniqueTitle)
+                window.dispatchEvent(new CustomEvent('refreshChatList'))
+              }
             } catch (error) {
               console.error('❌ Failed to save bot message:', error)
             }
           }, 100)
         } else {
-          handleGuestChatSave(newMessages)
+          const titleSource = botMessage.content
+          handleGuestChatSave(newMessages, titleSource)
         }
         return newMessages
       })
@@ -827,6 +839,7 @@ const ChatSection = () => {
     isLoading,
     currentUser,
     currentChatId,
+    currentChatTitle,
     messages.length,
     addToSearchHistory,
     handleGuestChatSave,

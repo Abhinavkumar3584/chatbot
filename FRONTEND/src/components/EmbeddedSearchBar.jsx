@@ -83,6 +83,7 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
     
     onSendMessage(query, subjectId)
     setInputValue('')
+    requestAnimationFrame(adjustTextareaHeight)
   }
 
   const handleKeyPress = (e) => {
@@ -93,10 +94,11 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
   }
 
   const adjustTextareaHeight = useCallback(() => {
-    if (!isMobile || !textareaRef.current) return
+    if (!textareaRef.current) return
     const el = textareaRef.current
     el.style.height = 'auto'
-    const maxHeight = window.innerHeight * 0.3
+    const viewportLimit = window.innerHeight * 0.3
+    const maxHeight = isMobile ? viewportLimit : Math.min(viewportLimit, 180)
     el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`
     el.style.overflowY = el.scrollHeight > maxHeight ? 'auto' : 'hidden'
   }, [isMobile])
@@ -188,18 +190,25 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
 
             {/* Search Input - Takes remaining space */}
             <div className="flex-1 relative">
-              <input
-                type="text"
+              <textarea
+                ref={textareaRef}
+                rows={1}
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e) => {
+                  setInputValue(e.target.value)
+                  requestAnimationFrame(adjustTextareaHeight)
+                }}
                 onKeyDown={handleKeyPress}
                 placeholder="Ask a question..."
-                className="w-full px-2 py-1.5 text-xs rounded-md focus:outline-none focus:ring-1 focus:border-transparent"
+                className="w-full px-2 py-1.5 text-xs rounded-md focus:outline-none focus:ring-1 focus:border-transparent resize-none"
                 style={{
                   backgroundColor: '#FAFBFC',
                   border: '1px solid #E3E7ED',
                   color: '#1F2933',
-                  caretColor: '#3A7CA5'
+                  caretColor: '#3A7CA5',
+                  minHeight: 32,
+                  maxHeight: '180px',
+                  transition: 'height 0.12s ease-out'
                 }}
                 disabled={isLoading}
                 autoComplete="off"
