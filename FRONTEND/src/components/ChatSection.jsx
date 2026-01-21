@@ -14,33 +14,108 @@ import SearchProgressIndicator from './SearchProgressIndicator'
 import EmbeddedSearchBar from './EmbeddedSearchBar'
 
 const EMPTY_EXPANDED_SOURCES = new Set()
+const MAX_CHAT_TITLE_LENGTH = 32
+const MAX_CHAT_TITLE_WORDS = 4
+const CHAT_FONT_SIZES = {
+  body: { xs: '0.75rem', md: '0.875rem' },
+  h1: { xs: '1rem', md: '1.125rem' },
+  h2: { xs: '0.9rem', md: '1.025rem' },
+  h3: { xs: '0.85rem', md: '0.975rem' },
+  code: { xs: '0.72rem', md: '0.845rem' }
+}
+const STOP_WORDS = new Set([
+  'the', 'a', 'an', 'of', 'in', 'on', 'for', 'to', 'and', 'or', 'with', 'without',
+  'about', 'regarding', 'please', 'explain', 'describe', 'detail', 'details',
+  'what', 'why', 'how', 'is', 'are', 'was', 'were', 'can', 'could', 'should',
+  'would', 'tell', 'me', 'give', 'show', 'list', 'define', 'meaning', 'meaningful',
+  'this', 'that', 'these', 'those', 'topic', 'concept', 'question', 'answer'
+])
+
+const buildConciseTitle = (input) => {
+  if (!input) return 'New Chat'
+
+  const rawTokens = input
+    .replace(/[\n\r]+/g, ' ')
+    .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+
+  if (rawTokens.length === 0) return 'New Chat'
+
+  const capitalizedTokens = []
+  const otherTokens = []
+
+  rawTokens.forEach((token) => {
+    const lowered = token.toLowerCase()
+    if (STOP_WORDS.has(lowered)) return
+    if (token[0] && token[0] === token[0].toUpperCase()) {
+      capitalizedTokens.push(token)
+    } else {
+      otherTokens.push(token)
+    }
+  })
+
+  const meaningful = [...capitalizedTokens, ...otherTokens]
+  const fallbackTokens = meaningful.length > 0 ? meaningful : rawTokens
+  const selectedTokens = fallbackTokens.slice(0, MAX_CHAT_TITLE_WORDS)
+
+  let title = selectedTokens.join(' ').trim()
+  if (!title) title = rawTokens.slice(0, MAX_CHAT_TITLE_WORDS).join(' ').trim()
+
+  if (title.length > MAX_CHAT_TITLE_LENGTH) {
+    title = `${title.slice(0, MAX_CHAT_TITLE_LENGTH - 3).trim()}...`
+  }
+
+  return title || 'New Chat'
+}
+
+const ensureUniqueTitle = (baseTitle, existingTitles) => {
+  const normalizedBase = baseTitle.trim()
+  if (!normalizedBase) return 'New Chat'
+
+  const normalizedSet = new Set(
+    existingTitles.map((title) => title.trim().toLowerCase()).filter(Boolean)
+  )
+
+  if (!normalizedSet.has(normalizedBase.toLowerCase())) {
+    return normalizedBase
+  }
+
+  let counter = 2
+  let candidate = `${normalizedBase} (${counter})`
+  while (normalizedSet.has(candidate.toLowerCase())) {
+    counter += 1
+    candidate = `${normalizedBase} (${counter})`
+  }
+  return candidate
+}
 
 const createMarkdownComponents = (isUserMessage) => ({
   p: ({ ...props }) => (
       <Typography
         variant="body2"
-        sx={{ fontSize: '0.75rem', lineHeight: 1.6, mb: 0.75, color: 'inherit' }}
+        sx={{ fontSize: CHAT_FONT_SIZES.body, lineHeight: 1.6, mb: 0.75, color: 'inherit' }}
         {...props}
       />
   ),
   h1: ({ ...props }) => (
       <Typography
         variant="h6"
-        sx={{ fontSize: '1rem', fontWeight: 700, mt: 0.5, mb: 0.75, color: 'inherit' }}
+        sx={{ fontSize: CHAT_FONT_SIZES.h1, fontWeight: 700, mt: 0.5, mb: 0.75, color: 'inherit' }}
         {...props}
       />
   ),
   h2: ({ ...props }) => (
       <Typography
         variant="subtitle1"
-        sx={{ fontSize: '0.9rem', fontWeight: 700, mt: 0.5, mb: 0.5, color: 'inherit' }}
+        sx={{ fontSize: CHAT_FONT_SIZES.h2, fontWeight: 700, mt: 0.5, mb: 0.5, color: 'inherit' }}
         {...props}
       />
   ),
   h3: ({ ...props }) => (
       <Typography
         variant="subtitle2"
-        sx={{ fontSize: '0.85rem', fontWeight: 700, mt: 0.5, mb: 0.5, color: 'inherit' }}
+        sx={{ fontSize: CHAT_FONT_SIZES.h3, fontWeight: 700, mt: 0.5, mb: 0.5, color: 'inherit' }}
         {...props}
       />
   ),
@@ -55,7 +130,7 @@ const createMarkdownComponents = (isUserMessage) => ({
         <Typography
           component="span"
           variant="body2"
-          sx={{ fontSize: '0.75rem', lineHeight: 1.6, color: 'inherit' }}
+          sx={{ fontSize: CHAT_FONT_SIZES.body, lineHeight: 1.6, color: 'inherit' }}
           {...props}
         />
       </li>
@@ -80,7 +155,7 @@ const createMarkdownComponents = (isUserMessage) => ({
         component="code"
         sx={{
           fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-          fontSize: '0.72rem',
+          fontSize: CHAT_FONT_SIZES.code,
           backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08),
           px: inline ? 0.5 : 1,
           py: inline ? 0 : 0.75,
@@ -333,8 +408,8 @@ const ChatSection = () => {
   const { theme } = useTheme()
   const isDarkMode = theme?.mode === 'dark'
   const { sidebarVisible, pyqVisible } = useLayout()
-  const { addToSearchHistory, addGuestChat, updateGuestChat } = useSearchHistory()
-  const { currentUser, saveMessage, getChatMessages, updateChatTitle, updateChatMessageCount } = useAuth()
+  const { addToSearchHistory, addGuestChat, updateGuestChat, guestChatHistory } = useSearchHistory()
+  const { currentUser, saveMessage, getChatMessages, updateChatTitle, updateChatMessageCount, getChatHistory } = useAuth()
   const { trackInteraction } = useDashboard()
   const scrollContainerRef = useRef(null)
   const scrollStateRef = useRef({ scrollTop: 0, scrollHeight: 0, isAtTop: true })
@@ -537,7 +612,7 @@ const ChatSection = () => {
           return rest
         })
       }
-    }, 20)
+    }, 10)
   }, [messages])
 
   // Cleanup timers for removed messages
@@ -558,8 +633,11 @@ const ChatSection = () => {
     if (!currentChatId || !currentChatId.startsWith('guest-')) {
       // Create a new guest chat
       const firstMessage = messages.find(msg => msg.type === 'user')?.content || 'New Chat'
+      const baseTitle = buildConciseTitle(firstMessage)
+      const existingTitles = (guestChatHistory || []).map(chat => chat.title || '')
+      const uniqueTitle = ensureUniqueTitle(baseTitle, existingTitles)
       const newChat = addGuestChat({
-        title: firstMessage.length > 50 ? firstMessage.substring(0, 50) + '...' : firstMessage,
+        title: uniqueTitle,
         firstMessage: firstMessage,
         messages: messages
       })
@@ -569,7 +647,11 @@ const ChatSection = () => {
     } else {
       // Update existing guest chat
       const firstMessage = messages.find(msg => msg.type === 'user')?.content || 'New Chat'
-      const title = firstMessage.length > 50 ? firstMessage.substring(0, 50) + '...' : firstMessage
+      const baseTitle = buildConciseTitle(firstMessage)
+      const existingTitles = (guestChatHistory || [])
+        .filter(chat => chat.id !== currentChatId)
+        .map(chat => chat.title || '')
+      const title = ensureUniqueTitle(baseTitle, existingTitles)
       
       updateGuestChat(currentChatId, {
         title: title,
@@ -579,7 +661,7 @@ const ChatSection = () => {
       setCurrentChatTitle(title)
       console.log('✅ Updated guest chat:', currentChatId)
     }
-  }, [currentUser, currentChatId, addGuestChat, updateGuestChat])
+  }, [currentUser, currentChatId, addGuestChat, updateGuestChat, guestChatHistory])
 
   // Handle sending messages - can be called from EmbeddedSearchBar
   const sendMessage = useCallback(async (query, selectedSubject = 'all') => {
@@ -613,11 +695,21 @@ const ChatSection = () => {
       try {
         await saveMessage(activeChatId, userMessage)
         await updateChatMessageCount(activeChatId, 1)
-        // If this is the first message, update the chat title to the message text
+        // If this is the first message, update the chat title to a concise, unique name
         if (messages.length === 0) {
-          const chatTitle = query.length > 50 ? query.substring(0, 50) + '...' : query
-          await updateChatTitle(activeChatId, chatTitle)
-          setCurrentChatTitle(chatTitle)
+          const baseTitle = buildConciseTitle(query)
+          let uniqueTitle = baseTitle
+          try {
+            const existingChats = await getChatHistory()
+            const existingTitles = (existingChats || [])
+              .filter(chat => chat.id !== activeChatId)
+              .map(chat => chat.title || '')
+            uniqueTitle = ensureUniqueTitle(baseTitle, existingTitles)
+          } catch (error) {
+            console.error('❌ Failed to load chat titles for uniqueness:', error)
+          }
+          await updateChatTitle(activeChatId, uniqueTitle)
+          setCurrentChatTitle(uniqueTitle)
           window.dispatchEvent(new CustomEvent('refreshChatList'))
         }
       } catch (error) {
@@ -739,6 +831,7 @@ const ChatSection = () => {
     addToSearchHistory,
     handleGuestChatSave,
     saveMessage,
+    getChatHistory,
     updateChatMessageCount,
     updateChatTitle,
     trackInteraction

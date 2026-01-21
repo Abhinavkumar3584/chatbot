@@ -448,7 +448,7 @@ const Sidebar = () => {
                         {/* Delete button */}
                         <button
                           onClick={(e) => handleDeleteChat(chat.id, e)}
-                          className="absolute top-1 right-1 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
+                          className={`absolute top-1 right-1 p-0.5 rounded transition-all ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 hover:bg-red-500/20'}`}
                           title="Delete chat"
                         >
                           <Trash2 className="w-2.5 h-2.5 text-red-400 hover:text-red-300" />
@@ -547,7 +547,7 @@ const Sidebar = () => {
                         {/* Delete button */}
                         <button
                           onClick={(e) => handleDeleteChat(chat.id, e)}
-                          className="absolute top-1 right-1 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
+                          className={`absolute top-1 right-1 p-0.5 rounded transition-all ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 hover:bg-red-500/20'}`}
                           title="Delete chat"
                         >
                           <Trash2 className="w-2.5 h-2.5 text-red-400 hover:text-red-300" />
@@ -577,7 +577,7 @@ const Sidebar = () => {
                   <Button onClick={() => { handleEligibilityClick(); toggleSidebar(); }} variant="contained" startIcon={<CheckCircle className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
                     Check Eligibility
                   </Button>
-                  <Button onClick={() => { handleSyllabusClick(); toggleSidebar(); }} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                  <Button onClick={() => { handleSyllabusClick(); toggleSidebar(); }} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke="currentColor" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
                     Exam Syllabus
                   </Button>
                   <Button onClick={() => { handleQuizClick(); toggleSidebar(); }} variant="contained" startIcon={<PenTool className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
@@ -595,7 +595,7 @@ const Sidebar = () => {
                   <Button onClick={() => { handleWhatsNewClick(); toggleSidebar(); }} variant="contained" startIcon={<Lightbulb className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
                     What&apos;s New
                   </Button>
-                  <Button onClick={() => { handleHelpClick(); toggleSidebar(); }} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                  <Button onClick={() => { handleHelpClick(); toggleSidebar(); }} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke="currentColor" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
                     Help & Support
                   </Button>
                   <Button
@@ -622,7 +622,7 @@ const Sidebar = () => {
                   <Button onClick={handleEligibilityClick} variant="contained" startIcon={<CheckCircle className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                     Check Eligibility
                   </Button>
-                  <Button onClick={handleSyllabusClick} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                  <Button onClick={handleSyllabusClick} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke="currentColor" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                     Exam Syllabus
                   </Button>
                   <Button onClick={handleQuizClick} variant="contained" startIcon={<PenTool className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
@@ -640,7 +640,7 @@ const Sidebar = () => {
                   <Button onClick={handleWhatsNewClick} variant="contained" startIcon={<Lightbulb className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                     What&apos;s New
                   </Button>
-                  <Button onClick={handleHelpClick} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                  <Button onClick={handleHelpClick} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke="currentColor" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
                     Help & Support
                   </Button>
                 </Stack>
@@ -732,7 +732,7 @@ const Sidebar = () => {
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 title="Exam Syllabus"
               >
-                <Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />
+                <Network width={16} height={16} strokeWidth={2} stroke="currentColor" />
               </button>
               <button 
                 onClick={handleQuizClick}
@@ -794,7 +794,7 @@ const Sidebar = () => {
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 title="Help & Support"
               >
-                <CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />
+                <CircleHelp width={16} height={16} strokeWidth={2} stroke="currentColor" />
               </button>
             </Box>
           </Paper>
