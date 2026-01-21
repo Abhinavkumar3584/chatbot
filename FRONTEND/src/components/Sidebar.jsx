@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react'
-import { MessageCircle, Search, BookOpen, FileText, Lightbulb, HelpCircle, ChevronLeft, ChevronRight, Trash2, Plus, Clock, Target, CheckCircle, GraduationCap, PenTool, MessagesSquare } from 'lucide-react'
-import { useTheme } from '../contexts/ThemeContext'
+import { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react'
+import { MessageCircle, Search, BookOpen, FileText, Lightbulb, Trash2, Clock, Target, CheckCircle, PenTool, MessagesSquare, Home } from 'lucide-react'
+import { Box, Paper, Stack, Typography, Button, IconButton, Divider } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { useLayout } from '../contexts/LayoutContext'
 import { useSearchHistory } from '../contexts/SearchHistoryContext'
 import { useAuth } from '../contexts/AuthContext'
-import HelpSupportModal from './HelpSupportModal'
-import WhatsNewModal from './WhatsNewModal'
+const HelpSupportModal = lazy(() => import('./HelpSupportModal'))
+const WhatsNewModal = lazy(() => import('./WhatsNewModal'))
 import apiService from '../services/api'
 import { ChevronFirst } from './icons/ChevronFirst'
 import { CircleHelp } from './icons/CircleHelp'
 import { Network } from './icons/Network'
 
 const Sidebar = () => {
-  const { theme } = useTheme()
-  const { sidebarVisible, toggleSidebar } = useLayout()
-  const { searchHistory, clearSearchHistory, guestChatHistory, addGuestChat, updateGuestChat, getGuestChat, deleteGuestChat } = useSearchHistory()
+  const { sidebarVisible, toggleSidebar, isMobile } = useLayout()
+  const { guestChatHistory, deleteGuestChat } = useSearchHistory()
   const { currentUser, getChatHistory, createNewChat, deleteChat } = useAuth()
   const [books, setBooks] = useState([])
   const [insertedPyqs, setInsertedPyqs] = useState([])
@@ -31,7 +31,7 @@ const Sidebar = () => {
   const [chatError, setChatError] = useState('')
 
   // Load chat history
-  const loadChatHistory = async () => {
+  const loadChatHistory = useCallback(async () => {
     if (!currentUser) {
       console.log('❌ No currentUser, skipping chat history load')
       return
@@ -50,7 +50,7 @@ const Sidebar = () => {
     } finally {
       setIsLoadingChats(false)
     }
-  }
+  }, [currentUser, getChatHistory])
 
   // Handle new chat creation
   const handleNewChat = async () => {
@@ -124,7 +124,7 @@ const Sidebar = () => {
   }
 
   // Format chat title from first message
-  const formatChatTitle = (chat) => {
+  const formatChatTitle = useCallback((chat) => {
     // If chat has a custom title that's not "New Chat", use it
     if (chat.title && chat.title !== 'New Chat') {
       return chat.title
@@ -139,9 +139,12 @@ const Sidebar = () => {
     
     // Fallback
     return 'Untitled Chat'
-  }
+  }, [])
 
-  const loadBooks = async () => {
+  const guestChats = useMemo(() => guestChatHistory || [], [guestChatHistory])
+  const userChats = useMemo(() => chatHistory || [], [chatHistory])
+
+  const loadBooks = useCallback(async () => {
     setIsLoadingBooks(true)
     try {
       const books = await apiService.getBooks()
@@ -151,9 +154,9 @@ const Sidebar = () => {
     } finally {
       setIsLoadingBooks(false)
     }
-  }
+  }, [])
 
-  const loadInsertedPyqs = async () => {
+  const loadInsertedPyqs = useCallback(async () => {
     setIsLoadingPyqs(true)
     try {
       const pyqs = await apiService.getInsertedPyqs()
@@ -163,59 +166,102 @@ const Sidebar = () => {
     } finally {
       setIsLoadingPyqs(false)
     }
-  }
+  }, [])
 
-  const handleBooksClick = () => {
+  const closeTransientOverlays = useCallback(() => {
+    setShowBooksModal(false)
+    setShowPyqsModal(false)
+    setShowHelpModal(false)
+    setShowWhatsNewModal(false)
+    setShowComingSoonModal(false)
+  }, [])
+
+  const handleBooksClick = useCallback(() => {
+    if (isMobile) closeTransientOverlays()
     setShowBooksModal(true)
     loadBooks()
-  }
+  }, [closeTransientOverlays, isMobile, loadBooks])
 
-  const handlePyqsClick = () => {
+  const handlePyqsClick = useCallback(() => {
+    if (isMobile) closeTransientOverlays()
     setShowPyqsModal(true)
     loadInsertedPyqs()
-  }
+  }, [closeTransientOverlays, isMobile, loadInsertedPyqs])
 
   const handleHelpClick = () => {
+    if (isMobile) closeTransientOverlays()
     setShowHelpModal(true)
   }
 
   const handleWhatsNewClick = () => {
+    if (isMobile) closeTransientOverlays()
     setShowWhatsNewModal(true)
   }
 
   const handlePyqPracticeClick = () => {
+    if (isMobile) closeTransientOverlays()
     // Emit event to switch to PYQ practice view
     window.dispatchEvent(new CustomEvent('switchToPyqPractice'))
   }
 
   const handleEligibilityClick = () => {
+    if (isMobile) closeTransientOverlays()
     // Show coming soon modal
     setComingSoonFeature('Check Eligibility')
     setShowComingSoonModal(true)
   }
 
   const handleSyllabusClick = () => {
+    if (isMobile) closeTransientOverlays()
     // Show coming soon modal
     setComingSoonFeature('Exam Syllabus')
     setShowComingSoonModal(true)
   }
 
   const handleQuizClick = () => {
+    if (isMobile) closeTransientOverlays()
     // Emit event to switch to quiz view
     window.dispatchEvent(new CustomEvent('switchToQuiz'))
   }
 
   const handleGDTopicsClick = () => {
+    if (isMobile) closeTransientOverlays()
     // Show coming soon modal
     setComingSoonFeature('AI for GD Topics')
     setShowComingSoonModal(true)
   }
 
+  const handleHomeClick = () => {
+    if (isMobile) closeTransientOverlays()
+    window.dispatchEvent(new CustomEvent('switchToChat'))
+  }
+
+  useEffect(() => {
+    if (!isMobile) return
+    const handleNavigation = () => {
+      closeTransientOverlays()
+    }
+    window.addEventListener('switchToChat', handleNavigation)
+    window.addEventListener('switchToPyqPractice', handleNavigation)
+    window.addEventListener('switchToEligibility', handleNavigation)
+    window.addEventListener('switchToSyllabus', handleNavigation)
+    window.addEventListener('switchToQuiz', handleNavigation)
+    window.addEventListener('switchToGDTopics', handleNavigation)
+    return () => {
+      window.removeEventListener('switchToChat', handleNavigation)
+      window.removeEventListener('switchToPyqPractice', handleNavigation)
+      window.removeEventListener('switchToEligibility', handleNavigation)
+      window.removeEventListener('switchToSyllabus', handleNavigation)
+      window.removeEventListener('switchToQuiz', handleNavigation)
+      window.removeEventListener('switchToGDTopics', handleNavigation)
+    }
+  }, [closeTransientOverlays, isMobile])
+
   // Load books and inserted PYQs on component mount
   useEffect(() => {
     loadBooks()
     loadInsertedPyqs()
-  }, [])
+  }, [loadBooks, loadInsertedPyqs])
 
   // Load chat history when user changes
   useEffect(() => {
@@ -226,7 +272,7 @@ const Sidebar = () => {
       console.log('👤 No user, clearing chat history')
       setChatHistory([])
     }
-  }, [currentUser])
+  }, [currentUser, loadChatHistory])
 
   // Listen for refresh chat list events
   useEffect(() => {
@@ -241,81 +287,96 @@ const Sidebar = () => {
     return () => {
       window.removeEventListener('refreshChatList', handleRefreshChatList)
     }
-  }, [currentUser])
-
-  const sidebarStyle = {
-    background: '#ffffff',
-    color: '#000000',
-    border: '1px solid #808080'
-  }
+  }, [currentUser, loadChatHistory])
 
   return (
     <>
+      {sidebarVisible && isMobile && (
+        <div
+          className="md:hidden fixed top-14 left-0 right-0 bottom-0 bg-black/40 backdrop-blur-sm z-[150]"
+          onClick={toggleSidebar}
+        />
+      )}
       {/* Full Sidebar */}
       {sidebarVisible && (
-       <div 
-          className="fixed left-1 top-[4rem] bottom-1 w-52 sm:w-60 md:w-68 shadow-lg z-30 rounded-lg transition-colors duration-300"
-          style={sidebarStyle}
+       <Paper
+          elevation={3}
+          sx={{
+            position: 'fixed',
+            left: isMobile ? 0 : 8,
+            top: isMobile ? 56 : 72,
+            bottom: isMobile ? 0 : 8,
+            width: isMobile ? '85vw' : { xs: 220, sm: 240, md: 260 },
+            zIndex: isMobile ? 160 : 30,
+            borderRadius: isMobile ? 0 : 1,
+            border: '1px solid #808080',
+            backgroundColor: '#ffffff',
+            color: '#000000',
+            overflow: 'hidden'
+          }}
         >
-          <div className="flex flex-col h-full">
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Toggle Button and Sign-in Notice */}
-            <div className="p-1 flex justify-between items-center">
-              {!currentUser && (
-                <div 
-                  className="text-xs px-1.5 py-0.5 rounded transition-colors duration-300" 
-                  style={{ 
-                    color: '#000000',
-                    backgroundColor: 'rgba(186, 255, 57, 0.15)'
+            <Box sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+              {!currentUser ? (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                    color: 'text.primary',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
                   }}
                 >
                   Sign in to sync your conversations
-                </div>
+                </Typography>
+              ) : (
+                <Box />
               )}
-              {currentUser && <div></div>}
-              <div 
-                onClick={toggleSidebar}
-                className="rounded transition-colors -m-2"
-                style={{ backgroundColor: 'transparent' }}
-                title="Hide Sidebar"
-              >
-                <ChevronFirst 
-                  width={15} 
-                  height={15} 
-                  strokeWidth={2} 
-                  stroke={'#000000'} 
-                />
-              </div>
-            </div>
+              <IconButton onClick={toggleSidebar} size="small" title="Hide Sidebar" sx={{ color: '#000000' }}>
+                <ChevronFirst width={15} height={15} strokeWidth={2} stroke={'#000000'} />
+              </IconButton>
+            </Box>
 
             {/* Top section - New Chat */}
-            <div className="px-2 pb-2">
-              {/* New Chat Button */}
-              <button 
+            <Box sx={{ px: 2, pb: 2 }}>
+              <Button
                 onClick={handleNewChat}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
+                fullWidth
+                variant="contained"
                 title="Start a new conversation"
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'primary.contrastText',
+                  borderRadius: 2,
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  py: 1,
+                  '&:hover': { backgroundColor: 'primary.dark' }
+                }}
               >
-
-<animated-icons
-  src="https://animatedicons.co/get-icon?name=plus&style=minimalistic&token=3a3309ff-41ae-42ce-97d0-5767a4421b43"
-  trigger="loop-on-hover"
-  attributes='{"variationThumbColour":"#536DFE","variationName":"Two Tone","variationNumber":2,"numberOfGroups":2,"backgroundIsGroup":false,"strokeWidth":4,"defaultColours":{"group-1":"#000000","group-2":"#000000FF","background":"#FFFFFF00"}}'
-  height="20"
-  width="20"
-></animated-icons>
-
-
-
-                <span className="font-medium">New Chat</span>
-              </button>
-            </div>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <animated-icons
+                    src="https://animatedicons.co/get-icon?name=plus&style=minimalistic&token=3a3309ff-41ae-42ce-97d0-5767a4421b43"
+                    trigger="loop-on-hover"
+                    attributes='{"variationThumbColour":"#536DFE","variationName":"Two Tone","variationNumber":2,"numberOfGroups":2,"backgroundIsGroup":false,"strokeWidth":4,"defaultColours":{"group-1":"#000000","group-2":"#000000FF","background":"#FFFFFF00"}}'
+                    height="20"
+                    width="20"
+                  ></animated-icons>
+                  <span>New Chat</span>
+                </Box>
+              </Button>
+            </Box>
 
             {/* Chat History Section - Scrollable */}
             <div className="flex-1 overflow-y-auto px-2 pb-2 sidebar-chat-history">
               <div className="space-y-1">
                 {/* Show guest chats if not authenticated or no user chats */}
-                {!currentUser && guestChatHistory.length === 0 ? (
+                {!currentUser && guestChats.length === 0 ? (
                   <div className="text-center py-6">
                     <MessageCircle 
                       className="w-10 h-10 mx-auto mb-2 transition-colors duration-300" 
@@ -334,7 +395,7 @@ const Sidebar = () => {
                       Start a conversation to see your chat history
                     </p>
                   </div>
-                ) : !currentUser && guestChatHistory.length > 0 ? (
+                ) : !currentUser && guestChats.length > 0 ? (
                   <>
                     <div 
                       className="text-xs mb-2 px-2 font-medium transition-colors duration-300" 
@@ -342,12 +403,12 @@ const Sidebar = () => {
                     >
                       Recent Conversations
                     </div>
-                    {guestChatHistory.map((chat) => (
+                    {guestChats.map((chat) => (
                       <div
                         key={chat.id}
                         className="w-full text-left p-2 rounded-lg transition-colors group relative"
                         style={{ color: '#000000' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       >
                         <div className="flex items-start space-x-2" onClick={() => handleChatSelect(chat)}>
@@ -387,7 +448,7 @@ const Sidebar = () => {
                         {/* Delete button */}
                         <button
                           onClick={(e) => handleDeleteChat(chat.id, e)}
-                          className="absolute top-1 right-1 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
+                          className={`absolute top-1 right-1 p-0.5 rounded transition-all ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 hover:bg-red-500/20'}`}
                           title="Delete chat"
                         >
                           <Trash2 className="w-2.5 h-2.5 text-red-400 hover:text-red-300" />
@@ -419,7 +480,7 @@ const Sidebar = () => {
                       Retry
                     </button>
                   </div>
-                ) : currentUser && chatHistory.length === 0 ? (
+                ) : currentUser && userChats.length === 0 ? (
                   <div className="text-center py-6">
                     <MessageCircle 
                       className="w-10 h-10 mx-auto mb-2"
@@ -438,7 +499,7 @@ const Sidebar = () => {
                       Start chatting to see your history here
                     </p>
                   </div>
-                ) : currentUser && chatHistory.length > 0 ? (
+                ) : currentUser && userChats.length > 0 ? (
                   <>
                     <div 
                       className="text-xs mb-2 px-2 font-medium" 
@@ -446,12 +507,12 @@ const Sidebar = () => {
                     >
                       Recent Conversations
                     </div>
-                    {chatHistory.map((chat) => (
+                    {userChats.map((chat) => (
                       <div
                         key={chat.id}
                         className="w-full text-left p-2 rounded-lg transition-colors group relative"
                         style={{ color: '#000000' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       >
                         <div className="flex items-start space-x-2" onClick={() => handleChatSelect(chat)}>
@@ -486,7 +547,7 @@ const Sidebar = () => {
                         {/* Delete button */}
                         <button
                           onClick={(e) => handleDeleteChat(chat.id, e)}
-                          className="absolute top-1 right-1 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
+                          className={`absolute top-1 right-1 p-0.5 rounded transition-all ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 hover:bg-red-500/20'}`}
                           title="Delete chat"
                         >
                           <Trash2 className="w-2.5 h-2.5 text-red-400 hover:text-red-300" />
@@ -499,240 +560,245 @@ const Sidebar = () => {
             </div>
 
             {/* Bottom section - Fixed at bottom */}
-            <div 
-              className="p-2 space-y-1.5 bg-inherit transition-colors duration-300" 
-              style={{ 
-                borderTop: '1px solid #808080'
-              }}
-            >
+            <Box sx={{ p: 2 }}>
+              <Divider sx={{ borderColor: '#808080', mb: 1.5 }} />
+              {/* Mobile grid, desktop stack */}
+              {isMobile ? (
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                    gap: 1
+                  }}
+                >
+                  <Button onClick={() => { handleGDTopicsClick(); toggleSidebar(); }} variant="contained" startIcon={<MessagesSquare className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    AI for GD Topics
+                  </Button>
+                  <Button onClick={() => { handleEligibilityClick(); toggleSidebar(); }} variant="contained" startIcon={<CheckCircle className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Check Eligibility
+                  </Button>
+                  <Button onClick={() => { handleSyllabusClick(); toggleSidebar(); }} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke="currentColor" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Exam Syllabus
+                  </Button>
+                  <Button onClick={() => { handleQuizClick(); toggleSidebar(); }} variant="contained" startIcon={<PenTool className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Attempt Quiz
+                  </Button>
+                  <Button onClick={() => { handlePyqPracticeClick(); toggleSidebar(); }} variant="contained" startIcon={<Target className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    PYQ Practice
+                  </Button>
+                  <Button onClick={() => { handleBooksClick(); toggleSidebar(); }} variant="contained" startIcon={<BookOpen className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Inserted Books
+                  </Button>
+                  <Button onClick={() => { handlePyqsClick(); toggleSidebar(); }} variant="contained" startIcon={<FileText className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Inserted PYQs
+                  </Button>
+                  <Button onClick={() => { handleWhatsNewClick(); toggleSidebar(); }} variant="contained" startIcon={<Lightbulb className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    What&apos;s New
+                  </Button>
+                  <Button onClick={() => { handleHelpClick(); toggleSidebar(); }} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke="currentColor" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Help & Support
+                  </Button>
+                  <Button
+                    onClick={() => { handleHomeClick(); toggleSidebar(); }}
+                    variant="contained"
+                    startIcon={<Home className="w-4 h-4" />}
+                    sx={{
+                      backgroundColor: '#111827',
+                      color: '#ffffff',
+                      py: 0.75,
+                      fontSize: '0.75rem',
+                      gridColumn: '2 / 3',
+                      '&:hover': { backgroundColor: '#000000' }
+                    }}
+                  >
+                    Home
+                  </Button>
+                </Box>
+              ) : (
+                <Stack spacing={1}>
+                  <Button onClick={handleGDTopicsClick} variant="contained" startIcon={<MessagesSquare className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    AI for GD Topics
+                  </Button>
+                  <Button onClick={handleEligibilityClick} variant="contained" startIcon={<CheckCircle className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Check Eligibility
+                  </Button>
+                  <Button onClick={handleSyllabusClick} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke="currentColor" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Exam Syllabus
+                  </Button>
+                  <Button onClick={handleQuizClick} variant="contained" startIcon={<PenTool className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Attempt Quiz
+                  </Button>
+                  <Button onClick={handlePyqPracticeClick} variant="contained" startIcon={<Target className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    PYQ Practice
+                  </Button>
+                  <Button onClick={handleBooksClick} variant="contained" startIcon={<BookOpen className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Inserted Books
+                  </Button>
+                  <Button onClick={handlePyqsClick} variant="contained" startIcon={<FileText className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Inserted PYQs
+                  </Button>
+                  <Button onClick={handleWhatsNewClick} variant="contained" startIcon={<Lightbulb className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    What&apos;s New
+                  </Button>
+                  <Button onClick={handleHelpClick} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke="currentColor" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                    Help & Support
+                  </Button>
+                </Stack>
+              )}
+            </Box>
+          </Box>
+        </Paper>
+      )}
+
+      {/* Collapsed Sidebar (Icon Bar) */}
+      {!sidebarVisible && (
+        <>
+          {/* Mobile sidebar trigger moved to ask bar */}
+          <Paper
+            elevation={3}
+            sx={{
+              display: { xs: 'none', md: 'flex' },
+              position: 'fixed',
+              left: 8,
+              top: 72,
+              bottom: 8,
+              width: 40,
+              zIndex: 30,
+              borderRadius: 1,
+              border: '1px solid #808080',
+              backgroundColor: '#ffffff',
+              color: '#000000',
+              overflow: 'hidden',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Toggle Button */}
+            <Box sx={{ p: 0.5, display: 'flex', justifyContent: 'center' }}>
+              <IconButton onClick={toggleSidebar} size="small" title="Show Sidebar" sx={{ color: '#000000', transform: 'scaleX(-1)' }}>
+                <ChevronFirst width={15} height={15} strokeWidth={2} stroke="#000000" />
+              </IconButton>
+            </Box>
+
+              {/* Icon Menu */}
+            <div className="flex-1 flex flex-col items-center space-y-2 p-1">
+              <button 
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="New Chat"
+              >
+                <MessageCircle className="w-4 h-4" />
+              </button>
+              <button 
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Search"
+              >
+                <Search className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Bottom Icons */}
+            <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <Divider sx={{ borderColor: '#808080', width: '100%' }} />
               {/* New buttons */}
               <button 
                 onClick={handleGDTopicsClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="AI for GD Topics"
               >
                 <MessagesSquare className="w-4 h-4" />
-                <span className="font-medium">AI for GD Topics</span>
               </button>
               <button 
                 onClick={handleEligibilityClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Check Exams Eligibility and Attempts"
               >
                 <CheckCircle className="w-4 h-4" />
-                <span className="font-medium">Check Eligibility</span>
               </button>
               <button 
                 onClick={handleSyllabusClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Exam Syllabus"
               >
-                <Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />
-                <span className="font-medium">Exam Syllabus</span>
+                <Network width={16} height={16} strokeWidth={2} stroke="currentColor" />
               </button>
               <button 
                 onClick={handleQuizClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Attempt Quiz"
               >
                 <PenTool className="w-4 h-4" />
-                <span className="font-medium">Attempt Quiz</span>
               </button>
               
               {/* Existing buttons */}
               <button 
                 onClick={handlePyqPracticeClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="PYQ Practice"
               >
                 <Target className="w-4 h-4" />
-                <span className="font-medium">PYQ Practice</span>
               </button>
               <button 
                 onClick={handleBooksClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Inserted Books"
               >
                 <BookOpen className="w-4 h-4" />
-                <span className="font-medium">Inserted Books</span>
               </button>
               <button 
                 onClick={handlePyqsClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Inserted PYQs"
               >
                 <FileText className="w-4 h-4" />
-                <span className="font-medium">Inserted PYQs</span>
               </button>
               <button 
                 onClick={handleWhatsNewClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="What's New"
               >
                 <Lightbulb className="w-4 h-4" />
-                <span className="font-medium">What's New</span>
               </button>
               <button 
                 onClick={handleHelpClick}
-                className="w-full flex items-center space-x-2 hover:opacity-90 transition-colors px-2 py-1.5 rounded-lg text-sm"
-                style={{ backgroundColor: '#BAFF39', color: '#000000' }}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: '#000000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Help & Support"
               >
-                <CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />
-                <span className="font-medium">Help & Support</span>
+                <CircleHelp width={16} height={16} strokeWidth={2} stroke="currentColor" />
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Collapsed Sidebar (Icon Bar) */}
-      {!sidebarVisible && (
-        <div 
-          className="fixed left-1 top-[4rem] bottom-1 w-10 shadow-lg flex flex-col rounded-lg transition-colors duration-300"
-          style={{
-            ...sidebarStyle,
-            border: '1px solid #808080'
-          }}
-        >
-          {/* Toggle Button */}
-          <div className="p-1 flex justify-center -m-1">
-            <div 
-              onClick={toggleSidebar}
-              className="rounded transition-colors"
-              style={{ backgroundColor: 'transparent', transform: 'scaleX(-1)' }}
-              title="Show Sidebar"
-            >
-              <ChevronFirst 
-                width={15} 
-                height={15} 
-                strokeWidth={2} 
-                stroke='#000000' 
-              />
-            </div>
-          </div>
-
-            {/* Icon Menu */}
-          <div className="flex-1 flex flex-col items-center space-y-2 p-1">
-            <button 
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="New Chat"
-            >
-              <MessageCircle className="w-4 h-4" />
-            </button>
-            <button 
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Search"
-            >
-              <Search className="w-4 h-4" />
-            </button>
-          </div>          {/* Bottom Icons */}
-          <div 
-            className="p-1 space-y-2 flex flex-col items-center transition-colors duration-300" 
-            style={{ 
-              borderTop: '1px solid #808080'
-            }}
-          >
-            {/* New buttons */}
-            <button 
-              onClick={handleGDTopicsClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="AI for GD Topics"
-            >
-              <MessagesSquare className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handleEligibilityClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Check Exams Eligibility and Attempts"
-            >
-              <CheckCircle className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handleSyllabusClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Exam Syllabus"
-            >
-              <Network width={16} height={16} strokeWidth={2} stroke={'#000000'} />
-            </button>
-            <button 
-              onClick={handleQuizClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Attempt Quiz"
-            >
-              <PenTool className="w-4 h-4" />
-            </button>
-            
-            {/* Existing buttons */}
-            <button 
-              onClick={handlePyqPracticeClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="PYQ Practice"
-            >
-              <Target className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handleBooksClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Inserted Books"
-            >
-              <BookOpen className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handlePyqsClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Inserted PYQs"
-            >
-              <FileText className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handleWhatsNewClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="What's New"
-            >
-              <Lightbulb className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handleHelpClick}
-              className="p-1 rounded-lg transition-colors"
-              style={{ color: '#000000' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.15)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Help & Support"
-            >
-              <CircleHelp width={16} height={16} strokeWidth={2} stroke={'#000000'} />
-            </button>
-          </div>
-        </div>
+            </Box>
+          </Paper>
+        </>
       )}
 
       {/* Books Modal */}
@@ -742,7 +808,7 @@ const Sidebar = () => {
           onClick={(e) => { if (e.target === e.currentTarget) setShowBooksModal(false) }}
         >
           <div
-            className="bg-white rounded-lg p-4 max-w-2xl w-full max-h-[80vh] overflow-y-auto m-3"
+            className="bg-white w-full h-full max-w-none max-h-none rounded-none md:rounded-lg md:max-w-2xl md:h-auto md:max-h-[80vh] overflow-y-auto m-0 md:m-3"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-3">
@@ -848,7 +914,7 @@ const Sidebar = () => {
           onClick={(e) => { if (e.target === e.currentTarget) setShowPyqsModal(false) }}
         >
           <div
-            className="bg-white rounded-lg p-4 max-w-3xl w-full max-h-[80vh] overflow-y-auto m-3"
+            className="bg-white w-full h-full max-w-none max-h-none rounded-none md:rounded-lg md:max-w-3xl md:h-auto md:max-h-[80vh] overflow-y-auto m-0 md:m-3"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-3">
@@ -956,26 +1022,28 @@ const Sidebar = () => {
         </div>
       )}
 
-      {/* Help & Support Modal */}
-      <HelpSupportModal 
-        isOpen={showHelpModal}
-        onClose={() => setShowHelpModal(false)}
-      />
-      
-      {/* What's New Modal */}
-      <WhatsNewModal 
-        isOpen={showWhatsNewModal}
-        onClose={() => setShowWhatsNewModal(false)}
-      />
+      <Suspense fallback={null}>
+        {/* Help & Support Modal */}
+        <HelpSupportModal
+          isOpen={showHelpModal}
+          onClose={() => setShowHelpModal(false)}
+        />
+        
+        {/* What's New Modal */}
+        <WhatsNewModal
+          isOpen={showWhatsNewModal}
+          onClose={() => setShowWhatsNewModal(false)}
+        />
+      </Suspense>
 
       {/* Coming Soon Modal */}
       {showComingSoonModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in"
+          className="fixed top-14 left-0 right-0 bottom-0 md:inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in"
           onClick={(e) => { if (e.target === e.currentTarget) setShowComingSoonModal(false) }}
         >
           <div
-            className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center transform transition-all duration-300 ease-out animate-slide-up"
+            className="bg-white w-full h-full max-w-none max-h-none rounded-none md:rounded-lg md:max-w-md md:h-auto md:max-h-[90vh] md:mx-4 p-6 md:p-8 text-center transform transition-all duration-300 ease-out animate-slide-up overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
@@ -1006,7 +1074,7 @@ const Sidebar = () => {
 
             {/* Description */}
             <p className="text-gray-600 mb-6">
-              We're working hard to bring you this amazing feature. Stay tuned for updates!
+              We&apos;re working hard to bring you this amazing feature. Stay tuned for updates!
             </p>
 
             {/* Decorative Elements */}

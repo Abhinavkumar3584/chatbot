@@ -47,29 +47,29 @@ const Clock = ({ isMobile = false }) => {
       <div 
         className="flex items-center space-x-0.5 px-1 py-0.5 rounded-md shadow-sm" 
         style={{ 
-          backgroundColor: 'rgba(186, 255, 57, 0.15)', 
-          border: '1px solid rgba(186, 255, 57, 0.3)' 
+          backgroundColor: 'rgba(58, 124, 165, 0.12)', 
+          border: '1px solid rgba(58, 124, 165, 0.3)' 
         }}
       >
         <div className="flex items-center space-x-0.5">
-          <ClockIcon className="w-2 h-2" style={{ color: '#000000' }} />
+          <ClockIcon className="w-3 h-3" style={{ color: '#000000', opacity: 0.8 }} />
           <span 
-            className="text-[8px] font-semibold whitespace-nowrap font-mono"
-            style={{ color: '#000000' }}
+            className="text-[10px] font-medium whitespace-nowrap font-mono"
+            style={{ color: '#000000', opacity: 0.85 }}
           >
             {formatTime(currentTime)}
           </span>
         </div>
         <span 
-          className="text-[8px]"
-          style={{ color: '#000000', opacity: 0.6 }}
+          className="text-[10px]"
+          style={{ color: '#000000', opacity: 0.5 }}
         >
           /
         </span>
         <div className="flex items-center space-x-0.5">
-          <Calendar className="w-2 h-2" style={{ color: '#000000' }} />
+          <Calendar className="w-3 h-3" style={{ color: '#000000', opacity: 0.8 }} />
           <span 
-            className="text-[8px] whitespace-nowrap"
+            className="text-[10px] whitespace-nowrap"
             style={{ color: '#000000', opacity: 0.8 }}
           >
             {formatDateShort(currentTime)}
@@ -83,8 +83,8 @@ const Clock = ({ isMobile = false }) => {
     <div 
       className="flex items-center space-x-1 px-1.5 py-0.5 rounded-md shadow-sm" 
       style={{ 
-        backgroundColor: 'rgba(186, 255, 57, 0.15)', 
-        border: '1px solid rgba(186, 255, 57, 0.3)' 
+        backgroundColor: 'rgba(58, 124, 165, 0.12)', 
+        border: '1px solid rgba(58, 124, 165, 0.3)' 
       }}
     >
       <div className="flex items-center space-x-0.5">

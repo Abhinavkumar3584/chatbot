@@ -1,16 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { ChevronDown, Search } from 'lucide-react'
-import { useTheme } from '../contexts/ThemeContext'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { ChevronDown, Search, Menu, FileText, Send } from 'lucide-react'
 import apiService from '../services/api'
+import { useLayout } from '../contexts/LayoutContext'
+import PropTypes from 'prop-types'
 
 const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
-  const { theme } = useTheme()
+  const { isMobile, toggleSidebar, togglePyq } = useLayout()
   const [availableSubjects, setAvailableSubjects] = useState([])
   const [selectedSubject, setSelectedSubject] = useState('All Subjects')
   const [showDropdown, setShowDropdown] = useState(false)
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(true)
   const [inputValue, setInputValue] = useState('')
   const dropdownRef = useRef(null)
+  const textareaRef = useRef(null)
 
   // Load available subjects from Pinecone
   const loadAvailableSubjects = async () => {
@@ -81,6 +83,7 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
     
     onSendMessage(query, subjectId)
     setInputValue('')
+    requestAnimationFrame(adjustTextareaHeight)
   }
 
   const handleKeyPress = (e) => {
@@ -90,19 +93,41 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
     }
   }
 
+  const adjustTextareaHeight = useCallback(() => {
+    if (!textareaRef.current) return
+    const el = textareaRef.current
+    el.style.height = 'auto'
+    const viewportLimit = window.innerHeight * 0.3
+    const maxHeight = isMobile ? viewportLimit : Math.min(viewportLimit, 180)
+    el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`
+    el.style.overflowY = el.scrollHeight > maxHeight ? 'auto' : 'hidden'
+  }, [isMobile])
+
+  useEffect(() => {
+    adjustTextareaHeight()
+  }, [inputValue, adjustTextareaHeight])
+
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <form onSubmit={handleSubmit} className="rounded-2xl shadow-sm p-1.5" style={{ backgroundColor: '#000000', border: '1px solid #BAFF39' }}>
-        <div className="flex items-center space-x-1.5">
-          {/* Subject Dropdown - Compact for mobile */}
-          <div className="relative flex-shrink-0" ref={dropdownRef}>
+    <div className="w-full max-w-none mx-auto px-2">
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-2xl shadow-sm p-1.5"
+        style={{
+          backgroundColor: '#FFFFFF',
+          border: isMobile ? 'none' : '1px solid #E3E7ED'
+        }}
+      >
+        {!isMobile ? (
+          <div className="flex items-center space-x-1.5">
+            {/* Subject Dropdown */}
+            <div className="relative flex-shrink-0" ref={dropdownRef}>
             <button 
               type="button"
               onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center justify-between space-x-1 px-2 py-1.5 rounded-md text-xs hover:opacity-90 transition-opacity min-w-[80px] max-w-[120px]"
+              className="flex items-center justify-between space-x-1 px-2 py-1.5 rounded-md text-xs hover:opacity-90 transition-opacity min-w-[64px] max-w-[120px]"
               style={{ 
-                backgroundColor: '#BAFF39', 
-                color: '#000000' 
+                backgroundColor: '#3A7CA5', 
+                color: '#FFFFFF' 
               }}
               disabled={isLoadingSubjects}
             >
@@ -119,7 +144,7 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
 
             {/* Dropdown Menu */}
             {showDropdown && !isLoadingSubjects && (
-              <div className="absolute bottom-full left-0 mb-1 w-40 rounded-md shadow-lg z-[60]" style={{ backgroundColor: '#000000', border: '1px solid #BAFF39' }}>
+              <div className="absolute bottom-full left-0 mb-1 w-40 rounded-md shadow-lg z-[60]" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E3E7ED' }}>
                 <div className="py-1">
                   {availableSubjects.map((subject, index) => (
                     <button
@@ -128,13 +153,13 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
                       onClick={() => handleSubjectSelect(subject)}
                       className="w-full text-left px-2 py-1.5 text-xs transition-colors"
                       style={{
-                        backgroundColor: selectedSubject === subject ? 'rgba(186, 255, 57, 0.2)' : 'transparent',
-                        color: selectedSubject === subject ? '#BAFF39' : '#BAFF39',
-                        fontWeight: selectedSubject === subject ? '500' : '400'
+                        backgroundColor: selectedSubject === subject ? 'rgba(58, 124, 165, 0.12)' : 'transparent',
+                        color: '#1F2933',
+                        fontWeight: selectedSubject === subject ? '600' : '400'
                       }}
                       onMouseEnter={(e) => {
                         if (selectedSubject !== subject) {
-                          e.currentTarget.style.backgroundColor = 'rgba(186, 255, 57, 0.1)'
+                          e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.08)'
                         }
                       }}
                       onMouseLeave={(e) => {
@@ -146,7 +171,7 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
                       <div className="flex items-center justify-between">
                         <span>{subject}</span>
                         {subject !== 'All Subjects' && (
-                          <span className="text-xs font-medium" style={{ color: '#00ff00' }}>✓</span>
+                          <span className="text-xs font-medium" style={{ color: '#3A7CA5' }}>✓</span>
                         )}
                       </div>
                     </button>
@@ -154,8 +179,8 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
                 </div>
                 
                 {/* Footer info */}
-                <div className="px-2 py-1" style={{ borderTop: '1px solid rgba(186, 255, 57, 0.3)' }}>
-                  <div className="text-xs" style={{ color: '#BAFF39', opacity: 0.7 }}>
+                <div className="px-2 py-1" style={{ borderTop: '1px solid #E3E7ED' }}>
+                  <div className="text-xs" style={{ color: '#52616B' }}>
                     {availableSubjects.length - 1} indexed subjects
                   </div>
                 </div>
@@ -163,61 +188,181 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
             )}
           </div>
 
-          {/* Search Input - Takes remaining space */}
-          <div className="flex-1 relative">
-            <style>
-              {`
-                .dark-search-input::placeholder {
-                  color: rgba(186, 255, 57, 0.5);
-                  opacity: 1;
-                }
-                .dark-search-input:focus {
-                  ring-color: #BAFF39;
-                }
-              `}
-            </style>
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="Ask a Question to get answers and Related PYQ..."
-              className="dark-search-input w-full px-2 py-1.5 text-xs rounded-md focus:outline-none focus:ring-1 focus:border-transparent"
-              style={{
-                backgroundColor: '#6E6E6E',
-                border: '1px solid #BAFF39',
-                color: '#BAFF39',
-                caretColor: '#BAFF39'
-              }}
-              disabled={isLoading}
-              autoComplete="off"
-            />
-          </div>
+            {/* Search Input - Takes remaining space */}
+            <div className="flex-1 relative">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={inputValue}
+                onChange={(e) => {
+                  setInputValue(e.target.value)
+                  requestAnimationFrame(adjustTextareaHeight)
+                }}
+                onKeyDown={handleKeyPress}
+                placeholder="Ask a question..."
+                className="w-full px-2 py-1.5 text-xs rounded-md focus:outline-none focus:ring-1 focus:border-transparent resize-none"
+                style={{
+                  backgroundColor: '#FAFBFC',
+                  border: '1px solid #E3E7ED',
+                  color: '#1F2933',
+                  caretColor: '#3A7CA5',
+                  minHeight: 32,
+                  maxHeight: '180px',
+                  transition: 'height 0.12s ease-out'
+                }}
+                disabled={isLoading}
+                autoComplete="off"
+              />
+            </div>
 
-          {/* Search Button - Compact */}
-          <button 
-            type="submit"
-            disabled={isLoading || !inputValue.trim()}
-            className="flex-shrink-0 p-1.5 rounded-md transition-colors disabled:opacity-50"
-            style={{ 
-              backgroundColor: '#BAFF39',
-              color: '#000000'
-            }}
-            onMouseOver={(e) => {
-              if (!isLoading && inputValue.trim()) {
-                e.target.style.backgroundColor = '#FF921C'
-              }
-            }}
-            onMouseOut={(e) => {
-              e.target.style.backgroundColor = '#BAFF39'
-            }}
-          >
-            <Search className="w-3 h-3" />
-          </button>
-        </div>
+            {/* Search Button - Compact (Desktop/Tablet) */}
+            <button 
+              type="submit"
+              disabled={isLoading || !inputValue.trim()}
+              className="flex-shrink-0 p-1.5 rounded-md transition-colors disabled:opacity-50"
+              style={{ 
+                backgroundColor: '#3A7CA5',
+                color: '#FFFFFF'
+              }}
+            >
+              <Search className="w-3 h-3" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {/* Top row: input */}
+            <div className="w-full">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={inputValue}
+                onChange={(e) => {
+                  setInputValue(e.target.value)
+                  requestAnimationFrame(adjustTextareaHeight)
+                }}
+                onKeyDown={handleKeyPress}
+                placeholder="Ask a question..."
+                className="w-full px-2 py-2 text-sm rounded-md focus:outline-none focus:ring-1 focus:border-transparent resize-none placeholder:text-gray-400"
+                style={{
+                  backgroundColor: '#FAFBFC',
+                  border: 'none',
+                  color: '#1F2933',
+                  caretColor: '#3A7CA5',
+                  minHeight: 40,
+                  maxHeight: '30vh',
+                  transition: 'height 0.12s ease-out'
+                }}
+                disabled={isLoading}
+                autoComplete="off"
+              />
+            </div>
+
+            {/* Bottom row: actions */}
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                className="flex-shrink-0 p-2 rounded-md transition-colors"
+                style={{ backgroundColor: '#F6F7F9', border: '1px solid #E3E7ED', color: '#1F2933' }}
+                aria-label="Open sidebar"
+              >
+                <Menu className="w-4 h-4" />
+              </button>
+
+              <div className="relative flex-1" ref={dropdownRef}>
+                <button 
+                  type="button"
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="flex w-full items-center justify-between space-x-1 px-2 py-1.5 rounded-md text-xs hover:opacity-90 transition-opacity"
+                  style={{ 
+                    backgroundColor: '#3A7CA5', 
+                    color: '#FFFFFF' 
+                  }}
+                  disabled={isLoadingSubjects}
+                >
+                  <span className="whitespace-nowrap truncate text-xs">
+                    {isLoadingSubjects ? 'Loading...' :
+                     selectedSubject === 'All Subjects' ? 'All' :
+                     selectedSubject.length > 10 ? selectedSubject.substring(0, 10) + '...' :
+                     selectedSubject}
+                  </span>
+                  <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform duration-200 ${
+                    showDropdown ? 'rotate-180' : ''
+                  }`} />
+                </button>
+                {showDropdown && !isLoadingSubjects && (
+                  <div className="absolute bottom-full left-0 mb-1 w-40 rounded-md shadow-lg z-[60]" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E3E7ED' }}>
+                    <div className="py-1">
+                      {availableSubjects.map((subject, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleSubjectSelect(subject)}
+                          className="w-full text-left px-2 py-1.5 text-xs transition-colors"
+                          style={{
+                            backgroundColor: selectedSubject === subject ? 'rgba(58, 124, 165, 0.12)' : 'transparent',
+                            color: '#1F2933',
+                            fontWeight: selectedSubject === subject ? '600' : '400'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (selectedSubject !== subject) {
+                              e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.08)'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (selectedSubject !== subject) {
+                              e.currentTarget.style.backgroundColor = 'transparent'
+                            }
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span>{subject}</span>
+                            {subject !== 'All Subjects' && (
+                              <span className="text-xs font-medium" style={{ color: '#3A7CA5' }}>✓</span>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="px-2 py-1" style={{ borderTop: '1px solid #E3E7ED' }}>
+                      <div className="text-xs" style={{ color: '#52616B' }}>
+                        {availableSubjects.length - 1} indexed subjects
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={togglePyq}
+                className="flex-shrink-0 p-2 rounded-md transition-colors"
+                style={{ backgroundColor: '#F6F7F9', border: '1px solid #E3E7ED', color: '#1F2933' }}
+                aria-label="Open PYQ"
+              >
+                <FileText className="w-4 h-4" />
+              </button>
+
+              <button
+                type="submit"
+                disabled={isLoading || !inputValue.trim()}
+                className="flex-shrink-0 p-2 rounded-md transition-colors disabled:opacity-50"
+                style={{ backgroundColor: '#3A7CA5', color: '#FFFFFF' }}
+                aria-label="Send"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </form>
     </div>
   )
 }
 
 export default EmbeddedSearchBar
+
+EmbeddedSearchBar.propTypes = {
+  onSendMessage: PropTypes.func.isRequired,
+  isLoading: PropTypes.bool.isRequired
+}

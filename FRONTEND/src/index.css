@@ -3,17 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #BAFF39;
-  --color-secondary: #FF921C;
-  --color-dark: #6E6E6E;
-  --color-light: #FFFFFF;
-  --text-color: #000000;
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f5f5;
-  --text-primary: #000000;
-  --text-secondary: #000000;
-  --border-color: #d0d0d0;
-  --hover-bg: rgba(186, 255, 57, 0.15);
+  --color-primary: #3A7CA5;
+  --color-secondary: #6B7C93;
+  --color-dark: #52616B;
+  --color-light: #FAFBFC;
+  --text-color: #1F2933;
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F6F7F9;
+  --text-primary: #1F2933;
+  --text-secondary: #52616B;
+  --border-color: #E3E7ED;
+  --hover-bg: rgba(58, 124, 165, 0.12);
 }
 
 * {
@@ -28,6 +28,25 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@media (max-width: 767px) {
+  body {
+    font-size: 15px;
+  }
+
+  .dashboard-page .border,
+  .dashboard-page .border-b,
+  .dashboard-page .border-t,
+  .dashboard-page .border-l,
+  .dashboard-page .border-r,
+  .pyq-practice-page .border,
+  .pyq-practice-page .border-b,
+  .pyq-practice-page .border-t,
+  .pyq-practice-page .border-l,
+  .pyq-practice-page .border-r {
+    border-width: 0 !important;
+  }
 }
 
 /* Custom slider styles */
@@ -84,7 +103,9 @@ canvas {
   image-rendering: crisp-edges;
 }
 
-/* Scrollbar styles for modal */
+/* Legacy/unused (kept for safety) */
+/*
+Scrollbar styles for color picker modal
 .color-picker-modal {
   scrollbar-width: thin;
   scrollbar-color: var(--color-primary) #f1f1f1;
@@ -108,15 +129,16 @@ canvas {
   background: var(--color-dark);
 }
 
-/* Hide scrollbars but keep them functional */
+Hide scrollbars but keep them functional
 .hide-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;  
+  scrollbar-width: none;  
 }
 
 .hide-scrollbar::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
+  display: none;  
 }
+*/
 
 /* Apply to main scrollable areas */
 .chat-messages-container {
@@ -193,7 +215,7 @@ canvas {
   animation: slide-up 0.3s ease-out forwards;
 }
 
-/* Smooth transitions for modal interactions */
+/* Legacy/unused modal transitions (kept for safety)
 .modal-backdrop {
   transition: opacity 0.3s ease-out;
 }
@@ -201,6 +223,7 @@ canvas {
 .modal-content {
   transition: transform 0.3s ease-out, opacity 0.3s ease-out;
 }
+*/
 
 /* MG Logo slow shaking animation */
 @keyframes slow-shake {
@@ -242,4 +265,11 @@ canvas {
 .features-scroll-content {
   white-space: nowrap;
   width: fit-content;
+}
+
+/* DEV: force toolbar children to center vertically (remove in prod if necessary) */
+.MuiToolbar-root {
+  align-items: center !important;
+  min-height: 56px !important;
+  height: 56px !important;
 }

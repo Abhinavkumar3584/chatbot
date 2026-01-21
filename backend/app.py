@@ -14,6 +14,7 @@ from groq import Groq
 from pinecone import Pinecone, ServerlessSpec
 from sentence_transformers import SentenceTransformer
 import threading
+from concurrent.futures import ThreadPoolExecutor
 import uuid
 from functools import wraps
 import traceback
@@ -62,6 +63,35 @@ else:
 search_components = {}
 system_initialized = False
 rate_limit_storage = {}
+
+# Simple in-memory cache for expensive read-only operations
+_cache_store = {}
+_cache_lock = threading.Lock()
+
+def _get_cached_value(key):
+    now = time.time()
+    with _cache_lock:
+        entry = _cache_store.get(key)
+        if not entry:
+            return None
+        value, expires_at = entry
+        if expires_at and now > expires_at:
+            _cache_store.pop(key, None)
+            return None
+        return value
+
+def _set_cached_value(key, value, ttl_seconds=None):
+    expires_at = time.time() + ttl_seconds if ttl_seconds else None
+    with _cache_lock:
+        _cache_store[key] = (value, expires_at)
+
+def _get_index_stats_cached(index, cache_key, ttl_seconds=60):
+    cached = _get_cached_value(cache_key)
+    if cached is not None:
+        return cached
+    stats = index.describe_index_stats()
+    _set_cached_value(cache_key, stats, ttl_seconds)
+    return stats
 
 def rate_limit(max_requests=10, window_seconds=60):
     """Simple rate limiting decorator"""
@@ -186,6 +216,18 @@ def initialize_search_system():
                 search_components['rag_model'] = rag_model
                 search_components['mcq_index'] = mcq_index
                 search_components['mcq_model'] = mcq_model
+
+                # Precompute common embeddings to avoid repeated model.encode calls
+                try:
+                    search_components['mcq_sample_embedding'] = mcq_model.encode("sample question").tolist()
+                    search_components['mcq_filter_embedding'] = mcq_model.encode("filter query").tolist()
+                    search_components['mcq_generic_embedding'] = mcq_model.encode("general knowledge question").tolist()
+                    search_components['mcq_minimal_embedding'] = mcq_model.encode("sample").tolist()
+                except Exception as e:
+                    if is_production:
+                        app.logger.warning(f"⚠️  Failed to precompute MCQ embeddings: {str(e)}")
+                    else:
+                        print(f"⚠️  Failed to precompute MCQ embeddings: {str(e)}")
                 
                 if is_production:
                     app.logger.info("✅ Pinecone components initialized")
@@ -232,9 +274,10 @@ def initialize_search_system():
         return False
 
 # Search functions (adapted from search_query.py)
-def semantic_search(index, model, query: str, n_results: int = 2, namespace: str = ""):
+def semantic_search(index, model, query: str, n_results: int = 2, namespace: str = "", query_embedding=None):
     """Perform semantic search on Pinecone index"""
-    query_embedding = model.encode([query]).tolist()[0]
+    if query_embedding is None:
+        query_embedding = model.encode([query]).tolist()[0]
     
     if namespace:
         results = index.query(
@@ -334,6 +377,29 @@ def get_prompt(context: str, query: str):
     
     return prompt
 
+def build_fallback_response(context: str, sources: list, query: str) -> str:
+    """Build a simple fallback response when LLM is unavailable"""
+    if sources:
+        bullets = []
+        for i, source in enumerate(sources, 1):
+            preview = source.get('text_preview') or source.get('full_text') or ''
+            if preview:
+                bullets.append(f"{i}. {preview}")
+        if bullets:
+            return (
+                "I couldn't reach the AI model, but here are the most relevant excerpts from the documents:\n\n"
+                + "\n".join(bullets)
+            )
+    if context and context.strip():
+        return (
+            "I couldn't reach the AI model, but here's the relevant context I found:\n\n"
+            f"{context.strip()}"
+        )
+    return (
+        "I couldn't reach the AI model and no relevant context was found for your question. "
+        "Please try again later."
+    )
+
 @app.route("/api/health", methods=["GET"])
 def health_check():
     """Enhanced health check endpoint"""
@@ -351,14 +417,14 @@ def health_check():
         try:
             # Check Pinecone connection
             if 'rag_index' in search_components:
-                rag_stats = search_components['rag_index'].describe_index_stats()
+                rag_stats = _get_index_stats_cached(search_components['rag_index'], 'rag_index_stats', ttl_seconds=60)
                 components['rag_index'] = {
                     "status": "healthy",
                     "total_vectors": rag_stats.total_vector_count
                 }
             
             if 'mcq_index' in search_components:
-                mcq_stats = search_components['mcq_index'].describe_index_stats()
+                mcq_stats = _get_index_stats_cached(search_components['mcq_index'], 'mcq_index_stats', ttl_seconds=60)
                 components['mcq_index'] = {
                     "status": "healthy", 
                     "total_vectors": mcq_stats.total_vector_count
@@ -371,6 +437,9 @@ def health_check():
                 components['mcq_model'] = {"status": "healthy"}
             if 'client' in search_components:
                 components['groq_client'] = {"status": "healthy"}
+            else:
+                components['groq_client'] = {"status": "unavailable"}
+                health_status["status"] = "degraded"
                 
         except Exception as e:
             health_status["status"] = "degraded"
@@ -396,12 +465,6 @@ def search():
         }), 500
     
     # Check if essential components are available
-    if 'client' not in search_components:
-        return jsonify({
-            "error": "AI service not available",
-            "message": "GROQ_API_KEY is not configured. Please set your API key in the .env file."
-        }), 500
-    
     if 'rag_index' not in search_components:
         return jsonify({
             "error": "Search index not available",
@@ -433,14 +496,18 @@ def search():
         start_time = time.time()
         timeout_seconds = 30  # 30 second timeout
         
+        # Precompute embedding once for RAG searches
+        rag_query_embedding = search_components['rag_model'].encode([query]).tolist()[0]
+
         # RAG search for contextual answer
         if namespace and namespace != "all":
             rag_results = semantic_search(
-                search_components['rag_index'], 
-                search_components['rag_model'], 
-                query, 
-                n_results, 
-                namespace
+                search_components['rag_index'],
+                search_components['rag_model'],
+                query,
+                n_results,
+                namespace,
+                query_embedding=rag_query_embedding
             )
             context, sources = get_context_with_sources(rag_results)
         else:
@@ -449,7 +516,8 @@ def search():
                 search_components['rag_index'],
                 search_components['rag_model'],
                 query,
-                n_results
+                n_results,
+                query_embedding=rag_query_embedding
             )
         
         # Check timeout
@@ -468,11 +536,12 @@ def search():
             print("DEBUG: Context appears limited, trying broader search...")
             try:
                 broader_results = semantic_search(
-                    search_components['rag_index'], 
-                    search_components['rag_model'], 
-                    query, 
+                    search_components['rag_index'],
+                    search_components['rag_model'],
+                    query,
                     n_results + 3,  # Get more results
-                    ""  # Search all namespaces
+                    "",  # Search all namespaces
+                    query_embedding=rag_query_embedding
                 )
                 broader_context, broader_sources = get_context_with_sources(broader_results)
                 if len(broader_context) > len(context):
@@ -483,24 +552,35 @@ def search():
                 print(f"DEBUG: Broader search failed: {e}")
         
         # Generate RAG response using Groq with optimized parameters
-        prompt = get_prompt(context, query)
-        chat_completion = search_components['client'].chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an expert educational assistant for NCERT content and competitive exam preparation. Provide detailed, accurate, and well-structured responses to help students learn effectively."
-                },
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            model="llama-3.1-8b-instant",  # Reliable and fast Groq model
-            max_tokens=1500,  # Increased for more detailed responses
-            temperature=0.3,  # Lower temperature for more focused, accurate responses
-            top_p=0.9,       # Better coherence
-        )
-        rag_response = chat_completion.choices[0].message.content
+        rag_response = None
+        warning = None
+        if 'client' in search_components:
+            try:
+                prompt = get_prompt(context, query)
+                chat_completion = search_components['client'].chat.completions.create(
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are an expert educational assistant for NCERT content and competitive exam preparation. Provide detailed, accurate, and well-structured responses to help students learn effectively."
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt,
+                        }
+                    ],
+                    model="llama-3.1-8b-instant",  # Reliable and fast Groq model
+                    max_tokens=1500,  # Increased for more detailed responses
+                    temperature=0.3,  # Lower temperature for more focused, accurate responses
+                    top_p=0.9,       # Better coherence
+                )
+                rag_response = chat_completion.choices[0].message.content
+            except Exception as e:
+                warning = f"LLM unavailable: {str(e)}"
+                print(f"⚠️ Groq call failed, using fallback response: {e}")
+                rag_response = build_fallback_response(context, sources, query)
+        else:
+            warning = "LLM client not configured (missing GROQ_API_KEY)"
+            rag_response = build_fallback_response(context, sources, query)
         
         # MCQ search for related questions
         mcq_results = query_mcq(
@@ -511,14 +591,18 @@ def search():
             mcq_limit
         )
         
-        return jsonify({
+        response_payload = {
             "rag_response": rag_response,
             "sources": sources,
             "mcq_results": mcq_results,
             "query": query,
             "namespace_used": namespace if namespace else "all",
             "timestamp": time.time()
-        }), 200
+        }
+        if warning:
+            response_payload["warning"] = warning
+
+        return jsonify(response_payload), 200
         
     except Exception as e:
         print(f"Error in search: {str(e)}")
@@ -539,7 +623,7 @@ def get_total_questions():
             return jsonify({"error": "MCQ index not available"}), 500
         
         # Get index stats to find total vector count
-        stats = mcq_index.describe_index_stats()
+        stats = _get_index_stats_cached(mcq_index, 'mcq_index_stats', ttl_seconds=60)
         total_questions = stats.get('total_vector_count', 0)
         
         return jsonify({
@@ -572,11 +656,11 @@ def get_stats():
         total_books = 0
         
         if mcq_index:
-            mcq_stats = mcq_index.describe_index_stats()
+            mcq_stats = _get_index_stats_cached(mcq_index, 'mcq_index_stats', ttl_seconds=60)
             total_questions = mcq_stats.get('total_vector_count', 0)
         
         if rag_index:
-            rag_stats = rag_index.describe_index_stats()
+            rag_stats = _get_index_stats_cached(rag_index, 'rag_index_stats', ttl_seconds=60)
             # RAG index contains document chunks, approximate books by dividing by average chunks per book
             total_chunks = rag_stats.get('total_vector_count', 0)
             # Estimate books based on namespaces (5 main subjects)
@@ -622,12 +706,14 @@ def get_questions():
             return jsonify({"error": "MCQ index not available"}), 500
         
         # Get all available namespaces dynamically from index stats
-        stats = mcq_index.describe_index_stats()
+        stats = _get_index_stats_cached(mcq_index, 'mcq_index_stats', ttl_seconds=60)
         pyq_namespaces = list(stats.namespaces.keys()) if stats.namespaces else ["CIVIL SERVICES EXAMS", "BANKING EXAMS", "SCHOOL EXAMS"]
         all_questions = []
         
         # Query for questions - using dummy query to get random questions
-        dummy_query = search_components['mcq_model'].encode(["sample question"]).tolist()[0]
+        dummy_query = search_components.get('mcq_sample_embedding')
+        if dummy_query is None:
+            dummy_query = search_components['mcq_model'].encode(["sample question"]).tolist()[0]
         
         for namespace in pyq_namespaces:
             try:
@@ -768,13 +854,15 @@ def get_filter_options():
             return jsonify({"error": "MCQ index not available"}), 500
         
         # Get all available namespaces dynamically from index stats
-        stats = mcq_index.describe_index_stats()
+        stats = _get_index_stats_cached(mcq_index, 'mcq_index_stats', ttl_seconds=60)
         pyq_namespaces = list(stats.namespaces.keys()) if stats.namespaces else ["CIVIL SERVICES EXAMS", "BANKING EXAMS", "SCHOOL EXAMS"]
         unique_exams = set()
         unique_subjects = set()
         
         # Query for questions from each namespace to extract metadata
-        dummy_query = search_components['mcq_model'].encode(["filter query"]).tolist()[0]
+        dummy_query = search_components.get('mcq_filter_embedding')
+        if dummy_query is None:
+            dummy_query = search_components['mcq_model'].encode(["filter query"]).tolist()[0]
         
         for namespace in pyq_namespaces:
             try:
@@ -847,7 +935,7 @@ def get_books():
             return jsonify({"error": "RAG index not available"}), 500
         
         # Get index statistics to see what namespaces exist
-        stats = rag_index.describe_index_stats()
+        stats = _get_index_stats_cached(rag_index, 'rag_index_stats', ttl_seconds=120)
         namespaces = stats.namespaces if stats.namespaces else {}
         
         books_list = []
@@ -961,7 +1049,7 @@ def get_inserted_pyqs():
             return jsonify({"error": "MCQ index not available"}), 500
         
         # Get index statistics to see what namespaces exist
-        stats = mcq_index.describe_index_stats()
+        stats = _get_index_stats_cached(mcq_index, 'mcq_index_stats', ttl_seconds=60)
         namespaces = stats.namespaces if stats.namespaces else {}
         
         pyq_list = []
@@ -973,7 +1061,9 @@ def get_inserted_pyqs():
             if vector_count > 0:
                 # Query the namespace to get detailed exam information
                 try:
-                    dummy_query = search_components['mcq_model'].encode(["sample"]).tolist()[0]
+                    dummy_query = search_components.get('mcq_minimal_embedding')
+                    if dummy_query is None:
+                        dummy_query = search_components['mcq_model'].encode(["sample"]).tolist()[0]
                     results = mcq_index.query(
                         vector=dummy_query,
                         top_k=min(vector_count, 1000),  # Get all or up to 1000 questions
@@ -1085,27 +1175,41 @@ def get_inserted_pyqs():
             "total": 0
         }), 500
 
-def search_all_namespaces(pinecone_index, model, query: str, n_chunks: int = 2):
+def search_all_namespaces(pinecone_index, model, query: str, n_chunks: int = 2, query_embedding=None):
     """Search across all namespaces and return best results"""
     namespaces = ["geography", "polity", "history", "economics", "science"]
     all_results = []
-    
-    for namespace in namespaces:
-        try:
-            results = semantic_search(pinecone_index, model, query, n_chunks, namespace)
-            if results['matches']:
-                for match in results['matches']:
-                    match['namespace'] = namespace
-                all_results.extend(results['matches'])
-        except Exception as e:
-            print(f"⚠️ Error searching namespace {namespace}: {str(e)}")
-    
+
+    if query_embedding is None:
+        query_embedding = model.encode([query]).tolist()[0]
+
+    def _query_namespace(namespace):
+        results = pinecone_index.query(
+            vector=query_embedding,
+            top_k=n_chunks,
+            include_metadata=True,
+            namespace=namespace
+        )
+        return namespace, results
+
+    with ThreadPoolExecutor(max_workers=min(5, len(namespaces))) as executor:
+        futures = [executor.submit(_query_namespace, namespace) for namespace in namespaces]
+        for future in futures:
+            try:
+                namespace, results = future.result()
+                if results['matches']:
+                    for match in results['matches']:
+                        match['namespace'] = namespace
+                    all_results.extend(results['matches'])
+            except Exception as e:
+                print(f"⚠️ Error searching namespace: {str(e)}")
+
     # Sort by relevance score and take top results
     all_results.sort(key=lambda x: x['score'], reverse=True)
     top_results = all_results[:n_chunks]
     formatted_results = {'matches': top_results}
     context, sources = get_context_with_sources(formatted_results)
-    
+
     return context, sources
 
 def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=5):
@@ -1114,26 +1218,30 @@ def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=
         query_embedding = mcq_model.encode(query_text).tolist()
         
         # Get all available namespaces dynamically from index stats
-        stats = mcq_index.describe_index_stats()
+        stats = _get_index_stats_cached(mcq_index, 'mcq_index_stats', ttl_seconds=60)
         pyq_namespaces = list(stats.namespaces.keys()) if stats.namespaces else ["CIVIL SERVICES EXAMS", "BANKING EXAMS", "SCHOOL EXAMS"]
         all_results = []
-        
-        for namespace in pyq_namespaces:
-            try:
-                response = mcq_index.query(
-                    vector=query_embedding, 
-                    top_k=20,  # Get more results per namespace to ensure variety
-                    include_metadata=True,
-                    namespace=namespace
-                )
-                
-                # Add namespace info to results
-                for match in response['matches']:
-                    match['namespace'] = namespace
-                    all_results.append(match)
-            except Exception as e:
-                print(f"⚠️ Error searching namespace {namespace}: {str(e)}")
-                continue
+
+        def _query_namespace(namespace):
+            response = mcq_index.query(
+                vector=query_embedding,
+                top_k=20,  # Get more results per namespace to ensure variety
+                include_metadata=True,
+                namespace=namespace
+            )
+            return namespace, response
+
+        with ThreadPoolExecutor(max_workers=min(6, len(pyq_namespaces))) as executor:
+            futures = [executor.submit(_query_namespace, namespace) for namespace in pyq_namespaces]
+            for future in futures:
+                try:
+                    namespace, response = future.result()
+                    for match in response['matches']:
+                        match['namespace'] = namespace
+                        all_results.append(match)
+                except Exception as e:
+                    print(f"⚠️ Error searching namespace: {str(e)}")
+                    continue
         
         # Sort all results by score
         all_results.sort(key=lambda x: x['score'], reverse=True)
@@ -1559,7 +1667,7 @@ def search_pyq_questions():
             return jsonify({"error": "MCQ system not available"}), 500
         
         # Get all available namespaces
-        stats = mcq_index.describe_index_stats()
+        stats = _get_index_stats_cached(mcq_index, 'mcq_index_stats', ttl_seconds=60)
         namespaces = list(stats.namespaces.keys()) if stats.namespaces else []
         
         all_questions = []
@@ -1572,15 +1680,17 @@ def search_pyq_questions():
             if not target_namespaces:
                 target_namespaces = namespaces  # fallback to all if no match
         
+        # Precompute embedding once for all namespaces
+        if query:
+            query_embedding = mcq_model.encode(query).tolist()
+        else:
+            query_embedding = search_components.get('mcq_generic_embedding')
+            if query_embedding is None:
+                query_embedding = mcq_model.encode("general knowledge question").tolist()
+
         # Query each namespace (limited for performance)
         for namespace in target_namespaces[:5]:  # Limit to first 5 namespaces for speed
             try:
-                # Use query text if provided, otherwise use dummy query
-                if query:
-                    query_embedding = mcq_model.encode(query).tolist()
-                else:
-                    query_embedding = mcq_model.encode("general knowledge question").tolist()
-                
                 results = mcq_index.query(
                     vector=query_embedding,
                     top_k=min(limit + 10, 100),  # Reduced from 500 to 100 for faster queries
@@ -1703,7 +1813,7 @@ def get_pyq_filters():
             return jsonify({"error": "MCQ system not available"}), 500
         
         # Get all namespaces
-        stats = mcq_index.describe_index_stats()
+        stats = _get_index_stats_cached(mcq_index, 'mcq_index_stats', ttl_seconds=60)
         namespaces = list(stats.namespaces.keys()) if stats.namespaces else []
         
         exams_set = set()
@@ -1711,7 +1821,9 @@ def get_pyq_filters():
         years_set = set()
         
         # Sample questions from each namespace to get filters
-        dummy_query = mcq_model.encode("sample").tolist()
+        dummy_query = search_components.get('mcq_minimal_embedding')
+        if dummy_query is None:
+            dummy_query = mcq_model.encode("sample").tolist()
         
         for namespace in namespaces:
             try:
