@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback, Fragment } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect, Fragment } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { User, ChevronUp, MessageCircle, FileText, Hash } from 'lucide-react'
@@ -22,6 +22,8 @@ const ChatSection = () => {
   const { trackInteraction } = useDashboard()
   const scrollContainerRef = useRef(null)
   const scrollStateRef = useRef({ scrollTop: 0, scrollHeight: 0, isAtTop: true })
+  const userMessageRefs = useRef(new Map())
+  const pendingScrollToIdRef = useRef(null)
   const [messages, setMessages] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [systemStatus, setSystemStatus] = useState({ initialized: false, healthy: false })
@@ -276,6 +278,8 @@ const ChatSection = () => {
       timestamp: new Date()
     }
 
+    pendingScrollToIdRef.current = userMessage.id
+
     // Always use the currentChatId (created in Sidebar)
     const activeChatId = currentChatId
 
@@ -432,20 +436,24 @@ const ChatSection = () => {
     scrollStateRef.current.isAtTop = container.scrollTop <= 8
   }, [])
 
-  // Preserve scroll position on new messages (no auto-scroll)
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const targetId = pendingScrollToIdRef.current
+    if (!targetId) return
+
     const container = scrollContainerRef.current
-    if (!container) return
+    const targetNode = userMessageRefs.current.get(targetId)
+    if (!container || !targetNode) return
 
-    const prevHeight = scrollStateRef.current.scrollHeight
-    const nextHeight = container.scrollHeight
-    const delta = nextHeight - prevHeight
+    const computed = window.getComputedStyle(container)
+    const paddingTop = Number.parseFloat(computed.paddingTop || '0') || 0
+    const nextTop = Math.max(0, targetNode.offsetTop - paddingTop)
 
-    if (!scrollStateRef.current.isAtTop && delta > 0) {
-      container.scrollTop = container.scrollTop + delta
-    }
+    container.scrollTop = nextTop
+    scrollStateRef.current.scrollTop = container.scrollTop
+    scrollStateRef.current.scrollHeight = container.scrollHeight
+    scrollStateRef.current.isAtTop = container.scrollTop <= 8
 
-    scrollStateRef.current.scrollHeight = nextHeight
+    pendingScrollToIdRef.current = null
   }, [messages.length])
 
   const messagePairs = useMemo(() => {
@@ -473,7 +481,7 @@ const ChatSection = () => {
     })
 
     if (currentPair) pairs.push(currentPair)
-    return pairs.reverse()
+    return pairs
   }, [messages])
 
   const getMarkdownComponents = useCallback((isUserMessage) => ({
@@ -564,8 +572,20 @@ const ChatSection = () => {
     )
   }), [])
 
+  const registerUserMessageRef = useCallback((messageId) => (node) => {
+    if (!node) {
+      userMessageRefs.current.delete(messageId)
+      return
+    }
+    userMessageRefs.current.set(messageId, node)
+  }, [])
+
   const renderMessage = (message) => (
-    <Box key={message.id} sx={{ display: 'flex', justifyContent: message.type === 'user' ? 'flex-end' : 'flex-start' }}>
+    <Box
+      key={message.id}
+      ref={message.type === 'user' ? registerUserMessageRef(message.id) : null}
+      sx={{ display: 'flex', justifyContent: message.type === 'user' ? 'flex-end' : 'flex-start' }}
+    >
       <Box
         sx={{
           display: 'flex',
