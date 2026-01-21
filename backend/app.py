@@ -237,13 +237,14 @@ def initialize_search_system():
                 pc_rag = Pinecone(api_key=pine_api_key)
                 rag_index_name = "ncert"
                 rag_index = pc_rag.Index(rag_index_name)
-                rag_model = create_sentence_transformer("all-MiniLM-L6-v2", device="cpu")
+                shared_model = create_sentence_transformer("all-MiniLM-L6-v2", device="cpu")
+                rag_model = shared_model
                 
                 # Initialize Pinecone for MCQ
                 pc_mcq = Pinecone(api_key=pine_api_key)
                 mcq_index_name = 'pyq-1'
                 mcq_index = pc_mcq.Index(mcq_index_name)
-                mcq_model = create_sentence_transformer('sentence-transformers/all-MiniLM-L6-v2', device='cpu')
+                mcq_model = shared_model
                 
                 search_components['rag_index'] = rag_index
                 search_components['rag_model'] = rag_model
