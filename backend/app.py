@@ -19,6 +19,14 @@ import uuid
 from functools import wraps
 import traceback
 
+# Constrain native library threading for low-RAM free tiers (Render, etc.)
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+
 # Optional dotenv - for local development only
 try:
     from dotenv import load_dotenv
@@ -182,6 +190,30 @@ def load_api_keys():
 
     return groq_api_key, pine_api_key
 
+import torch
+import inspect
+from typing import Any, Dict
+
+# Reduce CPU thread usage to lower memory/CPU pressure on small instances
+torch.set_num_threads(1)
+try:
+    torch.set_num_interop_threads(1)
+except Exception:
+    pass
+torch.set_grad_enabled(False)
+
+def create_sentence_transformer(model_name: str, device: str = "cpu"):
+    """Create SentenceTransformer with backward-compatible kwargs."""
+    kwargs: Dict[str, Any] = {"device": device}
+    try:
+        sig = inspect.signature(SentenceTransformer.__init__)
+        if "model_kwargs" in sig.parameters:
+            kwargs["model_kwargs"] = {"torch_dtype": torch.float32}
+    except Exception:
+        # Fallback for older sentence-transformers versions
+        pass
+    return SentenceTransformer(model_name, **kwargs)  # type: ignore[call-arg]
+
 def initialize_search_system():
     """Initialize all components needed for search"""
     global search_components, system_initialized
@@ -204,13 +236,13 @@ def initialize_search_system():
                 pc_rag = Pinecone(api_key=pine_api_key)
                 rag_index_name = "ncert"
                 rag_index = pc_rag.Index(rag_index_name)
-                rag_model = SentenceTransformer("all-MiniLM-L6-v2")
+                rag_model = create_sentence_transformer("all-MiniLM-L6-v2", device="cpu")
                 
                 # Initialize Pinecone for MCQ
                 pc_mcq = Pinecone(api_key=pine_api_key)
                 mcq_index_name = 'pyq-1'
                 mcq_index = pc_mcq.Index(mcq_index_name)
-                mcq_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2', device='cpu')
+                mcq_model = create_sentence_transformer('sentence-transformers/all-MiniLM-L6-v2', device='cpu')
                 
                 search_components['rag_index'] = rag_index
                 search_components['rag_model'] = rag_model
