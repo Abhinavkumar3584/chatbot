@@ -13,6 +13,10 @@ import hashlib
 from groq import Groq
 from pinecone import Pinecone, ServerlessSpec
 from sentence_transformers import SentenceTransformer
+try:
+    from fastembed import TextEmbedding
+except Exception:
+    TextEmbedding = None
 import threading
 from concurrent.futures import ThreadPoolExecutor
 import uuid
@@ -215,6 +219,24 @@ def create_sentence_transformer(model_name: str, device: str = "cpu"):
         pass
     return SentenceTransformer(model_name, **kwargs)  # type: ignore[call-arg]
 
+def create_embedding_model():
+    """Create a lightweight embedding model for low-RAM environments."""
+    use_fastembed = os.getenv("USE_FASTEMBED", "1").lower() in {"1", "true", "yes"}
+    if use_fastembed and TextEmbedding is not None:
+        model_name = os.getenv("FASTEMBED_MODEL", "BAAI/bge-small-en-v1.5")
+        return TextEmbedding(model_name), "fastembed"
+    return create_sentence_transformer("all-MiniLM-L6-v2", device="cpu"), "sentence-transformers"
+
+def encode_texts(model, texts):
+    """Encode texts to list of float vectors for either backend."""
+    if hasattr(model, "embed"):
+        return [vec.tolist() for vec in model.embed(texts)]
+    encoded = model.encode(texts)
+    return encoded.tolist()
+
+def encode_query(model, text: str):
+    return encode_texts(model, [text])[0]
+
 def initialize_search_system():
     """Initialize all components needed for search"""
     global search_components, system_initialized
@@ -237,7 +259,7 @@ def initialize_search_system():
                 pc_rag = Pinecone(api_key=pine_api_key)
                 rag_index_name = "ncert"
                 rag_index = pc_rag.Index(rag_index_name)
-                shared_model = create_sentence_transformer("all-MiniLM-L6-v2", device="cpu")
+                shared_model, embedding_backend = create_embedding_model()
                 rag_model = shared_model
                 
                 # Initialize Pinecone for MCQ
@@ -245,6 +267,11 @@ def initialize_search_system():
                 mcq_index_name = 'pyq-1'
                 mcq_index = pc_mcq.Index(mcq_index_name)
                 mcq_model = shared_model
+
+                if is_production:
+                    app.logger.info(f"✅ Embedding backend: {embedding_backend}")
+                else:
+                    print(f"✅ Embedding backend: {embedding_backend}")
                 
                 search_components['rag_index'] = rag_index
                 search_components['rag_model'] = rag_model
@@ -253,10 +280,10 @@ def initialize_search_system():
 
                 # Precompute common embeddings to avoid repeated model.encode calls
                 try:
-                    search_components['mcq_sample_embedding'] = mcq_model.encode("sample question").tolist()
-                    search_components['mcq_filter_embedding'] = mcq_model.encode("filter query").tolist()
-                    search_components['mcq_generic_embedding'] = mcq_model.encode("general knowledge question").tolist()
-                    search_components['mcq_minimal_embedding'] = mcq_model.encode("sample").tolist()
+                    search_components['mcq_sample_embedding'] = encode_query(mcq_model, "sample question")
+                    search_components['mcq_filter_embedding'] = encode_query(mcq_model, "filter query")
+                    search_components['mcq_generic_embedding'] = encode_query(mcq_model, "general knowledge question")
+                    search_components['mcq_minimal_embedding'] = encode_query(mcq_model, "sample")
                 except Exception as e:
                     if is_production:
                         app.logger.warning(f"⚠️  Failed to precompute MCQ embeddings: {str(e)}")
@@ -324,7 +351,7 @@ def _initialize_on_first_request():
 def semantic_search(index, model, query: str, n_results: int = 2, namespace: str = "", query_embedding=None):
     """Perform semantic search on Pinecone index"""
     if query_embedding is None:
-        query_embedding = model.encode([query]).tolist()[0]
+        query_embedding = encode_query(model, query)
     
     if namespace:
         results = index.query(
@@ -546,7 +573,7 @@ def search():
         timeout_seconds = 30  # 30 second timeout
         
         # Precompute embedding once for RAG searches
-        rag_query_embedding = search_components['rag_model'].encode([query]).tolist()[0]
+        rag_query_embedding = encode_query(search_components['rag_model'], query)
 
         # RAG search for contextual answer
         if namespace and namespace != "all":
@@ -762,7 +789,7 @@ def get_questions():
         # Query for questions - using dummy query to get random questions
         dummy_query = search_components.get('mcq_sample_embedding')
         if dummy_query is None:
-            dummy_query = search_components['mcq_model'].encode(["sample question"]).tolist()[0]
+            dummy_query = encode_query(search_components['mcq_model'], "sample question")
         
         for namespace in pyq_namespaces:
             try:
@@ -911,7 +938,7 @@ def get_filter_options():
         # Query for questions from each namespace to extract metadata
         dummy_query = search_components.get('mcq_filter_embedding')
         if dummy_query is None:
-            dummy_query = search_components['mcq_model'].encode(["filter query"]).tolist()[0]
+            dummy_query = encode_query(search_components['mcq_model'], "filter query")
         
         for namespace in pyq_namespaces:
             try:
@@ -1112,7 +1139,7 @@ def get_inserted_pyqs():
                 try:
                     dummy_query = search_components.get('mcq_minimal_embedding')
                     if dummy_query is None:
-                        dummy_query = search_components['mcq_model'].encode(["sample"]).tolist()[0]
+                        dummy_query = encode_query(search_components['mcq_model'], "sample")
                     results = mcq_index.query(
                         vector=dummy_query,
                         top_k=min(vector_count, 1000),  # Get all or up to 1000 questions
@@ -1230,7 +1257,7 @@ def search_all_namespaces(pinecone_index, model, query: str, n_chunks: int = 2, 
     all_results = []
 
     if query_embedding is None:
-        query_embedding = model.encode([query]).tolist()[0]
+        query_embedding = encode_query(model, query)
 
     def _query_namespace(namespace):
         results = pinecone_index.query(
@@ -1264,7 +1291,7 @@ def search_all_namespaces(pinecone_index, model, query: str, n_chunks: int = 2, 
 def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=5):
     """Query MCQ index for relevant questions across all namespaces"""
     try:
-        query_embedding = mcq_model.encode(query_text).tolist()
+        query_embedding = encode_query(mcq_model, query_text)
         
         # Get all available namespaces dynamically from index stats
         stats = _get_index_stats_cached(mcq_index, 'mcq_index_stats', ttl_seconds=60)
@@ -1731,11 +1758,11 @@ def search_pyq_questions():
         
         # Precompute embedding once for all namespaces
         if query:
-            query_embedding = mcq_model.encode(query).tolist()
+            query_embedding = encode_query(mcq_model, query)
         else:
             query_embedding = search_components.get('mcq_generic_embedding')
             if query_embedding is None:
-                query_embedding = mcq_model.encode("general knowledge question").tolist()
+                query_embedding = encode_query(mcq_model, "general knowledge question")
 
         # Query each namespace (limited for performance)
         for namespace in target_namespaces[:5]:  # Limit to first 5 namespaces for speed
@@ -1872,7 +1899,7 @@ def get_pyq_filters():
         # Sample questions from each namespace to get filters
         dummy_query = search_components.get('mcq_minimal_embedding')
         if dummy_query is None:
-            dummy_query = mcq_model.encode("sample").tolist()
+            dummy_query = encode_query(mcq_model, "sample")
         
         for namespace in namespaces:
             try:
