@@ -12,11 +12,16 @@ import time
 import hashlib
 from groq import Groq
 from pinecone import Pinecone, ServerlessSpec
-from sentence_transformers import SentenceTransformer
+try:
+    from sentence_transformers import SentenceTransformer
+except Exception:
+    SentenceTransformer = None
+
 try:
     from fastembed import TextEmbedding
 except Exception:
     TextEmbedding = None
+import httpx
 import threading
 from concurrent.futures import ThreadPoolExecutor
 import uuid
@@ -30,6 +35,7 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("FASTEMBED_CACHE_PATH", "/tmp/fastembed_cache")
 
 # Optional dotenv - for local development only
 try:
@@ -209,6 +215,8 @@ torch.set_grad_enabled(False)
 
 def create_sentence_transformer(model_name: str, device: str = "cpu"):
     """Create SentenceTransformer with backward-compatible kwargs."""
+    if SentenceTransformer is None:
+        raise RuntimeError("sentence-transformers is not installed")
     kwargs: Dict[str, Any] = {"device": device}
     try:
         sig = inspect.signature(SentenceTransformer.__init__)
@@ -221,18 +229,101 @@ def create_sentence_transformer(model_name: str, device: str = "cpu"):
 
 def create_embedding_model():
     """Create a lightweight embedding model for low-RAM environments."""
+    use_hf = os.getenv("USE_HF_EMBEDDINGS", "0").lower() in {"1", "true", "yes"}
+    if use_hf:
+        hf_token = os.getenv("HF_API_KEY")
+        hf_model = os.getenv("HF_EMBEDDING_MODEL", "sentence-transformers/paraphrase-MiniLM-L3-v2")
+        if not hf_token:
+            raise RuntimeError("HF_API_KEY is required when USE_HF_EMBEDDINGS=1")
+        return HFEmbeddingClient(hf_token, hf_model), "huggingface"
+
     use_fastembed = os.getenv("USE_FASTEMBED", "1").lower() in {"1", "true", "yes"}
     if use_fastembed and TextEmbedding is not None:
         model_name = os.getenv("FASTEMBED_MODEL", "BAAI/bge-small-en-v1.5")
-        return TextEmbedding(model_name), "fastembed"
-    return create_sentence_transformer("all-MiniLM-L6-v2", device="cpu"), "sentence-transformers"
+        cache_path = os.getenv("FASTEMBED_CACHE_PATH", "/tmp/fastembed_cache")
+        try:
+            os.makedirs(cache_path, exist_ok=True)
+            os.environ["FASTEMBED_CACHE_PATH"] = cache_path
+            return TextEmbedding(model_name), "fastembed"
+        except Exception as e:
+            if os.getenv('FLASK_ENV') == 'production':
+                app.logger.warning(f"⚠️  Fastembed failed, falling back: {e}")
+            else:
+                print(f"⚠️  Fastembed failed, falling back: {e}")
+    return create_sentence_transformer("sentence-transformers/paraphrase-MiniLM-L3-v2", device="cpu"), "sentence-transformers"
+
+
+class HFEmbeddingClient:
+    """Hugging Face Inference API client for embeddings (feature-extraction)."""
+    def __init__(self, api_key: str, model: str):
+        self.api_key = api_key
+        self.model = model
+        self.endpoint = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model}"
+        self.client = httpx.Client(timeout=30.0, headers={"Authorization": f"Bearer {self.api_key}"})
+
+    def embed(self, texts):
+        payload = {"inputs": texts}
+        last_error = None
+        for attempt in range(3):
+            try:
+                response = self.client.post(self.endpoint, json=payload)
+                if response.status_code in (429, 503):
+                    time.sleep(0.6 * (attempt + 1))
+                    continue
+                response.raise_for_status()
+                data = response.json()
+                break
+            except Exception as e:
+                last_error = e
+                time.sleep(0.6 * (attempt + 1))
+        else:
+            raise RuntimeError(f"HF embeddings failed after retries: {last_error}")
+
+        # HF returns token embeddings; mean-pool to sentence embeddings
+        def mean_pool(token_matrix):
+            if not token_matrix:
+                return []
+            dims = len(token_matrix[0])
+            pooled = [0.0] * dims
+            for token_vec in token_matrix:
+                for i, v in enumerate(token_vec):
+                    pooled[i] += float(v)
+            count = float(len(token_matrix))
+            return [v / count for v in pooled]
+
+        if isinstance(data, list) and data and isinstance(data[0], list) and data and isinstance(data[0][0], list):
+            return [mean_pool(item) for item in data]
+        if isinstance(data, list) and data and isinstance(data[0], list):
+            return [mean_pool(data)]
+        return []
 
 def encode_texts(model, texts):
     """Encode texts to list of float vectors for either backend."""
-    if hasattr(model, "embed"):
-        return [vec.tolist() for vec in model.embed(texts)]
-    encoded = model.encode(texts)
-    return encoded.tolist()
+    ttl_seconds = int(os.getenv("EMBEDDING_CACHE_TTL", "600"))
+    cached_vectors = {}
+    missing = []
+
+    for text in texts:
+        cache_key = f"embed:{hashlib.sha256(text.encode()).hexdigest()}"
+        cached = _get_cached_value(cache_key)
+        if cached is not None:
+            cached_vectors[text] = cached
+        else:
+            missing.append((text, cache_key))
+
+    if missing:
+        to_encode = [text for text, _ in missing]
+        if hasattr(model, "embed"):
+            new_vectors = [vec.tolist() for vec in model.embed(to_encode)]
+        else:
+            encoded = model.encode(to_encode)
+            new_vectors = encoded.tolist()
+
+        for (text, cache_key), vector in zip(missing, new_vectors):
+            _set_cached_value(cache_key, vector, ttl_seconds)
+            cached_vectors[text] = vector
+
+    return [cached_vectors[text] for text in texts]
 
 def encode_query(model, text: str):
     return encode_texts(model, [text])[0]
@@ -540,12 +631,8 @@ def search():
             "message": "Backend is starting up or API keys are not configured. Please check server logs."
         }), 500
     
-    # Check if essential components are available
-    if 'rag_index' not in search_components:
-        return jsonify({
-            "error": "Search index not available",
-            "message": "PINECONE_API_KEY is not configured. Please set your API key in the .env file."
-        }), 500
+    # Pinecone is optional for a best-effort response
+    pinecone_available = 'rag_index' in search_components and 'rag_model' in search_components
     
     data = request.json
     if not data:
@@ -572,29 +659,35 @@ def search():
         start_time = time.time()
         timeout_seconds = 30  # 30 second timeout
         
-        # Precompute embedding once for RAG searches
-        rag_query_embedding = encode_query(search_components['rag_model'], query)
+            if pinecone_available:
+                # Precompute embedding once for RAG searches
+                rag_query_embedding = encode_query(search_components['rag_model'], query)
+            else:
+                rag_query_embedding = None
 
-        # RAG search for contextual answer
-        if namespace and namespace != "all":
-            rag_results = semantic_search(
-                search_components['rag_index'],
-                search_components['rag_model'],
-                query,
-                n_results,
-                namespace,
-                query_embedding=rag_query_embedding
-            )
-            context, sources = get_context_with_sources(rag_results)
+        # RAG search for contextual answer (only if Pinecone is available)
+        if pinecone_available:
+            if namespace and namespace != "all":
+                rag_results = semantic_search(
+                    search_components['rag_index'],
+                    search_components['rag_model'],
+                    query,
+                    n_results,
+                    namespace,
+                    query_embedding=rag_query_embedding
+                )
+                context, sources = get_context_with_sources(rag_results)
+            else:
+                # Search all namespaces
+                context, sources = search_all_namespaces(
+                    search_components['rag_index'],
+                    search_components['rag_model'],
+                    query,
+                    n_results,
+                    query_embedding=rag_query_embedding
+                )
         else:
-            # Search all namespaces
-            context, sources = search_all_namespaces(
-                search_components['rag_index'],
-                search_components['rag_model'],
-                query,
-                n_results,
-                query_embedding=rag_query_embedding
-            )
+            context, sources = "", []
         
         # Check timeout
         if time.time() - start_time > timeout_seconds:
@@ -658,14 +751,17 @@ def search():
             warning = "LLM client not configured (missing GROQ_API_KEY)"
             rag_response = build_fallback_response(context, sources, query)
         
-        # MCQ search for related questions
-        mcq_results = query_mcq(
-            search_components['mcq_index'],
-            search_components['mcq_model'],
-            query,
-            mcq_threshold,
-            mcq_limit
-        )
+        # MCQ search for related questions (only if Pinecone is available)
+        if pinecone_available and 'mcq_index' in search_components and 'mcq_model' in search_components:
+            mcq_results = query_mcq(
+                search_components['mcq_index'],
+                search_components['mcq_model'],
+                query,
+                mcq_threshold,
+                mcq_limit
+            )
+        else:
+            mcq_results = []
         
         response_payload = {
             "rag_response": rag_response,
@@ -675,6 +771,8 @@ def search():
             "namespace_used": namespace if namespace else "all",
             "timestamp": time.time()
         }
+        if not pinecone_available:
+            warning = (warning + " | " if warning else "") + "Pinecone unavailable; returning LLM-only response"
         if warning:
             response_payload["warning"] = warning
 

@@ -17,11 +17,11 @@ pinecone>=5.0.0,<7.0.0
 # HTTP client (pinned for Groq compatibility)
 httpx<0.28
 
-# Embeddings (necessary for semantic search)
-sentence-transformers>=2.3.0,<3.0.0
-torch>=2.5.0
-transformers>=4.36.0,<5.0.0
-fastembed>=0.3.6
+# Embeddings (local models) - disabled for HF API mode to reduce RAM/build size
+# sentence-transformers>=2.3.0,<3.0.0
+# torch>=2.5.0
+# transformers>=4.36.0,<5.0.0
+# fastembed>=0.3.6
 
 # Utilities
 numpy>=1.24.0,<2.0.0
