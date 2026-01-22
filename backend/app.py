@@ -22,6 +22,10 @@ try:
 except Exception:
     TextEmbedding = None
 import httpx
+try:
+    from huggingface_hub import InferenceClient
+except Exception:
+    InferenceClient = None
 import threading
 from concurrent.futures import ThreadPoolExecutor
 import uuid
@@ -76,6 +80,10 @@ else:
         format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
     )
     app.logger.setLevel(logging.DEBUG)
+
+# Silence noisy HTTP client debug logs unless explicitly needed
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 # Global variables to store initialized components
 search_components = {}
@@ -262,20 +270,36 @@ class HFEmbeddingClient:
     def __init__(self, api_key: str, model: str):
         self.api_key = api_key
         self.model = model
-        self.endpoint = f"https://router.huggingface.co/hf-inference/models/{model}"
-        self.client = httpx.Client(timeout=30.0, headers={"Authorization": f"Bearer {self.api_key}"})
+        if InferenceClient is None:
+            raise RuntimeError("huggingface_hub is required for HF embeddings")
+        self.client = InferenceClient(api_key=self.api_key)
+
+    def _fallback_feature_extraction(self, inputs):
+        url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{self.model}"
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        payload = {"inputs": inputs}
+        with httpx.Client(timeout=30.0) as client:
+            resp = client.post(url, headers=headers, json=payload)
+            resp.raise_for_status()
+            return resp.json()
 
     def embed(self, texts):
-        payload = {"inputs": texts}
+        inputs = texts[0] if isinstance(texts, list) and len(texts) == 1 else texts
         last_error = None
         for attempt in range(3):
             try:
-                response = self.client.post(self.endpoint, json=payload)
-                if response.status_code in (429, 503):
-                    time.sleep(0.6 * (attempt + 1))
-                    continue
-                response.raise_for_status()
-                data = response.json()
+                # huggingface_hub API differs by version; prefer positional input
+                data = self.client.feature_extraction(
+                    inputs,
+                    model=self.model,
+                )
+                break
+            except TypeError:
+                # Older/newer versions may require keyword-only input
+                data = self.client.feature_extraction(
+                    text=inputs,
+                    model=self.model,
+                )
                 break
             except Exception as e:
                 last_error = e
@@ -283,8 +307,31 @@ class HFEmbeddingClient:
         else:
             raise RuntimeError(f"HF embeddings failed after retries: {last_error}")
 
+        if hasattr(data, "tolist"):
+            data = data.tolist()
+
+        def _has_data(obj):
+            if obj is None:
+                return False
+            if hasattr(obj, "size"):
+                return obj.size > 0
+            try:
+                return len(obj) > 0
+            except Exception:
+                return True
+
+        if not _has_data(data):
+            try:
+                data = self._fallback_feature_extraction(inputs)
+            except Exception as e:
+                raise RuntimeError(f"HF embeddings returned empty vectors: {e}")
+
         # HF returns token embeddings; mean-pool to sentence embeddings
         def mean_pool(token_matrix):
+            if token_matrix is None:
+                return []
+            if hasattr(token_matrix, "tolist"):
+                token_matrix = token_matrix.tolist()
             if not token_matrix:
                 return []
             dims = len(token_matrix[0])
@@ -299,6 +346,8 @@ class HFEmbeddingClient:
             return [mean_pool(item) for item in data]
         if isinstance(data, list) and data and isinstance(data[0], list):
             return [mean_pool(data)]
+        if isinstance(data, list) and data and isinstance(data[0], (float, int)):
+            return [list(map(float, data))]
         return []
 
 def encode_texts(model, texts):
@@ -317,17 +366,39 @@ def encode_texts(model, texts):
 
     if missing:
         to_encode = [text for text, _ in missing]
+
+        def _normalize_vectors(raw_vectors):
+            if raw_vectors is None:
+                return []
+            # If a single vector came back for a single input
+            if isinstance(raw_vectors, list) and raw_vectors and isinstance(raw_vectors[0], (float, int)):
+                return [list(map(float, raw_vectors))]
+            normalized = []
+            for vec in raw_vectors:
+                if hasattr(vec, "tolist"):
+                    normalized.append(vec.tolist())
+                elif isinstance(vec, list):
+                    normalized.append(list(map(float, vec)))
+            return normalized
+
         if hasattr(model, "embed"):
-            new_vectors = [vec.tolist() for vec in model.embed(to_encode)]
+            raw_vectors = model.embed(to_encode)
+            new_vectors = _normalize_vectors(raw_vectors)
         else:
             encoded = model.encode(to_encode)
-            new_vectors = encoded.tolist()
+            new_vectors = _normalize_vectors(encoded)
+
+        if not new_vectors or len(new_vectors) != len(to_encode):
+            raise RuntimeError("Embedding backend returned no vectors")
 
         for (text, cache_key), vector in zip(missing, new_vectors):
             _set_cached_value(cache_key, vector, ttl_seconds)
             cached_vectors[text] = vector
 
-    return [cached_vectors[text] for text in texts]
+    try:
+        return [cached_vectors[text] for text in texts]
+    except KeyError as e:
+        raise RuntimeError(f"Missing embedding for text: {e}")
 
 def encode_query(model, text: str):
     return encode_texts(model, [text])[0]
