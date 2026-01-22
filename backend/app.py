@@ -658,12 +658,12 @@ def search():
         # Set a timeout for the entire operation
         start_time = time.time()
         timeout_seconds = 30  # 30 second timeout
-        
-            if pinecone_available:
-                # Precompute embedding once for RAG searches
-                rag_query_embedding = encode_query(search_components['rag_model'], query)
-            else:
-                rag_query_embedding = None
+
+        if pinecone_available:
+            # Precompute embedding once for RAG searches
+            rag_query_embedding = encode_query(search_components['rag_model'], query)
+        else:
+            rag_query_embedding = None
 
         # RAG search for contextual answer (only if Pinecone is available)
         if pinecone_available:
