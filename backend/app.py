@@ -201,17 +201,21 @@ def load_api_keys():
 
     return groq_api_key, pine_api_key
 
-import torch
+try:
+    import torch
+except Exception:
+    torch = None
 import inspect
 from typing import Any, Dict
 
 # Reduce CPU thread usage to lower memory/CPU pressure on small instances
-torch.set_num_threads(1)
-try:
-    torch.set_num_interop_threads(1)
-except Exception:
-    pass
-torch.set_grad_enabled(False)
+if torch is not None:
+    torch.set_num_threads(1)
+    try:
+        torch.set_num_interop_threads(1)
+    except Exception:
+        pass
+    torch.set_grad_enabled(False)
 
 def create_sentence_transformer(model_name: str, device: str = "cpu"):
     """Create SentenceTransformer with backward-compatible kwargs."""
