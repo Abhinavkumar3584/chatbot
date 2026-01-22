@@ -262,7 +262,7 @@ class HFEmbeddingClient:
     def __init__(self, api_key: str, model: str):
         self.api_key = api_key
         self.model = model
-        self.endpoint = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model}"
+        self.endpoint = f"https://router.huggingface.co/hf-inference/models/{model}"
         self.client = httpx.Client(timeout=30.0, headers={"Authorization": f"Bearer {self.api_key}"})
 
     def embed(self, texts):
