@@ -236,7 +236,7 @@ def create_embedding_model():
     use_hf = os.getenv("USE_HF_EMBEDDINGS", "0").lower() in {"1", "true", "yes"}
     if use_hf:
         hf_token = os.getenv("HF_API_KEY")
-        hf_model = os.getenv("HF_EMBEDDING_MODEL", "sentence-transformers/paraphrase-MiniLM-L3-v2")
+        hf_model = os.getenv("HF_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
         if not hf_token:
             raise RuntimeError("HF_API_KEY is required when USE_HF_EMBEDDINGS=1")
         return HFEmbeddingClient(hf_token, hf_model), "huggingface"
