@@ -235,16 +235,16 @@ const PYQPractice = () => {
     }))
   }
 
-  const DropdownButton = ({ label, options, selected, onSelect, show, onToggle }) => (
-    <div className="relative dropdown-container">
+  const DropdownButton = ({ label, options, selected, onSelect, show, onToggle, className = '' }) => (
+    <div className={`relative dropdown-container ${className}`}>
       <button 
         onClick={(e) => {
           e.stopPropagation()
           onToggle()
         }}
-        className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+        className="w-full flex items-center justify-between space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
       >
-        <span>{options.find(opt => opt.id === selected)?.name || label}</span>
+        <span className="truncate text-left">{options.find(opt => opt.id === selected)?.name || label}</span>
         <ChevronDown className={`w-4 h-4 transition-transform ${show ? 'rotate-180' : ''}`} />
       </button>
       {show && (
@@ -310,45 +310,46 @@ const PYQPractice = () => {
         {/* Sticky Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 z-10 flex-shrink-0">
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                  <Target className="w-8 h-8 mr-3" style={{ color: theme.colors.primary }} />
+          <div className="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div className="min-w-0">
+                <h1 className="text-2xl md:text-2xl font-bold text-gray-900 flex items-start md:items-center">
+                  <Target className="w-7 h-7 md:w-8 md:h-8 mr-2 md:mr-3 mt-1 md:mt-0 flex-shrink-0" style={{ color: theme.colors.primary }} />
                   PYQ Practice
                 </h1>
-                <p className="text-gray-600 mt-1">
+                <p className="text-gray-600 mt-1 text-sm md:text-base leading-relaxed">
                   Practice with previous year questions from various competitive exams
                 </p>
               </div>
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center justify-between md:justify-end gap-2 md:gap-3 w-full md:w-auto">
                 <button
                   onClick={() => window.dispatchEvent(new CustomEvent('openPyqsModal'))}
-                  className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex items-center space-x-2 px-2.5 md:px-3 py-2 border border-gray-300 rounded-lg text-xs md:text-sm text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap"
                   title="View Inserted PYQs"
                 >
                   <FileText className="w-4 h-4" />
                   <span>Inserted PYQs</span>
                 </button>
-                <div className="text-right">
-                  <div className="text-2xl font-bold" style={{ color: theme.colors.primary }}>
+                <div className="text-right min-w-[72px] md:min-w-0">
+                  <div className="text-3xl md:text-2xl font-bold leading-none" style={{ color: theme.colors.primary }}>
                     {isLoading ? '...' : filteredQuestions.length}
                   </div>
-                  <div className="text-sm text-gray-600">Total Questions</div>
+                  <div className="text-xs md:text-sm text-gray-600">Total Questions</div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Filters Section */}
-          <div className="px-6 py-4 bg-gray-50">
-            <div className="flex flex-wrap items-center gap-4">
+          <div className="px-4 md:px-6 py-3 md:py-4 bg-gray-50">
+            <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-3 md:gap-4">
               <DropdownButton 
                 label="Select Exam"
                 options={examOptions}
                 selected={selectedExam}
                 onSelect={setSelectedExam}
                 show={showExamDropdown}
+                className="col-span-1"
                 onToggle={() => {
                   setShowExamDropdown(!showExamDropdown)
                   setShowSubjectDropdown(false)
@@ -361,6 +362,7 @@ const PYQPractice = () => {
                 selected={selectedSubject}
                 onSelect={setSelectedSubject}
                 show={showSubjectDropdown}
+                className="col-span-1"
                 onToggle={() => {
                   setShowSubjectDropdown(!showSubjectDropdown)
                   setShowExamDropdown(false)
@@ -373,6 +375,7 @@ const PYQPractice = () => {
                 selected={selectedYear}
                 onSelect={setSelectedYear}
                 show={showYearDropdown}
+                className="col-span-1"
                 onToggle={() => {
                   setShowYearDropdown(!showYearDropdown)
                   setShowExamDropdown(false)
@@ -382,7 +385,7 @@ const PYQPractice = () => {
               <select
                 value={questionsPerPage}
                 onChange={(e) => setQuestionsPerPage(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent col-span-1"
               >
                 {questionsPerPageOptions.map(option => (
                   <option key={option.id} value={option.id}>{option.name}</option>
@@ -393,7 +396,7 @@ const PYQPractice = () => {
         </div>
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 min-h-0">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="flex items-center space-x-2">
@@ -418,19 +421,19 @@ const PYQPractice = () => {
               </div>
             </div>
           ) : filteredQuestions.length === 0 ? (
-            <div className="flex items-center justify-center h-64">
+            <div className="flex items-center justify-center h-[55vh] md:h-64">
               <div className="text-center max-w-none md:max-w-md">
                 <div className="mb-4">
-                  <Target className="w-16 h-16 mx-auto text-blue-500 opacity-50" />
+                  <Target className="w-14 h-14 md:w-16 md:h-16 mx-auto text-blue-500 opacity-50" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                <h3 className="text-2xl md:text-xl font-semibold text-gray-900 mb-3">
                   Ready to Start Practicing?
                 </h3>
-                <p className="text-gray-600 mb-4 leading-relaxed">
+                <p className="text-gray-600 mb-4 leading-relaxed text-base md:text-base">
                   Select your <span className="font-medium text-blue-600">exam</span>, <span className="font-medium text-green-600">subject</span>, or <span className="font-medium text-purple-600">year</span> from the filters above to load previous year questions.
                 </p>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-                  <p className="text-sm text-blue-800">
+                  <p className="text-sm text-blue-800 leading-relaxed">
                     💡 <strong>Tip:</strong> You can combine multiple filters (e.g., UPSC CSE + History + 2024) to practice specific topics!
                   </p>
                 </div>
