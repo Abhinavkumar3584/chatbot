@@ -253,3 +253,5 @@ credentials.json
 
 # environment specific files
 .env
+# Ignore backend env copies
+backend/.env*
