@@ -16,6 +16,7 @@ import EmbeddedSearchBar from './EmbeddedSearchBar'
 import { SEARCH_SETTINGS } from '../config/searchSettings'
 
 const EMPTY_EXPANDED_SOURCES = new Set()
+const PENDING_CHAT_LOAD_STORAGE_KEY = 'pendingChatToLoad'
 const MAX_CHAT_TITLE_LENGTH = 32
 const MAX_CHAT_TITLE_WORDS = 4
 const CHAT_FONT_SIZES = {
@@ -492,7 +493,7 @@ const ChatSection = () => {
   const isDarkMode = theme?.mode === 'dark'
   const { contentOffsetLeft, pyqVisible } = useLayout()
   const { addToSearchHistory, addGuestChat, updateGuestChat, guestChatHistory } = useSearchHistory()
-  const { currentUser, saveMessage, getChatMessages, updateChatTitle, updateChatMessageCount, getChatHistory } = useAuth()
+  const { currentUser, createNewChat, saveMessage, getChatMessages, updateChatTitle, updateChatMessageCount, getChatHistory } = useAuth()
   const { trackInteraction } = useDashboard()
   const scrollContainerRef = useRef(null)
   const scrollStateRef = useRef({ scrollTop: 0, scrollHeight: 0, isAtTop: true })
@@ -585,21 +586,23 @@ const ChatSection = () => {
   useEffect(() => {
     const handleNewChat = (event) => {
       setMessages([])
+      sessionStorage.removeItem(PENDING_CHAT_LOAD_STORAGE_KEY)
       // Always use the chatId from the event (created in Sidebar)
       if (currentUser) {
-        setCurrentChatId(event.detail.chatId)
+        setCurrentChatId(event?.detail?.chatId || null)
         setCurrentChatTitle('New Chat')
-        console.log('🔄 Set chat ID for authenticated user:', event.detail.chatId)
+        console.log('🔄 Set chat ID for authenticated user:', event?.detail?.chatId || null)
       } else {
-        setCurrentChatId(event.detail.chatId)
+        setCurrentChatId(event?.detail?.chatId || null)
         setCurrentChatTitle('New Chat')
-        console.log('👤 Created new guest chat ID:', event.detail.chatId)
+        console.log('👤 Created new guest chat ID:', event?.detail?.chatId || null)
       }
     }
 
     const handleLoadChat = async (event) => {
       const { chatId, title } = event.detail
       console.log('🔄 Loading chat:', chatId, title)
+      sessionStorage.removeItem(PENDING_CHAT_LOAD_STORAGE_KEY)
       setCurrentChatId(chatId)
       setCurrentChatTitle(title)
       setMessages([]) // Clear messages first
@@ -617,6 +620,7 @@ const ChatSection = () => {
 
     const handleLoadGuestChat = (event) => {
       const { chatId, title, messages } = event.detail
+      sessionStorage.removeItem(PENDING_CHAT_LOAD_STORAGE_KEY)
       setCurrentChatId(chatId)
       setCurrentChatTitle(title)
       setMessages(messages || [])
@@ -648,6 +652,42 @@ const ChatSection = () => {
       window.removeEventListener('chatDeleted', handleChatDeleted)
     }
   }, [currentUser, currentChatId, getChatMessages])
+
+  // Recover pending chat selection when arriving from another view
+  useEffect(() => {
+    const pendingRaw = sessionStorage.getItem(PENDING_CHAT_LOAD_STORAGE_KEY)
+    if (!pendingRaw) return
+
+    const loadPendingChat = async () => {
+      try {
+        const pending = JSON.parse(pendingRaw)
+        if (!pending?.id) {
+          sessionStorage.removeItem(PENDING_CHAT_LOAD_STORAGE_KEY)
+          return
+        }
+
+        if (String(pending.id).startsWith('guest-')) {
+          setCurrentChatId(pending.id)
+          setCurrentChatTitle(pending.title || 'New Chat')
+          setMessages(pending.messages || [])
+          sessionStorage.removeItem(PENDING_CHAT_LOAD_STORAGE_KEY)
+          return
+        }
+
+        setCurrentChatId(pending.id)
+        setCurrentChatTitle(pending.title || 'New Chat')
+        setMessages([])
+        const chatMessages = await getChatMessages(pending.id)
+        setMessages(chatMessages || [])
+      } catch (error) {
+        console.error('❌ Failed to load pending chat:', error)
+      } finally {
+        sessionStorage.removeItem(PENDING_CHAT_LOAD_STORAGE_KEY)
+      }
+    }
+
+    loadPendingChat()
+  }, [getChatMessages])
 
   // Auto-cleanup on unmount
   useEffect(() => {
@@ -766,8 +806,19 @@ const ChatSection = () => {
 
     pendingScrollToIdRef.current = userMessage.id
 
-    // Always use the currentChatId (created in Sidebar)
-    const activeChatId = currentChatId
+    let activeChatId = currentChatId
+
+    // Create chat lazily only when first message is sent
+    if (currentUser && !activeChatId) {
+      try {
+        activeChatId = await createNewChat('New Chat')
+        setCurrentChatId(activeChatId)
+        setCurrentChatTitle('New Chat')
+        window.dispatchEvent(new CustomEvent('refreshChatList'))
+      } catch (error) {
+        console.error('❌ Failed to create chat on first message:', error)
+      }
+    }
 
     // Add user message to chat immediately
     setMessages(prev => {
@@ -930,7 +981,8 @@ const ChatSection = () => {
     getChatHistory,
     updateChatMessageCount,
     updateChatTitle,
-    trackInteraction
+    trackInteraction,
+    createNewChat
   ])
 
   const handleScroll = useCallback(() => {

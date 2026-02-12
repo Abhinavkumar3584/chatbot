@@ -367,7 +367,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="mt-4 w-full flex items-center justify-center gap-3 bg-white border border-gray-300 py-2 px-4 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="mt-4 w-full flex items-center justify-center gap-3 bg-white text-gray-900 border border-gray-300 py-2 px-4 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Sign in with your Google account"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">

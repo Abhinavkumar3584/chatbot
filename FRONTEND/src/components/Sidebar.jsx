@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react'
-import { MessageCircle, Search, BookOpen, FileText, Lightbulb, Trash2, Clock, Target, CheckCircle, PenTool, MessagesSquare, Home } from 'lucide-react'
+import { MessageCircle, Search, BookOpen, FileText, Lightbulb, Trash2, Clock, Target, CheckCircle, PenTool, Home } from 'lucide-react'
 import { Box, Paper, Stack, Typography, Button, IconButton, Divider } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useLayout } from '../contexts/LayoutContext'
@@ -12,10 +12,12 @@ import { ChevronFirst } from './icons/ChevronFirst'
 import { CircleHelp } from './icons/CircleHelp'
 import { Network } from './icons/Network'
 
+const PENDING_CHAT_LOAD_STORAGE_KEY = 'pendingChatToLoad'
+
 const Sidebar = () => {
   const { sidebarVisible, toggleSidebar, isMobile } = useLayout()
   const { guestChatHistory, deleteGuestChat } = useSearchHistory()
-  const { currentUser, getChatHistory, createNewChat, deleteChat } = useAuth()
+  const { currentUser, getChatHistory, deleteChat } = useAuth()
   const [books, setBooks] = useState([])
   const [insertedPyqs, setInsertedPyqs] = useState([])
   const [chatHistory, setChatHistory] = useState([])
@@ -56,18 +58,12 @@ const Sidebar = () => {
   const handleNewChat = async () => {
     console.log('🆕 New chat button clicked')
     try {
-      if (currentUser) {
-        // Instantly create a new chat in Firebase with placeholder title
-        const chatId = await createNewChat('New Chat')
-        await loadChatHistory() // Refresh sidebar
-        window.dispatchEvent(new CustomEvent('newChat', { detail: { chatId } }))
-        console.log('✅ Created and dispatched newChat event for authenticated user, chatId:', chatId)
-      } else {
-        // For guests, create a new guest chat session
-        const guestChatId = `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-        window.dispatchEvent(new CustomEvent('newChat', { detail: { chatId: guestChatId } }))
-        console.log('✅ Dispatched newChat event for guest user with ID:', guestChatId)
-      }
+      // New Chat behaves like Home initially: no DB write until first message send
+      sessionStorage.removeItem(PENDING_CHAT_LOAD_STORAGE_KEY)
+      window.dispatchEvent(new CustomEvent('switchToChat'))
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('newChat', { detail: { chatId: null } }))
+      }, 0)
     } catch (error) {
       console.error('❌ Failed to create new chat:', error)
     }
@@ -76,21 +72,28 @@ const Sidebar = () => {
   // Handle chat selection
   const handleChatSelect = (chat) => {
     console.log('💬 Chat selected:', chat.title, 'chatId:', chat.id)
+    sessionStorage.setItem(PENDING_CHAT_LOAD_STORAGE_KEY, JSON.stringify(chat))
+    window.dispatchEvent(new CustomEvent('switchToChat'))
+
     // For guest chats, we need to load messages from the stored chat data
     if (chat.id.startsWith('guest-')) {
       // Load guest chat messages directly
       console.log('👤 Loading guest chat:', chat.id)
-      window.dispatchEvent(new CustomEvent('loadGuestChat', { 
-        detail: { 
-          chatId: chat.id, 
-          title: chat.title, 
-          messages: chat.messages || [] 
-        } 
-      }))
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('loadGuestChat', { 
+          detail: { 
+            chatId: chat.id, 
+            title: chat.title, 
+            messages: chat.messages || [] 
+          } 
+        }))
+      }, 0)
     } else {
       // Emit event to load authenticated user chat messages from backend
       console.log('👤 Loading authenticated user chat:', chat.id)
-      window.dispatchEvent(new CustomEvent('loadChat', { detail: { chatId: chat.id, title: chat.title } }))
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('loadChat', { detail: { chatId: chat.id, title: chat.title } }))
+      }, 0)
     }
   }
 
@@ -222,13 +225,6 @@ const Sidebar = () => {
     if (isMobile) closeTransientOverlays()
     // Emit event to switch to quiz view
     window.dispatchEvent(new CustomEvent('switchToQuiz'))
-  }
-
-  const handleGDTopicsClick = () => {
-    if (isMobile) closeTransientOverlays()
-    // Show coming soon modal
-    setComingSoonFeature('AI for GD Topics')
-    setShowComingSoonModal(true)
   }
 
   const handleHomeClick = () => {

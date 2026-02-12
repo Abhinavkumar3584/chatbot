@@ -4,26 +4,53 @@ import { Box, Paper, Stack, Typography, IconButton, Chip, Divider, Button, Menu,
 import { alpha } from '@mui/material/styles'
 import { useLayout } from '../contexts/LayoutContext'
 import { useDashboard } from '../contexts/DashboardContext'
+import { useAuth } from '../contexts/AuthContext'
 import apiService from '../services/api'
 import { ChevronFirst } from './icons/ChevronFirst'
 
 const PYQ_IMPORTANT_STORAGE_KEY = 'pyqImportantQuestionIds'
+const STARRED_PYQ_LOCAL_STORAGE_KEY = 'pyqPracticeStarredQuestions'
 
 const getStableQuestionId = (question, index = 0) => {
-  if (question?.id) return question.id
+  if (question?.id !== undefined && question?.id !== null && String(question.id).trim() !== '') {
+    return String(question.id)
+  }
 
-  const exam = question?.exam_name || question?.metadata?.exam_name || question?.metadata?.exam || ''
-  const year = question?.year || question?.metadata?.year || question?.metadata?.exam_year || ''
-  const term = question?.term || question?.metadata?.term || question?.metadata?.exam_term || ''
-  const subject = question?.subject || question?.metadata?.subject || ''
-  const content = question?.question || question?.text || ''
+  const exam = question?.exam_name || question?.metadata?.exam_name || question?.metadata?.exam || 'unknown_exam'
+  const subject = question?.subject || question?.metadata?.subject || 'unknown_subject'
+  const year = question?.year || question?.metadata?.year || question?.metadata?.exam_year || 'unknown_year'
+  const term = question?.term || question?.metadata?.term || question?.metadata?.exam_term || 'unknown_term'
+  const questionText = (question?.question || question?.text || '').trim().slice(0, 80)
 
-  return `${exam}|${year}|${term}|${subject}|${content}`.trim() || `fallback_${index}`
+  return [exam, subject, year, term, questionText || `fallback_${index}`]
+    .map((part) => String(part).toLowerCase().replace(/\s+/g, '_'))
+    .join('__')
 }
+
+const buildStarredQuestionPayload = (question, questionId) => ({
+  id: questionId,
+  question: question?.question || question?.text || '',
+  options: Array.isArray(question?.options) ? question.options : [],
+  correct_answer: question?.correct_answer,
+  explanation: question?.explanation || '',
+  exam_name: question?.exam_name || question?.metadata?.exam_name || question?.metadata?.exam || '',
+  subject: question?.subject || question?.metadata?.subject || '',
+  year: question?.year || question?.metadata?.year || question?.metadata?.exam_year || '',
+  term: question?.term || question?.metadata?.term || question?.metadata?.exam_term || '',
+  metadata: question?.metadata || {},
+  source: question?.source || '',
+  score: question?.score ?? null
+})
 
 const PYQSection = () => {
   const { pyqVisible, togglePyq, isMobile } = useLayout()
   const { trackInteraction } = useDashboard()
+  const {
+    currentUser,
+    getStarredPyqQuestions,
+    saveStarredPyqQuestion,
+    removeStarredPyqQuestion
+  } = useAuth()
   const [searchResults, setSearchResults] = useState([])
   const [lastSearchQuery, setLastSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -42,17 +69,49 @@ const PYQSection = () => {
   const isSubjectMenuOpen = Boolean(subjectAnchorEl)
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(PYQ_IMPORTANT_STORAGE_KEY)
-      if (!saved) return
-      const parsed = JSON.parse(saved)
-      if (Array.isArray(parsed)) {
-        setImportantQuestions(new Set(parsed))
+    const loadImportantQuestions = async () => {
+      try {
+        if (currentUser) {
+          const remoteStarred = await getStarredPyqQuestions()
+          const ids = remoteStarred
+            .map((question, idx) => getStableQuestionId(question, idx))
+            .filter(Boolean)
+          setImportantQuestions(new Set(ids))
+          return
+        }
+
+        const localStarredRaw = localStorage.getItem(STARRED_PYQ_LOCAL_STORAGE_KEY)
+        if (localStarredRaw) {
+          const parsedLocalStarred = JSON.parse(localStarredRaw)
+          if (Array.isArray(parsedLocalStarred)) {
+            const ids = parsedLocalStarred
+              .map((question, idx) => getStableQuestionId(question, idx))
+              .filter(Boolean)
+            setImportantQuestions(new Set(ids))
+            return
+          }
+        }
+
+        const saved = localStorage.getItem(PYQ_IMPORTANT_STORAGE_KEY)
+        if (!saved) {
+          setImportantQuestions(new Set())
+          return
+        }
+
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) {
+          setImportantQuestions(new Set(parsed.map((id) => String(id))))
+        } else {
+          setImportantQuestions(new Set())
+        }
+      } catch (error) {
+        console.warn('Failed to load important PYQs from storage:', error)
+        setImportantQuestions(new Set())
       }
-    } catch (error) {
-      console.warn('Failed to load important PYQs from storage:', error)
     }
-  }, [])
+
+    loadImportantQuestions()
+  }, [currentUser, getStarredPyqQuestions])
 
   useEffect(() => {
     try {
@@ -307,16 +366,76 @@ const PYQSection = () => {
   }
 
   // Handle important question toggle
-  const toggleImportantQuestion = (questionId) => {
+  const toggleImportantQuestion = async (question, questionIndex = 0) => {
+    const questionId = getStableQuestionId(question, questionIndex)
+    if (!questionId) return
+
+    const isCurrentlyImportant = importantQuestions.has(questionId)
+
+    // Optimistic UI update
     setImportantQuestions(prev => {
       const newSet = new Set(prev)
-      if (newSet.has(questionId)) {
+      if (isCurrentlyImportant) {
         newSet.delete(questionId)
       } else {
         newSet.add(questionId)
       }
       return newSet
     })
+
+    const payload = buildStarredQuestionPayload(question, questionId)
+
+    try {
+      if (currentUser) {
+        const ok = isCurrentlyImportant
+          ? await removeStarredPyqQuestion(questionId)
+          : await saveStarredPyqQuestion(payload, questionId)
+
+        if (!ok) {
+          setImportantQuestions(prev => {
+            const reverted = new Set(prev)
+            if (isCurrentlyImportant) {
+              reverted.add(questionId)
+            } else {
+              reverted.delete(questionId)
+            }
+            return reverted
+          })
+        }
+
+        return
+      }
+
+      const localRaw = localStorage.getItem(STARRED_PYQ_LOCAL_STORAGE_KEY)
+      const parsed = localRaw ? JSON.parse(localRaw) : []
+      const existing = Array.isArray(parsed) ? parsed : []
+
+      const map = {}
+      existing.forEach((item, idx) => {
+        const id = getStableQuestionId(item, idx)
+        if (id) map[id] = { ...item, id }
+      })
+
+      if (isCurrentlyImportant) {
+        delete map[questionId]
+      } else {
+        map[questionId] = payload
+      }
+
+      localStorage.setItem(STARRED_PYQ_LOCAL_STORAGE_KEY, JSON.stringify(Object.values(map)))
+    } catch (error) {
+      console.warn('Failed to sync important question:', error)
+      // Revert optimistic update on failure
+      setImportantQuestions(prev => {
+        const reverted = new Set(prev)
+        if (isCurrentlyImportant) {
+          reverted.add(questionId)
+        } else {
+          reverted.delete(questionId)
+        }
+        return reverted
+      })
+    }
   }
 
   const handleSelectAllOrClearAll = () => {
@@ -620,7 +739,7 @@ const PYQSection = () => {
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      toggleImportantQuestion(questionId);
+                                      toggleImportantQuestion(question, questionIndex);
                                     }}
                                     title={importantQuestions.has(questionId) ? 'Remove from important' : 'Mark as important'}
                                     sx={{

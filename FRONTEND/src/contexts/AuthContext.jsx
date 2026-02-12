@@ -32,6 +32,27 @@ import {
 } from 'firebase/firestore';
 
 const AuthContext = createContext();
+const STARRED_PYQ_LOCAL_STORAGE_KEY = 'pyqPracticeStarredQuestions';
+
+function readLocalStarredPyqs() {
+  try {
+    const raw = localStorage.getItem(STARRED_PYQ_LOCAL_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalStarredPyqs(items) {
+  try {
+    localStorage.setItem(STARRED_PYQ_LOCAL_STORAGE_KEY, JSON.stringify(items || []));
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function useAuth() {
   return useContext(AuthContext);
@@ -907,6 +928,105 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // ===== PYQ Practice - Starred Questions (user-scoped) =====
+  async function getStarredPyqQuestions() {
+    if (!currentUser) return [];
+
+    try {
+      const starredRef = collection(db, 'users', currentUser.uid, 'starredPyqs');
+      const snapshot = await getDocs(starredRef);
+      const starred = [];
+
+      snapshot.forEach((starredDoc) => {
+        const data = starredDoc.data();
+        starred.push({
+          id: String(data?.id || starredDoc.id),
+          ...data,
+        });
+      });
+
+      return starred;
+    } catch (error) {
+      console.error('Error getting starred PYQs:', error);
+      if (error?.code === 'permission-denied' || error?.message?.includes('Missing or insufficient permissions')) {
+        console.warn('⚠️ Firestore permission denied for starred PYQs. Falling back to local cache.');
+        return readLocalStarredPyqs();
+      }
+      return [];
+    }
+  }
+
+  async function saveStarredPyqQuestion(question, questionId = null) {
+    const resolvedId = String(questionId || question?.id || '').trim();
+    if (!currentUser || !resolvedId) return false;
+
+    try {
+      const starredDocRef = doc(db, 'users', currentUser.uid, 'starredPyqs', resolvedId);
+      await setDoc(starredDocRef, {
+        ...question,
+        id: resolvedId,
+        userId: currentUser.uid,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      return true;
+    } catch (error) {
+      console.error('Error saving starred PYQ:', error);
+      if (error?.code === 'permission-denied' || error?.message?.includes('Missing or insufficient permissions')) {
+        console.warn('⚠️ Firestore permission denied for saving starred PYQ. Saving locally only.');
+        const existing = readLocalStarredPyqs();
+        const map = {};
+        existing.forEach((item) => {
+          const id = String(item?.id || '').trim();
+          if (id) map[id] = item;
+        });
+        map[resolvedId] = {
+          ...question,
+          id: resolvedId,
+          userId: currentUser.uid,
+          updatedAt: new Date().toISOString(),
+          localOnly: true,
+        };
+        return writeLocalStarredPyqs(Object.values(map));
+      }
+      return false;
+    }
+  }
+
+  async function removeStarredPyqQuestion(questionId) {
+    const resolvedId = String(questionId || '').trim();
+    if (!currentUser || !resolvedId) return false;
+
+    try {
+      const starredDocRef = doc(db, 'users', currentUser.uid, 'starredPyqs', resolvedId);
+      await deleteDoc(starredDocRef);
+      return true;
+    } catch (error) {
+      console.error('Error removing starred PYQ:', error);
+      if (error?.code === 'permission-denied' || error?.message?.includes('Missing or insufficient permissions')) {
+        console.warn('⚠️ Firestore permission denied for removing starred PYQ. Removing from local cache only.');
+        const existing = readLocalStarredPyqs();
+        const next = existing.filter((item) => String(item?.id || '').trim() !== resolvedId);
+        return writeLocalStarredPyqs(next);
+      }
+      return false;
+    }
+  }
+
+  async function clearAllStarredPyqQuestions() {
+    if (!currentUser) return false;
+
+    try {
+      const starredRef = collection(db, 'users', currentUser.uid, 'starredPyqs');
+      const snapshot = await getDocs(starredRef);
+      const deletePromises = snapshot.docs.map((starredDoc) => deleteDoc(starredDoc.ref));
+      await Promise.all(deletePromises);
+      return true;
+    } catch (error) {
+      console.error('Error clearing starred PYQs:', error);
+      return false;
+    }
+  }
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -992,6 +1112,10 @@ export function AuthProvider({ children }) {
     saveQuizResult,
     getUserQuizHistory,
     getQuizStatistics,
+    getStarredPyqQuestions,
+    saveStarredPyqQuestion,
+    removeStarredPyqQuestion,
+    clearAllStarredPyqQuestions,
   };
 
   return (

@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { 
   ChevronDown, 
   Target, 
   RefreshCw,
   FileText,
   CheckCircle,
-  XCircle
+  XCircle,
+  Star
 } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLayout } from '../contexts/LayoutContext'
@@ -13,11 +14,34 @@ import { useAuth } from '../contexts/AuthContext'
 import { useDashboard } from '../contexts/DashboardContext'
 import apiService from '../services/api'
 
+const getStableQuestionId = (question, index = 0) => {
+  if (question?.id !== undefined && question?.id !== null && String(question.id).trim() !== '') {
+    return String(question.id)
+  }
+
+  const exam = question?.exam_name || question?.metadata?.exam_name || question?.metadata?.exam || 'unknown_exam'
+  const subject = question?.subject || question?.metadata?.subject || 'unknown_subject'
+  const year = question?.year || question?.metadata?.year || question?.metadata?.exam_year || 'unknown_year'
+  const term = question?.term || question?.metadata?.term || question?.metadata?.exam_term || 'unknown_term'
+  const questionText = (question?.question || '').trim().slice(0, 80)
+
+  return [exam, subject, year, term, questionText || `fallback_${index}`]
+    .map((part) => String(part).toLowerCase().replace(/\s+/g, '_'))
+    .join('__')
+}
+
 const PYQPractice = () => {
   const { theme } = useTheme()
   const { contentOffsetLeft, isMobile } = useLayout()
-  const { currentUser } = useAuth()
+  const {
+    currentUser,
+    getStarredPyqQuestions,
+    saveStarredPyqQuestion,
+    removeStarredPyqQuestion
+  } = useAuth()
   const { trackInteraction } = useDashboard()
+
+  const STARRED_PYQ_LOCAL_STORAGE_KEY = 'pyqPracticeStarredQuestions'
 
   // State for filters
   const [selectedExam, setSelectedExam] = useState('all')
@@ -48,6 +72,10 @@ const PYQPractice = () => {
   // revealedAnswers now represents whether the question has been answered (checked)
   const [revealedAnswers, setRevealedAnswers] = useState({})
   const [expandedExplanations, setExpandedExplanations] = useState({})
+  const [starredQuestionsMap, setStarredQuestionsMap] = useState({})
+  const [showStarredOnly, setShowStarredOnly] = useState(false)
+
+  const starredQuestions = useMemo(() => Object.values(starredQuestionsMap), [starredQuestionsMap])
 
   // Filter options
   const examOptions = [
@@ -97,21 +125,107 @@ const PYQPractice = () => {
     { id: '50', name: '50 per page' }
   ]
 
+  const applyFiltersToDataset = (dataset) => {
+    let filtered = [...dataset]
+
+    if (selectedExam !== 'all') {
+      filtered = filtered.filter((question) => {
+        const examValue = question.exam_name || question.metadata?.exam_name || question.metadata?.exam || ''
+        return examValue.toLowerCase().replace(/\s+/g, '_') === selectedExam.toLowerCase()
+      })
+    }
+
+    if (selectedSubject !== 'all') {
+      filtered = filtered.filter((question) => {
+        const subjectValue = question.subject || question.metadata?.subject || ''
+        return subjectValue.toLowerCase().replace(/\s+/g, '_') === selectedSubject.toLowerCase()
+      })
+    }
+
+    if (selectedYear !== 'all') {
+      filtered = filtered.filter((question) => String(question.year) === String(selectedYear))
+    }
+
+    return filtered
+  }
+
   // Load initial data and filters
   useEffect(() => {
     loadInitialData()
   }, [])
 
+  // Load persisted starred questions (user-scoped in Firestore, guest-scoped in localStorage)
+  useEffect(() => {
+    const loadStarredQuestions = async () => {
+      try {
+        if (currentUser) {
+          const remoteStarred = await getStarredPyqQuestions()
+          const map = {}
+          remoteStarred.forEach((question) => {
+            const id = getStableQuestionId(question)
+            if (id) map[id] = { ...question, id }
+          })
+          setStarredQuestionsMap(map)
+          return
+        }
+
+        const localRaw = localStorage.getItem(STARRED_PYQ_LOCAL_STORAGE_KEY)
+        if (!localRaw) {
+          setStarredQuestionsMap({})
+          return
+        }
+
+        const parsed = JSON.parse(localRaw)
+        if (!Array.isArray(parsed)) {
+          setStarredQuestionsMap({})
+          return
+        }
+
+        const map = {}
+        parsed.forEach((question) => {
+          const id = getStableQuestionId(question)
+          if (id) map[id] = { ...question, id }
+        })
+        setStarredQuestionsMap(map)
+      } catch (loadError) {
+        console.error('Failed to load starred PYQs:', loadError)
+        setStarredQuestionsMap({})
+      }
+    }
+
+    loadStarredQuestions()
+  }, [currentUser, getStarredPyqQuestions])
+
+  // Persist guest starred questions to localStorage
+  useEffect(() => {
+    if (currentUser) return
+    try {
+      localStorage.setItem(STARRED_PYQ_LOCAL_STORAGE_KEY, JSON.stringify(starredQuestions))
+    } catch (persistError) {
+      console.error('Failed to persist starred PYQs locally:', persistError)
+    }
+  }, [currentUser, starredQuestions])
+
   // Load questions when filters change
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (selectedExam !== 'all' || selectedSubject !== 'all' || selectedYear !== 'all') {
+    if (showStarredOnly) {
+      const filteredStarred = applyFiltersToDataset(starredQuestions)
+      setQuestions(starredQuestions)
+      setFilteredQuestions(filteredStarred)
+      setCurrentPage(1)
+      extractFiltersFromResults(starredQuestions)
+      setIsLoading(false)
+    } else if (selectedExam !== 'all' || selectedSubject !== 'all' || selectedYear !== 'all') {
       loadFilteredQuestions()
     } else {
       setFilteredQuestions([])
       setIsLoading(false)
+      setAvailableExams([])
+      setAvailableSubjects([])
+      setAvailableYears([])
     }
-  }, [selectedExam, selectedSubject, selectedYear])
+  }, [selectedExam, selectedSubject, selectedYear, showStarredOnly, starredQuestions])
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -150,15 +264,16 @@ const PYQPractice = () => {
       })
       
       if (response && response.questions) {
-        setQuestions(response.questions)
-        setFilteredQuestions(response.questions)
+        const normalizedQuestions = response.questions || []
+        setQuestions(normalizedQuestions)
+        setFilteredQuestions(applyFiltersToDataset(normalizedQuestions))
         // Reset user answers and revealed states when new questions are loaded
         setUserAnswers({})
         setRevealedAnswers({})
         setExpandedExplanations({})
         setCurrentPage(1)
         // Extract available filters from results
-        extractFiltersFromResults(response.questions)
+        extractFiltersFromResults(normalizedQuestions)
       }
     } catch (error) {
       console.error('Failed to load questions:', error)
@@ -202,7 +317,7 @@ const PYQPractice = () => {
     }))
 
     // Track the MCQ attempt (correct/wrong)
-    const question = filteredQuestions.find(q => (q.id || `q_${filteredQuestions.indexOf(q)}`) === questionId)
+    const question = filteredQuestions.find((q, idx) => getStableQuestionId(q, idx) === questionId)
     if (question) {
       const questionSubject = question.subject || question.metadata?.subject || 'Others'
       const isCorrect = optionIndex === question.correct_answer
@@ -233,6 +348,38 @@ const PYQPractice = () => {
       ...prev,
       [questionId]: !prev[questionId]
     }))
+  }
+
+  const toggleStarredQuestion = async (question, questionIndex = 0) => {
+    const questionId = getStableQuestionId(question, questionIndex)
+    if (!questionId) return
+
+    const isCurrentlyStarred = Boolean(starredQuestionsMap[questionId])
+    const previousMap = starredQuestionsMap
+
+    // Optimistic local update
+    const nextMap = { ...previousMap }
+    if (isCurrentlyStarred) {
+      delete nextMap[questionId]
+    } else {
+      nextMap[questionId] = { ...question, id: questionId }
+    }
+    setStarredQuestionsMap(nextMap)
+
+    if (!currentUser) return
+
+    try {
+      const ok = isCurrentlyStarred
+        ? await removeStarredPyqQuestion(questionId)
+        : await saveStarredPyqQuestion({ ...question, id: questionId }, questionId)
+
+      if (!ok) {
+        setStarredQuestionsMap(previousMap)
+      }
+    } catch (persistError) {
+      console.error('Failed to sync starred PYQ:', persistError)
+      setStarredQuestionsMap(previousMap)
+    }
   }
 
   const DropdownButton = ({ label, options, selected, onSelect, show, onToggle, className = '' }) => (
@@ -323,6 +470,14 @@ const PYQPractice = () => {
               </div>
               <div className="flex items-center justify-between md:justify-end gap-2 md:gap-3 w-full md:w-auto">
                 <button
+                  onClick={() => setShowStarredOnly((prev) => !prev)}
+                  className={`flex items-center space-x-2 px-2.5 md:px-3 py-2 border rounded-lg text-xs md:text-sm transition-colors whitespace-nowrap ${showStarredOnly ? 'bg-amber-100 border-amber-300 text-amber-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                  title={showStarredOnly ? 'Show all PYQs' : 'Show only starred PYQs'}
+                >
+                  <Star className={`w-4 h-4 ${showStarredOnly ? 'fill-current' : ''}`} />
+                  <span>Starred ({starredQuestions.length})</span>
+                </button>
+                <button
                   onClick={() => window.dispatchEvent(new CustomEvent('openPyqsModal'))}
                   className="flex items-center space-x-2 px-2.5 md:px-3 py-2 border border-gray-300 rounded-lg text-xs md:text-sm text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap"
                   title="View Inserted PYQs"
@@ -385,7 +540,7 @@ const PYQPractice = () => {
               <select
                 value={questionsPerPage}
                 onChange={(e) => setQuestionsPerPage(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent col-span-1"
+                className="w-full md:w-auto md:min-w-[140px] md:ml-auto flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent col-span-1"
               >
                 {questionsPerPageOptions.map(option => (
                   <option key={option.id} value={option.id}>{option.name}</option>
@@ -444,7 +599,10 @@ const PYQPractice = () => {
               {/* Questions List */}
               <div className="space-y-4">
                 {paginatedQuestions.map((question, index) => {
-                  const questionId = question.id || `fallback_${index}`
+                  const questionId = getStableQuestionId(
+                    question,
+                    ((currentPage - 1) * parseInt(questionsPerPage)) + index
+                  )
                   const userAnswer = userAnswers[questionId]
                   const isRevealed = revealedAnswers[questionId]
                   const isCorrect = userAnswer === question.correct_answer
@@ -461,6 +619,20 @@ const PYQPractice = () => {
                             {question.question}
                           </h3>
                           <div className="flex items-center space-x-1">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                toggleStarredQuestion(
+                                  question,
+                                  ((currentPage - 1) * parseInt(questionsPerPage)) + index
+                                )
+                              }}
+                              className={`p-1 rounded transition-colors ${starredQuestionsMap[questionId] ? 'text-amber-500 bg-amber-50 hover:bg-amber-100' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'}`}
+                              title={starredQuestionsMap[questionId] ? 'Remove from starred' : 'Add to starred'}
+                            >
+                              <Star className={`w-4 h-4 ${starredQuestionsMap[questionId] ? 'fill-current' : ''}`} />
+                            </button>
                             {/* Answer Status Icon */}
                             {isRevealed && (
                               <span className={`flex items-center justify-center w-6 h-6 rounded-full ${isCorrect ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
