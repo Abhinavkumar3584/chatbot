@@ -714,47 +714,47 @@ const QuizSection = () => {
             ) : (
               <>
                 {/* Quiz Info */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 mb-6">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                    📝 Quiz Format
-                  </h3>
-                  <ul className="space-y-2 text-sm text-blue-800">
-                    <li className="flex items-center space-x-2">
-                      <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
-                      <span>
-                        <strong>15 random questions</strong> from the selected
-                        exam
-                      </span>
-                    </li>
-                    <li className="flex items-center space-x-2">
-                      <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
-                      <span>
-                        <strong>15 minutes</strong> time limit
-                      </span>
-                    </li>
-                    <li className="flex items-center space-x-2">
-                      <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
-                      <span>
-                        Questions from <strong>any year</strong> and{" "}
-                        <strong>any subject</strong>
-                      </span>
-                    </li>
-                    <li className="flex items-center space-x-2">
-                      <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
-                      <span>
-                        One question at a time with option to{" "}
-                        <strong>skip</strong>
-                      </span>
-                    </li>
-                    <li className="flex items-center space-x-2">
-                      <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
-                      <span>
-                        Detailed results with{" "}
-                        <strong>wrong answer review</strong>
-                      </span>
-                    </li>
-                  </ul>
-                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 md:p-3 mb-2">
+                          <h3 className="text-base font-semibold text-blue-900 mb-1">
+                          📝 Quiz Format
+                          </h3>
+                          <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-0.5 text-xs md:text-sm text-blue-800 leading-tight">
+                          <li className="flex items-start space-x-2">
+                            <span className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-0.5"></span>
+                            <span className="min-w-0 leading-tight">
+                            <strong>15 random questions</strong> from the selected
+                            exam
+                            </span>
+                          </li>
+                          <li className="flex items-start space-x-2">
+                            <span className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-0.5"></span>
+                            <span className="min-w-0 leading-tight">
+                            <strong>15 minutes</strong> time limit
+                            </span>
+                          </li>
+                          <li className="flex items-start space-x-2">
+                            <span className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-0.5"></span>
+                            <span className="min-w-0 leading-tight">
+                            Questions from <strong>any year</strong> and{" "}
+                            <strong>any subject</strong>
+                            </span>
+                          </li>
+                          <li className="flex items-start space-x-2">
+                            <span className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-0.5"></span>
+                            <span className="min-w-0 leading-tight">
+                            One question at a time, with option to{" "}
+                            <strong>skip</strong>
+                            </span>
+                          </li>
+                          <li className="flex items-start space-x-2 md:col-span-2">
+                            <span className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-0.5"></span>
+                            <span className="min-w-0 leading-tight">
+                            Detailed results with{" "}
+                            <strong>wrong answer review</strong>
+                            </span>
+                          </li>
+                          </ul>
+                        </div>
 
                 {/* Exam Cards */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
