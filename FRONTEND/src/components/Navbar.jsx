@@ -10,6 +10,7 @@ const EditProfileModal = lazy(() => import('./EditProfileModal'))
 // import Clock from './Clock'
 import { useAuth } from '../contexts/AuthContext'
 import { useLayout } from '../contexts/LayoutContext'
+import { CircleHelp } from './icons/CircleHelp'
 
 const Navbar = ({ onViewChange, currentView }) => {
   const { currentUser, logout } = useAuth()
@@ -379,6 +380,17 @@ const Navbar = ({ onViewChange, currentView }) => {
               </Button>
               <Button onClick={() => handleMobileModalOpen(setShowContactModal)} startIcon={<Phone size={16} />} variant="outlined" sx={{ justifyContent: 'flex-start' }}>
                 Contact
+              </Button>
+              <Button
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('openHelpModal'))
+                  closeMobileMenu()
+                }}
+                startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke="currentColor" />}
+                variant="outlined"
+                sx={{ justifyContent: 'flex-start' }}
+              >
+                Help & Support
               </Button>
             </Stack>
             <Divider sx={{ my: 1.5 }} />

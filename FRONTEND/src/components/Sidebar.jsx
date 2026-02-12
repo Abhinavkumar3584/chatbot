@@ -188,10 +188,10 @@ const Sidebar = () => {
     loadInsertedPyqs()
   }, [closeTransientOverlays, isMobile, loadInsertedPyqs])
 
-  const handleHelpClick = () => {
+  const handleHelpClick = useCallback(() => {
     if (isMobile) closeTransientOverlays()
     setShowHelpModal(true)
-  }
+  }, [closeTransientOverlays, isMobile])
 
   const handleWhatsNewClick = () => {
     if (isMobile) closeTransientOverlays()
@@ -239,15 +239,18 @@ const Sidebar = () => {
   useEffect(() => {
     const openBooksModal = () => handleBooksClick()
     const openPyqsModal = () => handlePyqsClick()
+    const openHelpModal = () => handleHelpClick()
 
     window.addEventListener('openBooksModal', openBooksModal)
     window.addEventListener('openPyqsModal', openPyqsModal)
+    window.addEventListener('openHelpModal', openHelpModal)
 
     return () => {
       window.removeEventListener('openBooksModal', openBooksModal)
       window.removeEventListener('openPyqsModal', openPyqsModal)
+      window.removeEventListener('openHelpModal', openHelpModal)
     }
-  }, [handleBooksClick, handlePyqsClick])
+  }, [handleBooksClick, handleHelpClick, handlePyqsClick])
 
   useEffect(() => {
     if (!isMobile) return
@@ -602,9 +605,6 @@ const Sidebar = () => {
                   </Button>
                   <Button onClick={() => { handleWhatsNewClick(); toggleSidebar(); }} variant="contained" startIcon={<Lightbulb className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
                     What&apos;s New
-                  </Button>
-                  <Button onClick={() => { handleHelpClick(); toggleSidebar(); }} variant="contained" startIcon={<CircleHelp width={16} height={16} strokeWidth={2} stroke="currentColor" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
-                    Help & Support
                   </Button>
                   <Button
                     onClick={() => { handleHomeClick(); toggleSidebar(); }}
