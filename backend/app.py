@@ -686,8 +686,157 @@ def trim_context_from_sources(sources, max_chars):
     return "\n\n".join(selected_blocks)
 
 
-def build_generation_prompt(context: str, query: str, answer_profile: dict):
+def is_greeting_or_casual(query: str) -> tuple[bool, str]:
+    """Detect if query is a greeting or casual chat instead of educational question."""
+    query_lower = query.lower().strip()
+    query_words = query_lower.split()
+    
+    # English greetings
+    english_greetings = [
+        'hi', 'hello', 'hey', 'hii', 'hiii', 'heya', 'howdy',
+        'good morning', 'good afternoon', 'good evening', 'good night',
+        'greetings', 'hola', 'yo'
+    ]
+    
+    # Hindi/Hinglish greetings
+    hindi_greetings = [
+        'namaste', 'namaskar', 'namaskaar', 'pranam', 'ram ram',
+        'jai hind', 'sat sri akal', 'salaam', 'adaab'
+    ]
+    
+    # Casual/How are you patterns (English + Hinglish)
+    casual_patterns = [
+        'how are you', 'how r u', 'how r you', 'how you doing',
+        'what\'s up', 'whatsup', 'wassup', 'sup', 'whats up',
+        'kaise ho', 'kese ho', 'kaisa hai', 'kesa hai', 'kya hal hai',
+        'sab badhiya', 'all good', 'theek ho', 'thik ho'
+    ]
+    
+    # Bot identity questions
+    identity_patterns = [
+        'who are you', 'what are you', 'what is your name', 'whats your name',
+        'who r u', 'what r u', 'your name', 'aap kaun ho', 'tum kaun ho',
+        'naam kya hai', 'aapka naam', 'tumhara naam', 'kon ho tum',
+        'what can you do', 'what do you do', 'kya kar sakte ho',
+        'help me', 'aap kya karte ho', 'kaise madad karoge'
+    ]
+    
+    # Thank you patterns
+    thank_patterns = [
+        'thank you', 'thanks', 'thank u', 'thanku', 'thnx', 'ty',
+        'dhanyavaad', 'dhanyawad', 'shukriya', 'शुक्रिया'
+    ]
+    
+    # Casual interjections/filler words
+    casual_interjections = [
+        'ok', 'okay', 'hmm', 'hmmm', 'ohh', 'ooh', 'aha', 'wow',
+        'nice', 'cool', 'great', 'awesome', 'accha', 'acha', 'theek hai',
+        'thik hai', 'badhiya', 'badiya', 'sahi', 'haan', 'han', 'nahi', 'na'
+    ]
+    
+    # Combined greetings (hi gran setu, hello bhai, etc.)
+    combined_greeting_words = ['gran', 'setu', 'bhai', 'dost', 'friend', 'bot', 'chatbot']
+    
+    # 1. Check pure greetings (short phrases)
+    if len(query_words) <= 5:
+        # Check English greetings
+        if any(query_lower == g or query_lower.startswith(g + ' ') for g in english_greetings):
+            return True, (
+                "Hello! 👋 I'm **Gran Setu**, your NCERT learning assistant.\n\n"
+                "I can help you with:\n"
+                "📚 NCERT subjects and concepts\n"
+                "💡 Detailed explanations\n"
+                "📝 Previous Year Questions (PYQs)\n"
+                "🎯 Exam preparation\n\n"
+                "What would you like to learn today?"
+            )
+        
+        # Check Hindi/Hinglish greetings
+        if any(g in query_lower for g in hindi_greetings):
+            return True, (
+                "Namaste! 🙏 Main **Gran Setu** hoon, aapka NCERT learning assistant.\n\n"
+                "Main aapki help kar sakta hoon:\n"
+                "📚 NCERT subjects aur concepts mein\n"
+                "💡 Detailed explanations\n"
+                "📝 Previous Year Questions (PYQs)\n"
+                "🎯 Exam preparation\n\n"
+                "Aaj aap kya seekhna chahenge?"
+            )
+        
+        # Combined greetings (hi gran setu, hello bhai, etc.)
+        if any(word in query_words for word in english_greetings + hindi_greetings):
+            if any(word in query_words for word in combined_greeting_words):
+                return True, (
+                    "Hello! 😊 I'm **Gran Setu**, ready to help you with your studies!\n\n"
+                    "Ask me anything about:\n"
+                    "• NCERT topics (Class 6-12)\n"
+                    "• Subject explanations\n"
+                    "• Practice questions\n"
+                    "• Exam preparation tips\n\n"
+                    "How can I assist you?"
+                )
+    
+    # 2. Check casual/how are you patterns
+    if any(pattern in query_lower for pattern in casual_patterns):
+        return True, (
+            "I'm doing great, thanks for asking! 😊\n\n"
+            "I'm **Gran Setu**, your study companion. I'm here to help you with NCERT content, "
+            "exam preparation, and answer your educational questions.\n\n"
+            "What topic would you like to explore today?"
+        )
+    
+    # 3. Check bot identity questions
+    if any(pattern in query_lower for pattern in identity_patterns):
+        return True, (
+            "I'm **Gran Setu** 🎓, your intelligent NCERT learning assistant!\n\n"
+            "**What I can do:**\n"
+            "✅ Answer questions from NCERT textbooks (Class 6-12)\n"
+            "✅ Explain complex concepts in simple language\n"
+            "✅ Provide Previous Year Questions (PYQs) for practice\n"
+            "✅ Help with exam preparation across subjects\n"
+            "✅ Understand both English and Hinglish queries\n\n"
+            "**Subjects I cover:**\n"
+            "History, Geography, Polity, Economics, Science, and more!\n\n"
+            "Try asking me: *\"Explain democracy\"* or *\"PYQ on Indian Constitution\"*"
+        )
+    
+    # 4. Check thank you messages
+    if any(pattern in query_lower for pattern in thank_patterns):
+        return True, (
+            "You're welcome! 😊\n\n"
+            "Happy to help! Feel free to ask me more questions anytime.\n"
+            "I'm here to make your learning easier! 📚"
+        )
+    
+    # 5. Check casual interjections (very short queries)
+    if len(query_words) <= 2 and any(word in casual_interjections for word in query_words):
+        return True, (
+            "I'm here to help you study! 📖\n\n"
+            "Ask me any educational question - I can explain NCERT topics, "
+            "provide practice questions, or help with exam preparation.\n\n"
+            "What would you like to know?"
+        )
+    
+    # 6. Check very short non-educational queries
+    if len(query.strip()) < 3 and not any(char.isdigit() for char in query):
+        return True, (
+            "I didn't quite understand that. 🤔\n\n"
+            "Please ask me an educational question! I can help with:\n"
+            "• NCERT concepts\n"
+            "• Subject explanations\n"
+            "• Previous year questions\n"
+            "• Exam preparation"
+        )
+    
+    return False, ""
+
+
+def build_generation_prompt(context: str, query: str, answer_profile: dict, has_context: bool = True):
     """Create compact, completion-safe prompt for accurate educational answers."""
+    disclaimer = ""
+    if not has_context or len(context.strip()) < 50:
+        disclaimer = "\n⚠️ Note: No relevant context found in NCERT materials. Response based on general knowledge.\n\n"
+    
     return (
         "You are an expert NCERT learning assistant. "
         "Use the provided context as the primary source of truth. "
@@ -697,13 +846,14 @@ def build_generation_prompt(context: str, query: str, answer_profile: dict):
         f"Answer style: {answer_profile['instruction']}\n\n"
         f"Question:\n{query}\n\n"
         f"Context:\n{context if context else 'No relevant context retrieved.'}\n\n"
+        f"{disclaimer}"
         "Provide the final answer now."
     )
 
 
-def generate_with_model_routing(query: str, context: str, answer_profile: dict, llm_temperature: float, llm_top_p: float, llm_max_tokens: int):
+def generate_with_model_routing(query: str, context: str, answer_profile: dict, llm_temperature: float, llm_top_p: float, llm_max_tokens: int, has_context: bool = True):
     """Generate answer with provider routing: OpenAI (primary) -> Groq (fallback)."""
-    prompt = build_generation_prompt(context, query, answer_profile)
+    prompt = build_generation_prompt(context, query, answer_profile, has_context)
     max_tokens = max(180, min(llm_max_tokens, answer_profile['max_tokens']))
 
     # 1) Primary: OpenAI
@@ -982,26 +1132,50 @@ def get_prompt(context: str, query: str):
     return prompt
 
 def build_fallback_response(context: str, sources: list, query: str) -> str:
-    """Build a simple fallback response when LLM is unavailable"""
+    """Build a helpful fallback response when LLM is unavailable"""
     if sources:
         bullets = []
         for i, source in enumerate(sources, 1):
             preview = source.get('text_preview') or source.get('full_text') or ''
+            subject = source.get('subject', '')
+            chapter = source.get('chapter', '')
             if preview:
-                bullets.append(f"{i}. {preview}")
+                header = f"**Source {i}**"
+                if subject:
+                    header += f" - {subject}"
+                if chapter:
+                    header += f" (Chapter: {chapter})"
+                bullets.append(f"{header}\n{preview[:400]}...")
+        
         if bullets:
             return (
-                "I couldn't reach the AI model, but here are the most relevant excerpts from the documents:\n\n"
-                + "\n".join(bullets)
+                "⚠️ **AI service temporarily unavailable**\n\n"
+                "However, I found relevant information from NCERT materials:\n\n"
+                + "\n\n---\n\n".join(bullets) + 
+                "\n\n---\n\n📚 *Tip: The AI will provide a more comprehensive answer when the service is restored.*"
             )
+    
     if context and context.strip():
         return (
-            "I couldn't reach the AI model, but here's the relevant context I found:\n\n"
-            f"{context.strip()}"
+            "⚠️ **AI service temporarily unavailable**\n\n"
+            "Here's the relevant context from NCERT materials:\n\n"
+            f"{context.strip()[:1000]}\n\n"
+            "📚 *For a detailed explanation, please try again in a moment.*"
         )
+    
+    # No context found at all
     return (
-        "I couldn't reach the AI model and no relevant context was found for your question. "
-        "Please try again later."
+        "⚠️ **Unable to process your request**\n\n"
+        "I couldn't find relevant NCERT content for your query, and the AI service is temporarily unavailable.\n\n"
+        "**Suggestions:**\n"
+        "• Try rephrasing your question\n"
+        "• Specify the subject or class (e.g., 'Class 10 democracy')\n"
+        "• Ask about specific NCERT topics\n"
+        "• Try again in a few moments\n\n"
+        "**Example queries:**\n"
+        "• 'Explain federalism in India'\n"
+        "• 'What is photosynthesis?'\n"
+        "• 'PYQ on Indian Constitution'"
     )
 
 @app.route("/api/health", methods=["GET"])
@@ -1108,6 +1282,21 @@ def search():
         return jsonify({"error": "Query cannot be empty"}), 400
     
     try:
+        # Check for greetings or casual chat first
+        is_casual, casual_response = is_greeting_or_casual(query)
+        if is_casual:
+            return jsonify({
+                "rag_response": casual_response,
+                "sources": [],
+                "mcq_results": [],
+                "query": query,
+                "namespace_used": "none",
+                "class_filter_used": None,
+                "answer_length_mode": "normal",
+                "provider_used": "greeting_handler",
+                "is_greeting": True
+            }), 200
+        
         # Set a timeout for the entire operation
         start_time = time.time()
         timeout_seconds = 30  # 30 second timeout
@@ -1162,6 +1351,9 @@ def search():
                 print(f"DEBUG: Broader search failed: {e}")
         
         compact_context = trim_context_from_sources(sources, max_chars=answer_profile['context_chars'])
+        
+        # Check if we have meaningful context
+        has_context = len(compact_context.strip()) > 50 and (sources and sources[0].get('score', 0) > 0.2)
 
         # Generate RAG response using provider routing
         rag_response = None
@@ -1174,7 +1366,12 @@ def search():
             llm_temperature=llm_temperature,
             llm_top_p=llm_top_p,
             llm_max_tokens=llm_max_tokens,
+            has_context=has_context,
         )
+        
+        # Add disclaimer if no context was found
+        if not has_context and rag_response:
+            rag_response = "⚠️ **Note**: No relevant content found in NCERT materials for this query. The response below is based on general knowledge.\n\n" + rag_response
 
         if not rag_response:
             warning = route_error or "LLM unavailable"
