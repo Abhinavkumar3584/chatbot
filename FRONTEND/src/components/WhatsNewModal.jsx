@@ -77,6 +77,11 @@ const WhatsNewModal = ({ isOpen, onClose }) => {
     }
   }
 
+  const handleOpenInsertedBooks = () => {
+    window.dispatchEvent(new CustomEvent('openBooksModal'))
+    onClose()
+  }
+
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-0 md:p-4"
@@ -147,6 +152,24 @@ const WhatsNewModal = ({ isOpen, onClose }) => {
             ))}
           </div>
           
+          {/* Quick Access */}
+          <div className="mt-6 bg-white p-4 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800">Inserted Books</h3>
+                <p className="text-xs text-gray-600 mt-1">
+                  View indexed books and key topics from the knowledge base.
+                </p>
+              </div>
+              <button
+                onClick={handleOpenInsertedBooks}
+                className="bg-blue-600 text-white py-1.5 px-3 rounded-lg hover:bg-blue-700 transition-colors text-xs font-semibold"
+              >
+                Open
+              </button>
+            </div>
+          </div>
+
           {/* Coming Soon Section */}
           <div className="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border border-purple-200">
             <div className="flex items-center space-x-2 mb-2">

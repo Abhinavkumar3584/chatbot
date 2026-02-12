@@ -323,6 +323,14 @@ const PYQPractice = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('openPyqsModal'))}
+                  className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  title="View Inserted PYQs"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Inserted PYQs</span>
+                </button>
                 <div className="text-right">
                   <div className="text-2xl font-bold" style={{ color: theme.colors.primary }}>
                     {isLoading ? '...' : filteredQuestions.length}
