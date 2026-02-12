@@ -412,7 +412,7 @@ const ChatMessageBubble = memo(({
 const ChatSection = () => {
   const { theme } = useTheme()
   const isDarkMode = theme?.mode === 'dark'
-  const { sidebarVisible, pyqVisible } = useLayout()
+  const { contentOffsetLeft, pyqVisible } = useLayout()
   const { addToSearchHistory, addGuestChat, updateGuestChat, guestChatHistory } = useSearchHistory()
   const { currentUser, saveMessage, getChatMessages, updateChatTitle, updateChatMessageCount, getChatHistory } = useAuth()
   const { trackInteraction } = useDashboard()
@@ -945,7 +945,7 @@ const ChatSection = () => {
   )
 
   // Calculate dynamic margins based on visibility (match fixed panel sizes)
-  const leftMarginPx = useMemo(() => (sidebarVisible ? 268 : 48), [sidebarVisible])
+  const leftMarginPx = contentOffsetLeft
   const rightMarginPx = useMemo(() => (pyqVisible ? 428 : 48), [pyqVisible])
 
   return (

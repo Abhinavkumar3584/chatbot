@@ -35,10 +35,10 @@ export const LayoutProvider = ({ children }) => {
     if (isMobile) return 0
 
     // Sidebar dimensions mirror Sidebar.jsx:
-    // expanded: 230px (tablet), 245px (desktop) with 8px left gap
+    // expanded: 240px (tablet), 255px (desktop) with 8px left gap
     // collapsed icon rail (desktop only): 40px with 8px left gap
     if (sidebarVisible) {
-      return viewportWidth >= 900 ? 253 : 238
+      return viewportWidth >= 900 ? 263 : 248
     }
 
     return 48

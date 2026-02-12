@@ -322,7 +322,7 @@ const Sidebar = () => {
             left: isMobile ? 0 : 8,
             top: isMobile ? 56 : 72,
             bottom: isMobile ? 0 : 8,
-            width: isMobile ? '85vw' : { xs: 215, sm: 230, md: 245 },
+            width: isMobile ? '85vw' : { xs: 220, sm: 240, md: 255 },
             zIndex: isMobile ? 160 : 30,
             borderRadius: isMobile ? 0 : 1,
             border: '1px solid #808080',
