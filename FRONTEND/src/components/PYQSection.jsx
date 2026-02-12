@@ -7,6 +7,20 @@ import { useDashboard } from '../contexts/DashboardContext'
 import apiService from '../services/api'
 import { ChevronFirst } from './icons/ChevronFirst'
 
+const PYQ_IMPORTANT_STORAGE_KEY = 'pyqImportantQuestionIds'
+
+const getStableQuestionId = (question, index = 0) => {
+  if (question?.id) return question.id
+
+  const exam = question?.exam_name || question?.metadata?.exam_name || question?.metadata?.exam || ''
+  const year = question?.year || question?.metadata?.year || question?.metadata?.exam_year || ''
+  const term = question?.term || question?.metadata?.term || question?.metadata?.exam_term || ''
+  const subject = question?.subject || question?.metadata?.subject || ''
+  const content = question?.question || question?.text || ''
+
+  return `${exam}|${year}|${term}|${subject}|${content}`.trim() || `fallback_${index}`
+}
+
 const PYQSection = () => {
   const { pyqVisible, togglePyq, isMobile } = useLayout()
   const { trackInteraction } = useDashboard()
@@ -26,6 +40,27 @@ const PYQSection = () => {
 
   const isExamMenuOpen = Boolean(examAnchorEl)
   const isSubjectMenuOpen = Boolean(subjectAnchorEl)
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(PYQ_IMPORTANT_STORAGE_KEY)
+      if (!saved) return
+      const parsed = JSON.parse(saved)
+      if (Array.isArray(parsed)) {
+        setImportantQuestions(new Set(parsed))
+      }
+    } catch (error) {
+      console.warn('Failed to load important PYQs from storage:', error)
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PYQ_IMPORTANT_STORAGE_KEY, JSON.stringify(Array.from(importantQuestions)))
+    } catch (error) {
+      console.warn('Failed to persist important PYQs:', error)
+    }
+  }, [importantQuestions])
 
   // Load available exams and subjects from current search results only
   const [availableExams, setAvailableExams] = useState([])
@@ -199,7 +234,7 @@ const PYQSection = () => {
     // Filter for important questions only
     if (showImportantOnly) {
       filtered = filtered.filter(q => {
-        const questionId = q.id || `fallback_${questions.indexOf(q)}`
+        const questionId = getStableQuestionId(q, questions.indexOf(q))
         return importantQuestions.has(questionId)
       })
     }
@@ -284,6 +319,24 @@ const PYQSection = () => {
     })
   }
 
+  const handleSelectAllOrClearAll = () => {
+    if (importantQuestions.size > 0) {
+      // Clear all marked important questions globally
+      setImportantQuestions(new Set())
+      return
+    }
+
+    // Select all currently visible questions
+    if (filteredQuestions.length === 0) return
+    setImportantQuestions(prev => {
+      const newSet = new Set(prev)
+      filteredQuestions.forEach((question, idx) => {
+        newSet.add(getStableQuestionId(question, idx))
+      })
+      return newSet
+    })
+  }
+
   // Determine which questions to display based on search results or filtered API results
   const currentQuestions = searchResults.length > 0 ? filteredQuestions : filteredQuestions
 
@@ -360,9 +413,19 @@ const PYQSection = () => {
                 {importantQuestions.size > 0 && (
                   <Chip
                     size="small"
-                    icon={<Star className="w-3 h-3 fill-current" />}
+                    clickable
+                    onClick={() => setShowImportantOnly(prev => !prev)}
+                    icon={<Star className={`w-3 h-3 ${showImportantOnly ? 'fill-current' : ''}`} />}
                     label={`${importantQuestions.size} important`}
-                    sx={{ backgroundColor: 'rgba(255, 146, 28, 0.15)', color: '#FF921C', fontSize: '0.7rem' }}
+                    title={showImportantOnly ? 'Show all questions' : 'Show only important questions'}
+                    sx={{
+                      backgroundColor: showImportantOnly ? '#f59e0b' : 'rgba(255, 146, 28, 0.15)',
+                      color: showImportantOnly ? '#ffffff' : '#FF921C',
+                      fontSize: '0.7rem',
+                      '&:hover': {
+                        backgroundColor: showImportantOnly ? '#d97706' : 'rgba(255, 146, 28, 0.25)'
+                      }
+                    }}
                   />
                 )}
               </Stack>
@@ -453,23 +516,23 @@ const PYQSection = () => {
                         ))}
                       </Menu>
 
-                      {/* Important Questions Filter */}
+                      {/* Important Controls */}
                       <Button
                         size="small"
-                        variant={showImportantOnly ? 'contained' : 'outlined'}
-                        onClick={() => setShowImportantOnly(!showImportantOnly)}
-                        startIcon={<Star className={`w-3 h-3 ${showImportantOnly ? 'fill-current' : ''}`} />}
-                        title={showImportantOnly ? 'Show all questions' : 'Show only important questions'}
+                        variant="outlined"
+                        onClick={handleSelectAllOrClearAll}
+                        startIcon={<Star className="w-3 h-3" />}
+                        title={importantQuestions.size > 0 ? 'Clear all marked important questions' : 'Mark all currently visible questions as important'}
                         sx={{
                           fontSize: '0.75rem',
                           borderRadius: 999,
-                          backgroundColor: showImportantOnly ? '#f59e0b' : '#e5e7eb',
-                          color: showImportantOnly ? '#ffffff' : '#374151',
-                          borderColor: showImportantOnly ? '#f59e0b' : '#e5e7eb',
-                          '&:hover': { backgroundColor: showImportantOnly ? '#d97706' : '#d1d5db' }
+                          backgroundColor: '#e5e7eb',
+                          color: '#374151',
+                          borderColor: '#e5e7eb',
+                          '&:hover': { backgroundColor: '#d1d5db' }
                         }}
                       >
-                        {showImportantOnly ? 'Important' : 'All'}
+                        {importantQuestions.size > 0 ? 'Clear All' : 'Select All'}
                       </Button>
                     </Stack>
                   )}
@@ -528,7 +591,7 @@ const PYQSection = () => {
                     <Stack spacing={2}>
                       {currentQuestions.map((question, questionIndex) => {
                         // Use the unique ID from backend, fallback to index-based ID if needed
-                        const questionId = question.id || `fallback_${questionIndex}`
+                        const questionId = getStableQuestionId(question, questionIndex)
                         const userAnswer = userAnswers[questionId]
                         const isCorrect = userAnswer === question.correct_answer
                         const hasAnswered = userAnswer !== undefined

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect, Fragment, memo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { User, ChevronUp, MessageCircle, FileText, Hash } from 'lucide-react'
+import { User, ChevronUp, FileText, Hash } from 'lucide-react'
 import { Box, Paper, Stack, Typography, Alert, Chip, Divider, Avatar, IconButton, Button } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import PropTypes from 'prop-types'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLayout } from '../contexts/LayoutContext'
 import { useSearchHistory } from '../contexts/SearchHistoryContext'
@@ -12,6 +13,7 @@ import { useDashboard } from '../contexts/DashboardContext'
 import apiService from '../services/api'
 import SearchProgressIndicator from './SearchProgressIndicator'
 import EmbeddedSearchBar from './EmbeddedSearchBar'
+import { SEARCH_SETTINGS } from '../config/searchSettings'
 
 const EMPTY_EXPANDED_SOURCES = new Set()
 const MAX_CHAT_TITLE_LENGTH = 32
@@ -99,43 +101,73 @@ const createMarkdownComponents = (isUserMessage) => ({
   p: ({ ...props }) => (
       <Typography
         variant="body2"
-        sx={{ fontSize: CHAT_FONT_SIZES.body, lineHeight: 1.6, mb: 0.75, color: 'inherit' }}
+        sx={{
+          fontSize: CHAT_FONT_SIZES.body,
+          lineHeight: isUserMessage ? 1.48 : 1.34,
+          mb: isUserMessage ? 0.35 : 0.16,
+          color: 'inherit',
+          '&:last-of-type': { mb: 0 }
+        }}
         {...props}
       />
   ),
   h1: ({ ...props }) => (
       <Typography
         variant="h6"
-        sx={{ fontSize: CHAT_FONT_SIZES.h1, fontWeight: 700, mt: 0.5, mb: 0.75, color: 'inherit' }}
+        sx={{ fontSize: CHAT_FONT_SIZES.h1, fontWeight: 700, mt: 0.12, mb: isUserMessage ? 0.22 : 0.08, color: 'inherit' }}
         {...props}
       />
   ),
   h2: ({ ...props }) => (
       <Typography
         variant="subtitle1"
-        sx={{ fontSize: CHAT_FONT_SIZES.h2, fontWeight: 700, mt: 0.5, mb: 0.5, color: 'inherit' }}
+        sx={{ fontSize: CHAT_FONT_SIZES.h2, fontWeight: 700, mt: 0.1, mb: isUserMessage ? 0.2 : 0.06, color: 'inherit' }}
         {...props}
       />
   ),
   h3: ({ ...props }) => (
       <Typography
         variant="subtitle2"
-        sx={{ fontSize: CHAT_FONT_SIZES.h3, fontWeight: 700, mt: 0.5, mb: 0.5, color: 'inherit' }}
+        sx={{ fontSize: CHAT_FONT_SIZES.h3, fontWeight: 700, mt: 0.1, mb: isUserMessage ? 0.18 : 0.05, color: 'inherit' }}
         {...props}
       />
   ),
   ul: ({ ...props }) => (
-    <Box component="ul" sx={{ pl: 2, mb: 0.75 }} {...props} />
+    <Box
+      component="ul"
+      sx={{
+        listStyleType: 'disc',
+        listStylePosition: 'outside',
+        pl: 2.5,
+        mb: isUserMessage ? 0.35 : 0.16,
+        mt: 0.12,
+        '& ul': { listStyleType: 'circle', mt: 0.25 },
+        '& ol': { listStyleType: 'decimal', mt: 0.25 }
+      }}
+      {...props}
+    />
   ),
   ol: ({ ...props }) => (
-    <Box component="ol" sx={{ pl: 2, mb: 0.75 }} {...props} />
+    <Box
+      component="ol"
+      sx={{
+        listStyleType: 'decimal',
+        listStylePosition: 'outside',
+        pl: 2.5,
+        mb: isUserMessage ? 0.35 : 0.16,
+        mt: 0.12,
+        '& ul': { listStyleType: 'disc', mt: 0.25 },
+        '& ol': { listStyleType: 'lower-alpha', mt: 0.25 }
+      }}
+      {...props}
+    />
   ),
   li: ({ ...props }) => (
-      <li>
+      <li style={{ marginBottom: isUserMessage ? '0.14rem' : '0.08rem' }}>
         <Typography
           component="span"
           variant="body2"
-          sx={{ fontSize: CHAT_FONT_SIZES.body, lineHeight: 1.6, color: 'inherit' }}
+          sx={{ fontSize: CHAT_FONT_SIZES.body, lineHeight: isUserMessage ? 1.42 : 1.28, color: 'inherit' }}
           {...props}
         />
       </li>
@@ -147,10 +179,26 @@ const createMarkdownComponents = (isUserMessage) => ({
           pl: 1.5,
           ml: 0,
           mr: 0,
-          mb: 0.75,
+          mb: 0.35,
           borderLeft: (theme) => `3px solid ${alpha(theme.palette.text.primary, 0.2)}`,
           color: 'inherit',
           opacity: isUserMessage ? 0.9 : 0.85
+        }}
+        {...props}
+      />
+  ),
+  pre: ({ ...props }) => (
+      <Box
+        component="pre"
+        sx={{
+          fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+          fontSize: CHAT_FONT_SIZES.code,
+          backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08),
+          p: 1,
+          borderRadius: 1,
+          overflowX: 'auto',
+          my: 0.35,
+          whiteSpace: 'pre'
         }}
         {...props}
       />
@@ -162,12 +210,12 @@ const createMarkdownComponents = (isUserMessage) => ({
           fontFamily: '"JetBrains Mono", "Fira Code", monospace',
           fontSize: CHAT_FONT_SIZES.code,
           backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.08),
-          px: inline ? 0.5 : 1,
-          py: inline ? 0 : 0.75,
+          px: inline ? 0.45 : 0,
+          py: inline ? 0.05 : 0,
           borderRadius: 1,
-          display: inline ? 'inline' : 'block',
-          whiteSpace: inline ? 'pre-wrap' : 'pre',
-          overflowX: inline ? 'visible' : 'auto'
+          display: inline ? 'inline' : 'inherit',
+          whiteSpace: inline ? 'pre-wrap' : 'inherit',
+          overflowX: inline ? 'visible' : 'inherit'
         }}
         {...props}
       />
@@ -233,7 +281,7 @@ const ChatMessageBubble = memo(({
         <Paper
           elevation={0}
           sx={{
-            p: 1.5,
+            p: message.type === 'bot' ? 1.15 : 1.4,
             width: { xs: '100%', md: 'auto' },
             borderRadius: 2,
             backgroundColor: message.type === 'user' ? 'primary.main' : 'background.paper',
@@ -252,7 +300,19 @@ const ChatMessageBubble = memo(({
               )}
             </Box>
           ) : (
-            <Box sx={{ fontSize: '0.75rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+            <Box
+              sx={{
+                fontSize: '0.75rem',
+                lineHeight: message.type === 'bot' ? 1.34 : 1.5,
+                whiteSpace: 'pre-wrap',
+                '& h1 + p, & h2 + p, & h3 + p, & h4 + p, & h5 + p, & h6 + p': {
+                  marginTop: '0.08rem'
+                },
+                '& p + p': {
+                  marginTop: '0.1rem'
+                }
+              }}
+            >
               <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                 {typingText ?? message.content}
               </ReactMarkdown>
@@ -408,6 +468,24 @@ const ChatMessageBubble = memo(({
     </Box>
   )
 })
+
+ChatMessageBubble.displayName = 'ChatMessageBubble'
+ChatMessageBubble.propTypes = {
+  message: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    type: PropTypes.string.isRequired,
+    content: PropTypes.string,
+    isLoading: PropTypes.bool,
+    sources: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
+    error: PropTypes.bool
+  }).isRequired,
+  markdownComponents: PropTypes.object.isRequired,
+  typingText: PropTypes.string,
+  aiStatusText: PropTypes.string,
+  expandedSourceSet: PropTypes.instanceOf(Set),
+  onToggleSource: PropTypes.func.isRequired,
+  onRegisterUserRef: PropTypes.func.isRequired
+}
 
 const ChatSection = () => {
   const { theme } = useTheme()
@@ -733,10 +811,15 @@ const ChatSection = () => {
     try {
       const response = await apiService.search(query, {
         subject: selectedSubject,
-        n_results: 5,        // Increased from 3 to 5 for better context
+        n_results: SEARCH_SETTINGS.nResults,
         namespace: selectedSubject,
-        mcq_threshold: 0.25, // Slightly increased for better MCQ matching
-        mcq_limit: 8         // Increased from 5 to 8 for more PYQs
+        mcq_threshold: SEARCH_SETTINGS.mcqThreshold,
+        mcq_limit: SEARCH_SETTINGS.mcqLimit,
+        answer_settings: {
+          temperature: SEARCH_SETTINGS.answerGeneration.temperature,
+          top_p: SEARCH_SETTINGS.answerGeneration.topP,
+          max_tokens: SEARCH_SETTINGS.answerGeneration.maxTokens
+        }
       })
       
       // Track successful search interaction
@@ -973,32 +1056,6 @@ const ChatSection = () => {
             position: 'relative'
           }}
         >
-          {/* Chat Header with Title */}
-          {currentChatTitle && currentChatTitle !== 'New Chat' && (
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 12,
-                left: 16,
-                zIndex: 1,
-                display: { xs: 'none', md: 'block' },
-                pointerEvents: 'none'
-              }}
-            >
-              <Chip
-                size="small"
-                icon={<MessageCircle size={12} />}
-                label={currentChatTitle}
-                sx={{
-                  backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
-                  border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.35)}`,
-                  color: 'text.primary',
-                  maxWidth: '100%'
-                }}
-              />
-            </Box>
-          )}
-
           {/* System Status Banner */}
           {!systemStatus.healthy && (
             <Box sx={{ mx: 2, mt: 1 }}>

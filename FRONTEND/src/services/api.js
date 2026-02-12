@@ -81,7 +81,10 @@ class ApiService {
     const {
       n_results = 3,
       namespace = '',
-      subject = 'all'
+      subject = 'all',
+      mcq_threshold,
+      mcq_limit,
+      answer_settings
     } = options;
 
     try {
@@ -91,7 +94,10 @@ class ApiService {
           query,
           n_results,
           namespace,
-          subject
+          subject,
+          ...(mcq_threshold !== undefined ? { mcq_threshold } : {}),
+          ...(mcq_limit !== undefined ? { mcq_limit } : {}),
+          ...(answer_settings ? { answer_settings } : {})
         }),
       });
 
@@ -111,6 +117,22 @@ class ApiService {
     } catch (error) {
       console.error('Failed to get total questions:', error);
       return { total_questions: 0, error: error.message };
+    }
+  }
+
+  /**
+   * Get active search and answer-generation settings
+   */
+  async getSearchSettings() {
+    try {
+      return await this.request('/search-settings');
+    } catch (error) {
+      console.error('Failed to get search settings:', error);
+      return {
+        search: { n_results: 5, mcq_threshold: 0.25, mcq_limit: 0 },
+        answer_generation: { temperature: 0.3, top_p: 0.9, max_tokens: 1500 },
+        error: error.message
+      };
     }
   }
 

@@ -714,10 +714,15 @@ def search():
         return jsonify({"error": "No JSON data provided"}), 400
     
     query = data.get("query", "")
-    n_results = data.get("n_results", 5)  # Increased from 3 to 5 for better context
+    n_results = data.get("n_results", int(os.getenv("DEFAULT_N_RESULTS", "5")))
     namespace = data.get("namespace", "")
-    mcq_threshold = data.get("mcq_threshold", 0.25)  # Slightly increased for better MCQ matching
-    mcq_limit = data.get("mcq_limit", 8)  # Increased from 5 to 8 for more PYQs
+    mcq_threshold = data.get("mcq_threshold", float(os.getenv("DEFAULT_MCQ_THRESHOLD", "0.25")))
+    mcq_limit = data.get("mcq_limit", int(os.getenv("DEFAULT_MCQ_LIMIT", "0")))
+    answer_settings = data.get("answer_settings", {}) or {}
+
+    llm_temperature = float(answer_settings.get("temperature", os.getenv("DEFAULT_ANSWER_TEMPERATURE", "0.3")))
+    llm_top_p = float(answer_settings.get("top_p", os.getenv("DEFAULT_ANSWER_TOP_P", "0.9")))
+    llm_max_tokens = int(answer_settings.get("max_tokens", os.getenv("DEFAULT_ANSWER_MAX_TOKENS", "1500")))
     
     # Input validation
     if not query.strip():
@@ -813,9 +818,9 @@ def search():
                         }
                     ],
                     model="llama-3.1-8b-instant",  # Reliable and fast Groq model
-                    max_tokens=1500,  # Increased for more detailed responses
-                    temperature=0.3,  # Lower temperature for more focused, accurate responses
-                    top_p=0.9,       # Better coherence
+                    max_tokens=llm_max_tokens,
+                    temperature=llm_temperature,
+                    top_p=llm_top_p,
                 )
                 rag_response = chat_completion.choices[0].message.content
             except Exception as e:
@@ -844,6 +849,16 @@ def search():
             "mcq_results": mcq_results,
             "query": query,
             "namespace_used": namespace if namespace else "all",
+            "search_settings": {
+                "n_results": n_results,
+                "mcq_threshold": mcq_threshold,
+                "mcq_limit": mcq_limit
+            },
+            "answer_settings": {
+                "temperature": llm_temperature,
+                "top_p": llm_top_p,
+                "max_tokens": llm_max_tokens
+            },
             "timestamp": time.time()
         }
         if not pinecone_available:
@@ -887,6 +902,25 @@ def get_total_questions():
             "error": f"Failed to get total questions: {str(e)}",
             "total_questions": 0
         }), 500
+
+@app.route("/api/search-settings", methods=["GET"])
+def get_search_settings():
+    """Expose active search and answer-generation settings."""
+    return jsonify({
+        "search": {
+            "n_results": int(os.getenv("DEFAULT_N_RESULTS", "5")),
+            "mcq_threshold": float(os.getenv("DEFAULT_MCQ_THRESHOLD", "0.25")),
+            "mcq_limit": int(os.getenv("DEFAULT_MCQ_LIMIT", "0"))
+        },
+        "answer_generation": {
+            "temperature": float(os.getenv("DEFAULT_ANSWER_TEMPERATURE", "0.3")),
+            "top_p": float(os.getenv("DEFAULT_ANSWER_TOP_P", "0.9")),
+            "max_tokens": int(os.getenv("DEFAULT_ANSWER_MAX_TOKENS", "1500"))
+        },
+        "notes": {
+            "mcq_limit": "0 means no hard cap; returns all matches above threshold"
+        }
+    }), 200
 
 @app.route("/api/stats", methods=["GET"])
 def get_stats():
@@ -1461,7 +1495,7 @@ def search_all_namespaces(pinecone_index, model, query: str, n_chunks: int = 2, 
 
     return context, sources
 
-def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=5):
+def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=0):
     """Query MCQ index for relevant questions across all namespaces"""
     try:
         query_embedding = encode_query(mcq_model, query_text)
@@ -1471,10 +1505,14 @@ def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=
         pyq_namespaces = list(stats.namespaces.keys()) if stats.namespaces else ["CIVIL SERVICES EXAMS", "BANKING EXAMS", "SCHOOL EXAMS"]
         all_results = []
 
+        normalized_top_k = int(top_k) if top_k is not None else 0
+        unlimited_results = normalized_top_k <= 0
+        per_namespace_top_k = min(500, max(50, normalized_top_k * 2)) if not unlimited_results else 1000
+
         def _query_namespace(namespace):
             response = mcq_index.query(
                 vector=query_embedding,
-                top_k=20,  # Get more results per namespace to ensure variety
+                top_k=per_namespace_top_k,
                 include_metadata=True,
                 namespace=namespace
             )
@@ -1499,10 +1537,12 @@ def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=
         filtered_results = [
             result for result in all_results if result['score'] >= similarity_threshold
         ]
+
+        selected_results = filtered_results if unlimited_results else filtered_results[:normalized_top_k]
         
         # Format MCQ results for frontend
         formatted_mcqs = []
-        for result in filtered_results[:top_k]:
+        for result in selected_results:
             metadata = result['metadata']
             
             # Extract data from full_json_str field (new structure)
@@ -1559,9 +1599,9 @@ def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=
             subject = full_question_data.get('subject', metadata.get('subject', 'Unknown'))
             explanation = full_question_data.get('explanation', metadata.get('explanation', ''))
             
-            # Generate a unique ID using timestamp and question hash
-            question_hash = hashlib.md5(question_text.encode()).hexdigest()[:8]
-            unique_id = f"{int(time.time() * 1000)}_{question_hash}"
+            # Generate a stable unique ID for persistence on frontend
+            stable_id_source = f"{exam_name}|{exam_year}|{exam_term}|{subject}|{question_text}".lower().strip()
+            unique_id = hashlib.md5(stable_id_source.encode()).hexdigest()
             
             formatted_mcqs.append({
                 'id': unique_id,
