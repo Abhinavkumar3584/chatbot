@@ -792,14 +792,10 @@ const ChatSection = () => {
   }, [currentUser, currentChatId, currentChatTitle, addGuestChat, updateGuestChat, guestChatHistory])
 
   // Handle sending messages - can be called from EmbeddedSearchBar
-  const sendMessage = useCallback(async (query, chatControls = {}) => {
+  const sendMessage = useCallback(async (query, selectedSubject = 'all') => {
     if (!query.trim()) return
     if (isLoading) return
     setIsLoading(true)
-
-    const selectedSubject = chatControls.subject || 'all'
-    const selectedClass = chatControls.selectedClass || null
-    const answerLength = chatControls.answerLength || 'normal'
 
     const userMessage = {
       id: Date.now(),
@@ -866,8 +862,6 @@ const ChatSection = () => {
     try {
       const response = await apiService.search(query, {
         subject: selectedSubject,
-        selected_class: selectedClass,
-        answer_length: answerLength,
         n_results: SEARCH_SETTINGS.nResults,
         namespace: selectedSubject,
         mcq_threshold: SEARCH_SETTINGS.mcqThreshold,
@@ -949,14 +943,16 @@ const ChatSection = () => {
         return newMessages
       })
       
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('newMcqResults', {
-          detail: {
-            mcqs: Array.isArray(response.mcq_results) ? response.mcq_results : [],
-            query: query
-          }
-        }))
-      }, 100)
+      if (response.mcq_results && response.mcq_results.length > 0) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('newMcqResults', { 
+            detail: { 
+              mcqs: response.mcq_results,
+              query: query 
+            } 
+          }))
+        }, 100)
+      }
     } catch (error) {
       // Update the temporary bot message with error
       const errorMessage = {

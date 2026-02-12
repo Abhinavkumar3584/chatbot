@@ -77,44 +77,24 @@ const PYQPractice = () => {
 
   const starredQuestions = useMemo(() => Object.values(starredQuestionsMap), [starredQuestionsMap])
 
-  // Filter options
-  const examOptions = [
+  // Filter options (DB-backed only)
+  const examOptions = useMemo(() => [
     { id: 'all', name: 'All Exams' },
-    { id: 'upsc', name: 'UPSC CSE' },
-    { id: 'capf', name: 'CAPF' },
-    { id: 'cds', name: 'CDS' },
-    { id: 'mppsc', name: 'MPPSC' },
-    { id: 'uppcs', name: 'UPPCS' },
-    { id: 'bpsc', name: 'BPSC' },
     ...availableExams.map(exam => ({ id: exam.toLowerCase().replace(/\s+/g, '_'), name: exam }))
-  ]
+  ], [availableExams])
 
-  const subjectOptions = [
+  const subjectOptions = useMemo(() => [
     { id: 'all', name: 'All Subjects' },
-    { id: 'history', name: 'History' },
-    { id: 'geography', name: 'Geography' },
-    { id: 'polity', name: 'Polity' },
-    { id: 'economics', name: 'Economics' },
-    { id: 'science', name: 'Science & Technology' },
-    { id: 'environment', name: 'Environment' },
-    { id: 'current_affairs', name: 'Current Affairs' },
     ...availableSubjects.map(subject => ({ id: subject.toLowerCase().replace(/\s+/g, '_'), name: subject }))
-  ]
+  ], [availableSubjects])
 
-  const yearOptions = [
+  const yearOptions = useMemo(() => [
     { id: 'all', name: 'All Years' },
-    { id: '2024', name: '2024' },
-    { id: '2023', name: '2023' },
-    { id: '2022', name: '2022' },
-    { id: '2021', name: '2021' },
-    { id: '2020', name: '2020' },
-    { id: '2019', name: '2019' },
-    { id: '2018', name: '2018' },
-    { id: '2017', name: '2017' },
-    { id: '2016', name: '2016' },
-    { id: '2015', name: '2015' },
-    ...availableYears.map(year => ({ id: year.toString(), name: year.toString() }))
-  ]
+    ...availableYears
+      .slice()
+      .sort((a, b) => Number(b) - Number(a))
+      .map(year => ({ id: year.toString(), name: year.toString() }))
+  ], [availableYears])
 
 
 
@@ -152,6 +132,46 @@ const PYQPractice = () => {
   // Load initial data and filters
   useEffect(() => {
     loadInitialData()
+  }, [])
+
+  // Load filter options in background after UI becomes idle
+  useEffect(() => {
+    let cancelled = false
+    let idleHandle = null
+    let timeoutHandle = null
+
+    const loadPyqFilterOptions = async () => {
+      try {
+        const response = await apiService.getPyqFilters()
+        if (cancelled) return
+
+        const exams = Array.isArray(response?.exams) ? response.exams.filter(Boolean) : []
+        const subjects = Array.isArray(response?.subjects) ? response.subjects.filter(Boolean) : []
+        const years = Array.isArray(response?.years) ? response.years.filter(Boolean) : []
+
+        setAvailableExams(exams)
+        setAvailableSubjects(subjects)
+        setAvailableYears(years)
+      } catch (err) {
+        console.error('Failed to load PYQ filter options:', err)
+      }
+    }
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleHandle = window.requestIdleCallback(() => {
+        loadPyqFilterOptions()
+      }, { timeout: 1200 })
+    } else {
+      timeoutHandle = window.setTimeout(() => {
+        loadPyqFilterOptions()
+      }, 250)
+    }
+
+    return () => {
+      cancelled = true
+      if (idleHandle && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleHandle)
+      if (timeoutHandle) window.clearTimeout(timeoutHandle)
+    }
   }, [])
 
   // Load persisted starred questions (user-scoped in Firestore, guest-scoped in localStorage)
@@ -214,16 +234,12 @@ const PYQPractice = () => {
       setQuestions(starredQuestions)
       setFilteredQuestions(filteredStarred)
       setCurrentPage(1)
-      extractFiltersFromResults(starredQuestions)
       setIsLoading(false)
     } else if (selectedExam !== 'all' || selectedSubject !== 'all' || selectedYear !== 'all') {
       loadFilteredQuestions()
     } else {
       setFilteredQuestions([])
       setIsLoading(false)
-      setAvailableExams([])
-      setAvailableSubjects([])
-      setAvailableYears([])
     }
   }, [selectedExam, selectedSubject, selectedYear, showStarredOnly, starredQuestions])
 
@@ -272,8 +288,6 @@ const PYQPractice = () => {
         setRevealedAnswers({})
         setExpandedExplanations({})
         setCurrentPage(1)
-        // Extract available filters from results
-        extractFiltersFromResults(normalizedQuestions)
       }
     } catch (error) {
       console.error('Failed to load questions:', error)
@@ -282,24 +296,6 @@ const PYQPractice = () => {
       setIsLoading(false)
     }
   }
-
-  const extractFiltersFromResults = (questionResults) => {
-    const exams = new Set()
-    const subjects = new Set()
-    const years = new Set()
-    
-    questionResults.forEach(question => {
-      if (question.exam_name) exams.add(question.exam_name)
-      if (question.subject) subjects.add(question.subject)
-      if (question.year) years.add(question.year)
-    })
-    
-    setAvailableExams(Array.from(exams).sort())
-    setAvailableSubjects(Array.from(subjects).sort())
-    setAvailableYears(Array.from(years).sort())
-  }
-
-
 
   const handleAnswerSelect = (questionId, optionIndex) => {
     // If already answered, don't allow changes

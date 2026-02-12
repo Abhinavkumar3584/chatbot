@@ -33,50 +33,77 @@ const QuizSection = () => {
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(15 * 60); // 15 minutes in seconds
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingExams, setIsLoadingExams] = useState(false);
   const [error, setError] = useState("");
   const [quizResults, setQuizResults] = useState(null);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [quizStartTime, setQuizStartTime] = useState(null);
+  const [availableExams, setAvailableExams] = useState([]);
 
-  // Available exams for quiz
-  const availableExams = [
-    {
-      id: "upsc",
-      name: "UPSC CSE",
-      description: "Civil Services Examination",
-      icon: "🏛️",
-    },
-    {
-      id: "capf",
-      name: "CAPF",
-      description: "Central Armed Police Forces",
-      icon: "🛡️",
-    },
-    {
-      id: "cds",
-      name: "CDS",
-      description: "Combined Defence Services",
-      icon: "⚔️",
-    },
-    {
-      id: "mppsc",
-      name: "MPPSC",
-      description: "Madhya Pradesh Public Service Commission",
-      icon: "📋",
-    },
-    {
-      id: "uppcs",
-      name: "UPPCS",
-      description: "Uttar Pradesh Public Service Commission",
-      icon: "📄",
-    },
-    {
-      id: "bpsc",
-      name: "BPSC",
-      description: "Bihar Public Service Commission",
-      icon: "📝",
-    },
-  ];
+  const normalizeExamId = (name) =>
+    String(name || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .replace(/_+/g, "_");
+
+  const getExamIcon = (examName) => {
+    const value = String(examName || "").toLowerCase();
+    if (value.includes("civil") || value.includes("upsc")) return "🏛️";
+    if (value.includes("bank")) return "🏦";
+    if (value.includes("school") || value.includes("board")) return "🏫";
+    if (value.includes("defence") || value.includes("cds") || value.includes("capf")) return "🛡️";
+    if (value.includes("ssc")) return "📄";
+    if (value.includes("rail")) return "🚆";
+    return "📝";
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    let idleHandle = null;
+    let timeoutHandle = null;
+
+    const loadQuizExams = async () => {
+      setIsLoadingExams(true);
+      try {
+        const response = await apiService.getPyqFilters();
+        if (cancelled) return;
+        const exams = Array.isArray(response?.exams) ? response.exams : [];
+
+        const mapped = exams
+          .filter((name) => String(name || "").trim().length > 0)
+          .map((name) => ({
+            id: normalizeExamId(name),
+            name,
+            description: "Questions available in PYQ database",
+            icon: getExamIcon(name),
+          }));
+
+        setAvailableExams(mapped);
+      } catch (err) {
+        console.error("Failed to load quiz exam list:", err);
+        if (!cancelled) setAvailableExams([]);
+      } finally {
+        if (!cancelled) setIsLoadingExams(false);
+      }
+    };
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      idleHandle = window.requestIdleCallback(() => {
+        loadQuizExams();
+      }, { timeout: 1200 });
+    } else {
+      timeoutHandle = window.setTimeout(() => {
+        loadQuizExams();
+      }, 250);
+    }
+
+    return () => {
+      cancelled = true;
+      if (idleHandle && "cancelIdleCallback" in window) window.cancelIdleCallback(idleHandle);
+      if (timeoutHandle) window.clearTimeout(timeoutHandle);
+    };
+  }, []);
 
   // Timer countdown
   useEffect(() => {
@@ -105,7 +132,7 @@ const QuizSection = () => {
       // Fetch 15 random questions from the selected exam
       const response = await apiService.searchPyqQuestions({
         query: "",
-        exam: exam.id,
+        exam: exam.name,
         subject: null,
         year: null,
         limit: 30, // Fetch more to shuffle and select 15
@@ -710,6 +737,12 @@ const QuizSection = () => {
                 >
                   Try Again
                 </button>
+              </div>
+            ) : availableExams.length === 0 && !isLoadingExams ? (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                <AlertCircle className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
+                <h3 className="text-lg font-medium text-yellow-800 mb-2">No Exams Found</h3>
+                <p className="text-yellow-700">No quiz exams are available in the PYQ database right now.</p>
               </div>
             ) : (
               <>

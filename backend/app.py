@@ -2704,6 +2704,10 @@ def get_pyq_filters():
         exams_set = set()
         subjects_set = set()
         years_set = set()
+
+        def _is_placeholder_exam(name: str) -> bool:
+            value = str(name or "").strip().lower()
+            return ("coming soon" in value) or value in {"tbd", "to be announced"}
         
         # Sample questions from each namespace to get filters
         mcq_model = search_components.get('mcq_model')
@@ -2734,7 +2738,7 @@ def get_pyq_filters():
                     exam_year = str(full_data.get('exam_year', metadata.get('exam_year', '')))
                     subject = full_data.get('subject', metadata.get('subject', ''))
                     
-                    if exam_name:
+                    if exam_name and not _is_placeholder_exam(exam_name):
                         exams_set.add(exam_name)
                     if exam_year and exam_year != 'Unknown':
                         years_set.add(exam_year)
