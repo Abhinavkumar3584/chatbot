@@ -474,6 +474,77 @@ def encode_query(model, text: str):
     return encode_texts(model, [text])[0]
 
 
+def _match_dimension_error(message: str):
+    """Extract (query_dim, index_dim) from Pinecone dimension mismatch message."""
+    if not message:
+        return None, None
+    match = re.search(
+        r"Vector dimension\s*(\d+)\s*does not match the dimension of the index\s*(\d+)",
+        message,
+        re.IGNORECASE,
+    )
+    if not match:
+        return None, None
+    return int(match.group(1)), int(match.group(2))
+
+
+def _resize_vector(vector, target_dim: int):
+    """Resize embedding vector to target dimension by trim/pad."""
+    if target_dim <= 0:
+        return vector
+    if len(vector) == target_dim:
+        return vector
+    if len(vector) > target_dim:
+        return vector[:target_dim]
+    return vector + [0.0] * (target_dim - len(vector))
+
+
+def safe_pinecone_query(index, vector, **kwargs):
+    """Query Pinecone and retry once with adjusted vector if dimensions mismatch."""
+    try:
+        return index.query(vector=vector, **kwargs)
+    except Exception as e:
+        query_dim, index_dim = _match_dimension_error(str(e))
+        if not index_dim:
+            raise
+
+        adjusted_vector = _resize_vector(vector, index_dim)
+        app.logger.warning(
+            f"Pinecone dimension mismatch detected (query={query_dim}, index={index_dim}). Retrying with adjusted vector."
+        )
+        return index.query(vector=adjusted_vector, **kwargs)
+
+
+def _extract_index_dimension(stats):
+    """Get Pinecone index dimension from stats object/dict."""
+    if stats is None:
+        return None
+    if isinstance(stats, dict):
+        dim = stats.get("dimension")
+        return int(dim) if dim is not None else None
+    dim = getattr(stats, "dimension", None)
+    if dim is not None:
+        return int(dim)
+    to_dict = getattr(stats, "to_dict", None)
+    if callable(to_dict):
+        data = to_dict()
+        if isinstance(data, dict) and data.get("dimension") is not None:
+            return int(data.get("dimension"))
+    return None
+
+
+def encode_mcq_query(text: str):
+    """Encode MCQ query and enforce pyq index dimension compatibility."""
+    mcq_model = search_components.get('mcq_model')
+    if mcq_model is None:
+        raise RuntimeError("MCQ model not initialized")
+    vector = encode_query(mcq_model, text)
+    mcq_dim = search_components.get('mcq_index_dimension')
+    if mcq_dim:
+        vector = _resize_vector(vector, int(mcq_dim))
+    return vector
+
+
 EDU_NAMESPACES = ["economics", "geography", "history", "polity"]
 CLASS_OPTIONS = [
     {"value": "class-6", "label": "Class 6"},
@@ -722,12 +793,28 @@ def initialize_search_system():
                 search_components['mcq_index'] = mcq_index
                 search_components['mcq_model'] = mcq_model
 
+                # Cache MCQ index dimension for vector compatibility
+                try:
+                    mcq_stats = _get_index_stats_cached(mcq_index, 'mcq_index_stats', ttl_seconds=60)
+                    mcq_dim = _extract_index_dimension(mcq_stats)
+                    search_components['mcq_index_dimension'] = mcq_dim
+                    if mcq_dim:
+                        if is_production:
+                            app.logger.info(f"✅ MCQ index dimension: {mcq_dim}")
+                        else:
+                            print(f"✅ MCQ index dimension: {mcq_dim}")
+                except Exception as e:
+                    if is_production:
+                        app.logger.warning(f"⚠️ Could not read MCQ index dimension: {e}")
+                    else:
+                        print(f"⚠️ Could not read MCQ index dimension: {e}")
+
                 # Precompute common embeddings to avoid repeated model.encode calls
                 try:
-                    search_components['mcq_sample_embedding'] = encode_query(mcq_model, "sample question")
-                    search_components['mcq_filter_embedding'] = encode_query(mcq_model, "filter query")
-                    search_components['mcq_generic_embedding'] = encode_query(mcq_model, "general knowledge question")
-                    search_components['mcq_minimal_embedding'] = encode_query(mcq_model, "sample")
+                    search_components['mcq_sample_embedding'] = encode_mcq_query("sample question")
+                    search_components['mcq_filter_embedding'] = encode_mcq_query("filter query")
+                    search_components['mcq_generic_embedding'] = encode_mcq_query("general knowledge question")
+                    search_components['mcq_minimal_embedding'] = encode_mcq_query("sample")
                 except Exception as e:
                     if is_production:
                         app.logger.warning(f"⚠️  Failed to precompute MCQ embeddings: {str(e)}")
@@ -1294,13 +1381,14 @@ def get_questions():
         # Query for questions - using dummy query to get random questions
         dummy_query = search_components.get('mcq_sample_embedding')
         if dummy_query is None:
-            dummy_query = encode_query(search_components['mcq_model'], "sample question")
+            dummy_query = encode_mcq_query("sample question")
         
         for namespace in pyq_namespaces:
             try:
                 # Get questions from each namespace
-                results = mcq_index.query(
-                    vector=dummy_query,
+                results = safe_pinecone_query(
+                    mcq_index,
+                    dummy_query,
                     top_k=min(limit * 2, 200),  # Get extra for filtering
                     include_metadata=True,
                     namespace=namespace
@@ -1443,13 +1531,14 @@ def get_filter_options():
         # Query for questions from each namespace to extract metadata
         dummy_query = search_components.get('mcq_filter_embedding')
         if dummy_query is None:
-            dummy_query = encode_query(search_components['mcq_model'], "filter query")
+            dummy_query = encode_mcq_query("filter query")
         
         for namespace in pyq_namespaces:
             try:
                 # Get questions from each namespace
-                results = mcq_index.query(
-                    vector=dummy_query,
+                results = safe_pinecone_query(
+                    mcq_index,
+                    dummy_query,
                     top_k=1000,  # Get many results to extract all unique values
                     include_metadata=True,
                     namespace=namespace
@@ -1644,9 +1733,10 @@ def get_inserted_pyqs():
                 try:
                     dummy_query = search_components.get('mcq_minimal_embedding')
                     if dummy_query is None:
-                        dummy_query = encode_query(search_components['mcq_model'], "sample")
-                    results = mcq_index.query(
-                        vector=dummy_query,
+                        dummy_query = encode_mcq_query("sample")
+                    results = safe_pinecone_query(
+                        mcq_index,
+                        dummy_query,
                         top_k=min(vector_count, 1000),  # Get all or up to 1000 questions
                         include_metadata=True,
                         namespace=namespace
@@ -1829,7 +1919,7 @@ def search_rag_with_class_filter(pinecone_index, query_embedding, n_chunks: int 
 def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=0):
     """Query MCQ index for relevant questions across all namespaces"""
     try:
-        query_embedding = encode_query(mcq_model, query_text)
+        query_embedding = encode_mcq_query(query_text)
         
         # Get all available namespaces dynamically from index stats
         stats = _get_index_stats_cached(mcq_index, 'mcq_index_stats', ttl_seconds=60)
@@ -1841,8 +1931,9 @@ def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=
         per_namespace_top_k = min(500, max(50, normalized_top_k * 2)) if not unlimited_results else 1000
 
         def _query_namespace(namespace):
-            response = mcq_index.query(
-                vector=query_embedding,
+            response = safe_pinecone_query(
+                mcq_index,
+                query_embedding,
                 top_k=per_namespace_top_k,
                 include_metadata=True,
                 namespace=namespace
@@ -2302,17 +2393,18 @@ def search_pyq_questions():
         
         # Precompute embedding once for all namespaces
         if query:
-            query_embedding = encode_query(mcq_model, query)
+            query_embedding = encode_mcq_query(query)
         else:
             query_embedding = search_components.get('mcq_generic_embedding')
             if query_embedding is None:
-                query_embedding = encode_query(mcq_model, "general knowledge question")
+                query_embedding = encode_mcq_query("general knowledge question")
 
         # Query each namespace (limited for performance)
         for namespace in target_namespaces[:5]:  # Limit to first 5 namespaces for speed
             try:
-                results = mcq_index.query(
-                    vector=query_embedding,
+                results = safe_pinecone_query(
+                    mcq_index,
+                    query_embedding,
                     top_k=min(limit + 10, 100),  # Reduced from 500 to 100 for faster queries
                     include_metadata=True,
                     namespace=namespace
@@ -2443,12 +2535,13 @@ def get_pyq_filters():
         # Sample questions from each namespace to get filters
         dummy_query = search_components.get('mcq_minimal_embedding')
         if dummy_query is None:
-            dummy_query = encode_query(mcq_model, "sample")
+            dummy_query = encode_mcq_query("sample")
         
         for namespace in namespaces:
             try:
-                results = mcq_index.query(
-                    vector=dummy_query,
+                results = safe_pinecone_query(
+                    mcq_index,
+                    dummy_query,
                     top_k=100,
                     include_metadata=True,
                     namespace=namespace
