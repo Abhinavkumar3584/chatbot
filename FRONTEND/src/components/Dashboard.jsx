@@ -26,7 +26,7 @@ import { useDashboard } from "../contexts/DashboardContext";
 const Dashboard = () => {
   const { theme } = useTheme();
   const { currentUser, getUserQuizHistory, getQuizStatistics } = useAuth();
-  const { sidebarVisible, isMobile } = useLayout();
+  const { contentOffsetLeft, isMobile } = useLayout();
   const {
     stats,
     subjectStats,
@@ -53,13 +53,6 @@ const Dashboard = () => {
     weakAreas: false,
     progressTrends: false,
   });
-
-  // Calculate dynamic margins based on sidebar visibility
-  const leftMargin = isMobile
-    ? "ml-0"
-    : sidebarVisible
-      ? "ml-52 sm:ml-60 md:ml-68"
-      : "ml-12";
 
   // Fetch quiz statistics
   useEffect(() => {
@@ -93,7 +86,11 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div
-        className={`dashboard-page flex-1 ${leftMargin} transition-all duration-300 p-2 md:p-4 overflow-y-auto`}
+        className="dashboard-page flex-1 transition-all duration-300 p-2 md:p-4 overflow-y-auto"
+        style={{
+          marginLeft: `${contentOffsetLeft}px`,
+          width: `calc(100% - ${contentOffsetLeft + (isMobile ? 0 : 8)}px)`
+        }}
       >
         <div className="max-w-none mx-0 md:max-w-7xl md:mx-auto">
           <div className="flex items-center justify-center h-64">
@@ -111,7 +108,11 @@ const Dashboard = () => {
   if (error) {
     return (
       <div
-        className={`dashboard-page flex-1 ${leftMargin} transition-all duration-300 p-2 md:p-4 overflow-y-auto`}
+        className="dashboard-page flex-1 transition-all duration-300 p-2 md:p-4 overflow-y-auto"
+        style={{
+          marginLeft: `${contentOffsetLeft}px`,
+          width: `calc(100% - ${contentOffsetLeft + (isMobile ? 0 : 8)}px)`
+        }}
       >
         <div className="max-w-none mx-0 md:max-w-7xl md:mx-auto">
           <div className="flex items-center justify-center h-64">
@@ -407,7 +408,11 @@ const Dashboard = () => {
 
   return (
     <div
-      className={`dashboard-page flex-1 ${leftMargin} mr-0 md:mr-4 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2`}
+      className="dashboard-page flex-1 mr-0 flex flex-col h-full overflow-hidden pl-2 pr-2 pb-2"
+      style={{
+        marginLeft: `${contentOffsetLeft}px`,
+        width: `calc(100% - ${contentOffsetLeft + (isMobile ? 0 : 8)}px)`
+      }}
     >
       {/* Main Dashboard Container */}
       <div className="flex-1 bg-white border border-gray-400 rounded-lg shadow-sm flex flex-col overflow-hidden">
