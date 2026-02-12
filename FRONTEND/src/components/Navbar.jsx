@@ -7,7 +7,7 @@ const AuthModal = lazy(() => import('./AuthModal'))
 const AboutUsModal = lazy(() => import('./AboutUsModal'))
 const ContactModal = lazy(() => import('./ContactModal'))
 const EditProfileModal = lazy(() => import('./EditProfileModal'))
-import Clock from './Clock'
+// import Clock from './Clock'
 import { useAuth } from '../contexts/AuthContext'
 import { useLayout } from '../contexts/LayoutContext'
 
@@ -207,7 +207,7 @@ const Navbar = ({ onViewChange, currentView }) => {
 
             {/* Mobile - Clock + Menu */}
             <Stack direction="row" alignItems="center" spacing={1} sx={{ display: { xs: 'flex', md: 'none' }, ml: 'auto' }}>
-              <Clock isMobile={true} />
+              {/* <Clock isMobile={true} /> */}
               <IconButton
                 onClick={openMobileMenu}
                 size="small"
@@ -241,9 +241,9 @@ const Navbar = ({ onViewChange, currentView }) => {
 
             {/* Right side - Clock and User actions */}
             <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flexShrink: 0, height: '100%', display: { xs: 'none', md: 'flex' } }}>
-              <Box sx={{ display: { xs: 'none', lg: 'flex' } }}>
+              {/* <Box sx={{ display: { xs: 'none', lg: 'flex' } }}>
                 <Clock />
-              </Box>
+              </Box> */}
               {loadTimeMs !== null && (
                 <Chip
                   size="small"
@@ -303,7 +303,7 @@ const Navbar = ({ onViewChange, currentView }) => {
                     size="small"
                     variant="contained"
                       startIcon={<LogIn size={14} />}
-                      sx={{ backgroundColor: 'secondary.main', color: 'secondary.contrastText', borderRadius: 999, fontSize: '0.7rem', px: 1, py: 0.25, height: 32, display: 'inline-flex', alignItems: 'center', '&:hover': { backgroundColor: 'secondary.dark' } }}
+                      sx={{ backgroundColor: 'secondary.main', color: 'secondary.contrastText', borderRadius: 2, fontSize: '0.7rem', px: 1, py: 0.25, height: 32, display: 'inline-flex', alignItems: 'center', '&:hover': { backgroundColor: 'secondary.dark' } }}
                   >
                     <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Log In</Box>
                   </Button>
@@ -312,7 +312,7 @@ const Navbar = ({ onViewChange, currentView }) => {
                     size="small"
                     variant="contained"
                       startIcon={<UserPlus size={14} />}
-                      sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', borderRadius: 999, fontSize: '0.7rem', px: 1, py: 0.25, height: 32, display: 'inline-flex', alignItems: 'center', '&:hover': { backgroundColor: 'primary.dark' } }}
+                      sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', borderRadius: 2, fontSize: '0.7rem', px: 1, py: 0.25, height: 32, display: 'inline-flex', alignItems: 'center', '&:hover': { backgroundColor: 'primary.dark' } }}
                   >
                     <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Sign up</Box>
                   </Button>

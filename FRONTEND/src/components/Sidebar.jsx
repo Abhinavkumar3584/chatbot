@@ -365,7 +365,7 @@ const Sidebar = () => {
                 sx={{
                   backgroundColor: 'primary.main',
                   color: 'primary.contrastText',
-                  borderRadius: 2,
+                  borderRadius: 1,
                   fontSize: '0.875rem',
                   fontWeight: 600,
                   py: isMobile ? 1 : 0.6,
