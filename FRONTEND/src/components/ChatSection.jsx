@@ -949,16 +949,14 @@ const ChatSection = () => {
         return newMessages
       })
       
-      if (response.mcq_results && response.mcq_results.length > 0) {
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('newMcqResults', { 
-            detail: { 
-              mcqs: response.mcq_results,
-              query: query 
-            } 
-          }))
-        }, 100)
-      }
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('newMcqResults', {
+          detail: {
+            mcqs: Array.isArray(response.mcq_results) ? response.mcq_results : [],
+            query: query
+          }
+        }))
+      }, 100)
     } catch (error) {
       // Update the temporary bot message with error
       const errorMessage = {

@@ -10,7 +10,6 @@ import os
 import json
 import time
 import hashlib
-import re
 from groq import Groq
 from pinecone import Pinecone, ServerlessSpec
 try:
@@ -27,10 +26,6 @@ try:
     from huggingface_hub import InferenceClient
 except Exception:
     InferenceClient = None
-try:
-    from openai import OpenAI
-except Exception:
-    OpenAI = None
 import threading
 from concurrent.futures import ThreadPoolExecutor
 import uuid
@@ -191,23 +186,18 @@ def handle_exception(e):
 
 def load_api_keys():
     """Load API keys from environment variables"""
-    openai_api_key = os.getenv('OPENAI_API_KEY')
     groq_api_key = os.getenv('GROQ_API_KEY')
     pine_api_key = os.getenv('PINECONE_API_KEY')
     
     is_production = os.getenv('FLASK_ENV') == 'production'
 
-    if not openai_api_key:
-        if is_production:
-            app.logger.warning("⚠️ OPENAI_API_KEY not found. Primary LLM routing will be unavailable.")
-        else:
-            print("\n⚠️ OPENAI_API_KEY not found. Primary LLM routing will be unavailable.\n")
-
     if not groq_api_key:
         if is_production:
-            app.logger.warning("⚠️ GROQ_API_KEY not found. Groq fallback will be unavailable.")
+            app.logger.error("❌ CRITICAL: GROQ_API_KEY not found in environment variables!")
         else:
-            print("\n⚠️ GROQ_API_KEY not found. Groq fallback will be unavailable.\n")
+            print("\n❌ CRITICAL: GROQ_API_KEY not found in environment variables!")
+            print("   Please create a .env file with your API keys or set them in your environment.")
+            print("   Example: GROQ_API_KEY=your_key_here\n")
     
     if not pine_api_key:
         if is_production:
@@ -217,7 +207,7 @@ def load_api_keys():
             print("   Please create a .env file with your API keys or set them in your environment.")
             print("   Example: PINECONE_API_KEY=your_key_here\n")
 
-    return openai_api_key, groq_api_key, pine_api_key
+    return groq_api_key, pine_api_key
 
 try:
     import torch
@@ -250,31 +240,18 @@ def create_sentence_transformer(model_name: str, device: str = "cpu"):
     return SentenceTransformer(model_name, **kwargs)  # type: ignore[call-arg]
 
 def create_embedding_model():
-    """Create embedding model aligned with RAG v2 defaults (BGE-base, 768d)."""
-    provider = os.getenv("EMBEDDING_PROVIDER", "local").strip().lower()
-    local_model = os.getenv("LOCAL_EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5")
-    embedding_device = os.getenv("EMBEDDING_DEVICE", "cpu")
-
-    if provider == "local":
-        try:
-            return create_sentence_transformer(local_model, device=embedding_device), "sentence-transformers-local"
-        except Exception as e:
-            if os.getenv('FLASK_ENV') == 'production':
-                app.logger.warning(f"⚠️  Local embedding model failed, trying fallbacks: {e}")
-            else:
-                print(f"⚠️  Local embedding model failed, trying fallbacks: {e}")
-
+    """Create a lightweight embedding model for low-RAM environments."""
     use_hf = os.getenv("USE_HF_EMBEDDINGS", "0").lower() in {"1", "true", "yes"}
     if use_hf:
         hf_token = os.getenv("HF_API_KEY")
-        hf_model = os.getenv("HF_EMBEDDING_MODEL", local_model)
+        hf_model = os.getenv("HF_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
         if not hf_token:
             raise RuntimeError("HF_API_KEY is required when USE_HF_EMBEDDINGS=1")
         return HFEmbeddingClient(hf_token, hf_model), "huggingface"
 
     use_fastembed = os.getenv("USE_FASTEMBED", "1").lower() in {"1", "true", "yes"}
     if use_fastembed and TextEmbedding is not None:
-        model_name = os.getenv("FASTEMBED_MODEL", "BAAI/bge-base-en-v1.5")
+        model_name = os.getenv("FASTEMBED_MODEL", "BAAI/bge-small-en-v1.5")
         cache_path = os.getenv("FASTEMBED_CACHE_PATH", "/tmp/fastembed_cache")
         try:
             os.makedirs(cache_path, exist_ok=True)
@@ -285,49 +262,7 @@ def create_embedding_model():
                 app.logger.warning(f"⚠️  Fastembed failed, falling back: {e}")
             else:
                 print(f"⚠️  Fastembed failed, falling back: {e}")
-    return create_sentence_transformer("BAAI/bge-base-en-v1.5", device=embedding_device), "sentence-transformers"
-
-
-def create_mcq_embedding_model():
-    """Create MCQ embedding model (defaults aligned with older working PYQ setup)."""
-    provider = os.getenv("MCQ_EMBEDDING_PROVIDER", os.getenv("EMBEDDING_PROVIDER", "local")).strip().lower()
-    local_model = os.getenv("MCQ_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
-    embedding_device = os.getenv("MCQ_EMBEDDING_DEVICE", os.getenv("EMBEDDING_DEVICE", "cpu"))
-
-    # Keep legacy-friendly order for better PYQ match quality:
-    # HF (optional) -> FastEmbed -> local sentence-transformers
-    use_hf = os.getenv("USE_HF_EMBEDDINGS", "0").lower() in {"1", "true", "yes"}
-    if use_hf:
-        hf_token = os.getenv("HF_API_KEY")
-        hf_model = os.getenv("HF_MCQ_EMBEDDING_MODEL", local_model)
-        if not hf_token:
-            raise RuntimeError("HF_API_KEY is required when USE_HF_EMBEDDINGS=1")
-        return HFEmbeddingClient(hf_token, hf_model), "huggingface-mcq"
-
-    use_fastembed = os.getenv("USE_FASTEMBED_FOR_MCQ", os.getenv("USE_FASTEMBED", "1")).lower() in {"1", "true", "yes"}
-    if use_fastembed and TextEmbedding is not None:
-        model_name = os.getenv("FASTEMBED_MCQ_MODEL", local_model)
-        cache_path = os.getenv("FASTEMBED_CACHE_PATH", "/tmp/fastembed_cache")
-        try:
-            os.makedirs(cache_path, exist_ok=True)
-            os.environ["FASTEMBED_CACHE_PATH"] = cache_path
-            return TextEmbedding(model_name), "fastembed-mcq"
-        except Exception as e:
-            if os.getenv('FLASK_ENV') == 'production':
-                app.logger.warning(f"⚠️  Fastembed MCQ model failed, falling back: {e}")
-            else:
-                print(f"⚠️  Fastembed MCQ model failed, falling back: {e}")
-
-    if provider == "local":
-        try:
-            return create_sentence_transformer(local_model, device=embedding_device), "sentence-transformers-local-mcq"
-        except Exception as e:
-            if os.getenv('FLASK_ENV') == 'production':
-                app.logger.warning(f"⚠️  Local MCQ embedding model failed, trying fallbacks: {e}")
-            else:
-                print(f"⚠️  Local MCQ embedding model failed, trying fallbacks: {e}")
-
-    return create_sentence_transformer("BAAI/bge-small-en-v1.5", device=embedding_device), "sentence-transformers-mcq"
+    return create_sentence_transformer("sentence-transformers/paraphrase-MiniLM-L3-v2", device="cpu"), "sentence-transformers"
 
 
 class HFEmbeddingClient:
@@ -450,14 +385,7 @@ def encode_texts(model, texts):
             raw_vectors = model.embed(to_encode)
             new_vectors = _normalize_vectors(raw_vectors)
         else:
-            try:
-                encoded = model.encode(
-                    to_encode,
-                    normalize_embeddings=True,
-                    show_progress_bar=False
-                )
-            except TypeError:
-                encoded = model.encode(to_encode)
+            encoded = model.encode(to_encode)
             new_vectors = _normalize_vectors(encoded)
 
         if not new_vectors or len(new_vectors) != len(to_encode):
@@ -475,279 +403,6 @@ def encode_texts(model, texts):
 def encode_query(model, text: str):
     return encode_texts(model, [text])[0]
 
-
-def _match_dimension_error(message: str):
-    """Extract (query_dim, index_dim) from Pinecone dimension mismatch message."""
-    if not message:
-        return None, None
-    match = re.search(
-        r"Vector dimension\s*(\d+)\s*does not match the dimension of the index\s*(\d+)",
-        message,
-        re.IGNORECASE,
-    )
-    if not match:
-        return None, None
-    return int(match.group(1)), int(match.group(2))
-
-
-def _resize_vector(vector, target_dim: int):
-    """Resize embedding vector to target dimension by trim/pad."""
-    if target_dim <= 0:
-        return vector
-    if len(vector) == target_dim:
-        return vector
-    if len(vector) > target_dim:
-        return vector[:target_dim]
-    return vector + [0.0] * (target_dim - len(vector))
-
-
-def safe_pinecone_query(index, vector, **kwargs):
-    """Query Pinecone and retry once with adjusted vector if dimensions mismatch."""
-    try:
-        return index.query(vector=vector, **kwargs)
-    except Exception as e:
-        query_dim, index_dim = _match_dimension_error(str(e))
-        if not index_dim:
-            raise
-
-        adjusted_vector = _resize_vector(vector, index_dim)
-        app.logger.warning(
-            f"Pinecone dimension mismatch detected (query={query_dim}, index={index_dim}). Retrying with adjusted vector."
-        )
-        return index.query(vector=adjusted_vector, **kwargs)
-
-
-def _extract_index_dimension(stats):
-    """Get Pinecone index dimension from stats object/dict."""
-    if stats is None:
-        return None
-    if isinstance(stats, dict):
-        dim = stats.get("dimension")
-        return int(dim) if dim is not None else None
-    dim = getattr(stats, "dimension", None)
-    if dim is not None:
-        return int(dim)
-    to_dict = getattr(stats, "to_dict", None)
-    if callable(to_dict):
-        data = to_dict()
-        if isinstance(data, dict) and data.get("dimension") is not None:
-            return int(data.get("dimension"))
-    return None
-
-
-def encode_mcq_query(text: str):
-    """Encode MCQ query using the shared embedding model."""
-    mcq_model = search_components.get('mcq_model')
-    if mcq_model is None:
-        raise RuntimeError("MCQ model not initialized")
-    return encode_query(mcq_model, text)
-
-
-EDU_NAMESPACES = ["economics", "geography", "history", "polity"]
-CLASS_OPTIONS = [
-    {"value": "class-6", "label": "Class 6"},
-    {"value": "class-7", "label": "Class 7"},
-    {"value": "class-8", "label": "Class 8"},
-    {"value": "class-9", "label": "Class 9"},
-    {"value": "class-10", "label": "Class 10"},
-    {"value": "class-11", "label": "Class 11"},
-    {"value": "class-12", "label": "Class 12"},
-]
-
-ANSWER_LENGTH_PROFILES = {
-    "very_short": {
-        "label": "Very Short",
-        "max_tokens": 220,
-        "context_chars": 3400,
-        "instruction": "Respond in 2-4 concise bullet points."
-    },
-    "short": {
-        "label": "Short",
-        "max_tokens": 420,
-        "context_chars": 5200,
-        "instruction": "Respond in a compact answer with key points only."
-    },
-    "normal": {
-        "label": "Normal",
-        "max_tokens": 780,
-        "context_chars": 7600,
-        "instruction": "Respond with a balanced explanation and clear structure."
-    },
-    "explanatory": {
-        "label": "Explanatory",
-        "max_tokens": 1200,
-        "context_chars": 10200,
-        "instruction": "Provide a detailed explanation with examples and learning guidance."
-    },
-}
-
-
-def normalize_class_label(class_label):
-    """Normalize class label to (class_num, class_display, class_normalized)."""
-    if not class_label:
-        return None, None, None
-
-    class_str = str(class_label).strip().upper()
-
-    roman_to_num = {
-        'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9,
-        'X': 10, 'XI': 11, 'XII': 12
-    }
-
-    for roman, num in roman_to_num.items():
-        if re.search(rf"\b{roman}\b", class_str):
-            return num, f"Class {num}", f"class-{num}"
-
-    digit_match = re.search(r"\b(6|7|8|9|10|11|12)\s*(?:ST|ND|RD|TH)?\b", class_str)
-    if digit_match:
-        class_num = int(digit_match.group(1))
-        return class_num, f"Class {class_num}", f"class-{class_num}"
-
-    return None, None, None
-
-
-def extract_class_filter(user_query: str):
-    """Extract class filter from query text."""
-    if not user_query:
-        return None
-
-    query_lower = user_query.lower()
-    class_patterns = [
-        r"class\s*(\d+)",
-        r"std\s*(\d+)",
-        r"grade\s*(\d+)",
-        r"(\d+)(?:st|nd|rd|th)\s*class",
-        r"class\s*(vi|vii|viii|ix|x|xi|xii)",
-    ]
-
-    for pattern in class_patterns:
-        match = re.search(pattern, query_lower)
-        if not match:
-            continue
-        class_num, _, class_normalized = normalize_class_label(match.group(1))
-        if class_num and 6 <= class_num <= 12:
-            return class_normalized
-
-    return None
-
-
-def resolve_class_filter(selected_class, query):
-    """Resolve class filter from selected value first, then query extraction."""
-    if selected_class:
-        _, _, normalized = normalize_class_label(selected_class)
-        if normalized:
-            return normalized
-
-    return extract_class_filter(query)
-
-
-def get_answer_length_profile(answer_length_mode):
-    mode = str(answer_length_mode or "normal").strip().lower().replace("-", "_").replace(" ", "_")
-    return ANSWER_LENGTH_PROFILES.get(mode, ANSWER_LENGTH_PROFILES["normal"]), mode if mode in ANSWER_LENGTH_PROFILES else "normal"
-
-
-def trim_context_from_sources(sources, max_chars):
-    """Build compact context under a char budget to control token usage safely."""
-    selected_blocks = []
-    total_chars = 0
-
-    for idx, source in enumerate(sources, 1):
-        metadata = source.get('metadata', {}) if isinstance(source, dict) else {}
-        content = (
-            metadata.get('content')
-            or metadata.get('text')
-            or source.get('full_text')
-            or source.get('text_preview')
-            or ""
-        )
-        if not content:
-            continue
-
-        content = str(content).strip()
-        if not content:
-            continue
-
-        content_budget = min(1800, max(300, max_chars // 3))
-        clipped = content[:content_budget]
-        block = (
-            f"[Source {idx}] "
-            f"Subject: {metadata.get('subject', source.get('subject', ''))} | "
-            f"Class: {metadata.get('class', source.get('class', ''))} | "
-            f"Chapter: {metadata.get('chapter', source.get('chapter', ''))}\n"
-            f"{clipped}"
-        )
-
-        projected = total_chars + len(block) + 2
-        if projected > max_chars and selected_blocks:
-            break
-        selected_blocks.append(block)
-        total_chars = projected
-
-    return "\n\n".join(selected_blocks)
-
-
-def build_generation_prompt(context: str, query: str, answer_profile: dict):
-    """Create compact, completion-safe prompt for accurate educational answers."""
-    return (
-        "You are an expert NCERT learning assistant. "
-        "Use the provided context as the primary source of truth. "
-        "If context is limited, be transparent and provide safe, educationally useful guidance. "
-        "Never fabricate exact textbook citations. "
-        "Ensure the final answer is complete and not abruptly cut.\n\n"
-        f"Answer style: {answer_profile['instruction']}\n\n"
-        f"Question:\n{query}\n\n"
-        f"Context:\n{context if context else 'No relevant context retrieved.'}\n\n"
-        "Provide the final answer now."
-    )
-
-
-def generate_with_model_routing(query: str, context: str, answer_profile: dict, llm_temperature: float, llm_top_p: float, llm_max_tokens: int):
-    """Generate answer with provider routing: OpenAI (primary) -> Groq (fallback)."""
-    prompt = build_generation_prompt(context, query, answer_profile)
-    max_tokens = max(180, min(llm_max_tokens, answer_profile['max_tokens']))
-
-    # 1) Primary: OpenAI
-    openai_client = search_components.get('openai_client')
-    if openai_client:
-        try:
-            response = openai_client.chat.completions.create(
-                model=search_components.get('openai_model', 'gpt-4o-mini'),
-                messages=[
-                    {"role": "system", "content": "You are a precise and helpful educational assistant."},
-                    {"role": "user", "content": prompt},
-                ],
-                max_tokens=max_tokens,
-                temperature=llm_temperature,
-                top_p=llm_top_p,
-            )
-            content = (response.choices[0].message.content or "").strip()
-            if content:
-                return content, "openai", None
-        except Exception as e:
-            app.logger.warning(f"OpenAI generation failed, trying fallback: {e}")
-
-    # 2) Fallback: Groq
-    groq_client = search_components.get('client')
-    if groq_client:
-        try:
-            response = groq_client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": "You are a precise and helpful educational assistant."},
-                    {"role": "user", "content": prompt},
-                ],
-                model=search_components.get('groq_model', os.getenv('GROQ_MODEL_NAME', 'llama-3.1-8b-instant')),
-                max_tokens=max_tokens,
-                temperature=llm_temperature,
-                top_p=llm_top_p,
-            )
-            content = (response.choices[0].message.content or "").strip()
-            if content:
-                return content, "groq", None
-        except Exception as e:
-            return None, None, f"All LLM providers failed: {e}"
-
-    return None, None, "No LLM provider configured"
-
 def initialize_search_system():
     """Initialize all components needed for search"""
     global search_components, system_initialized
@@ -761,46 +416,45 @@ def initialize_search_system():
             print("🔧 Initializing search system...")
         
         # Load API keys
-        openai_api_key, groq_api_key, pine_api_key = load_api_keys()
+        groq_api_key, pine_api_key = load_api_keys()
         
         # Initialize components only if API keys are available
         if pine_api_key:
             try:
                 # Initialize Pinecone for RAG
                 pc_rag = Pinecone(api_key=pine_api_key)
-                rag_index_name = os.getenv("RAG_INDEX_NAME", "ncert-local-bge-base")
+                rag_index_name = "ncert"
                 rag_index = pc_rag.Index(rag_index_name)
-                rag_model, embedding_backend = create_embedding_model()
+                shared_model, embedding_backend = create_embedding_model()
+                rag_model = shared_model
                 
-                # Initialize Pinecone for MCQ - use same BGE-base model for consistency and quality
+                # Initialize Pinecone for MCQ
                 pc_mcq = Pinecone(api_key=pine_api_key)
-                mcq_index_name = 'pyq-bge-768'  # New 768-dim index with BGE-base embeddings
+                mcq_index_name = 'pyq-1'
                 mcq_index = pc_mcq.Index(mcq_index_name)
-                # Use same model as RAG for unified architecture (BGE-base, 768-dim)
-                mcq_model = rag_model
-                
-                # Verify MCQ model dimension by encoding a test query
-                test_embedding = encode_query(mcq_model, "test")
-                mcq_actual_dim = len(test_embedding)
+                mcq_model = shared_model
 
                 if is_production:
-                    app.logger.info(f"✅ RAG embedding backend: {embedding_backend}")
-                    app.logger.info(f"✅ MCQ embedding model: BGE-base (shared with RAG)")
-                    app.logger.info(f"✅ MCQ embedding dimension: {mcq_actual_dim} (expected: 768)")
-                    if mcq_actual_dim != 768:
-                        app.logger.error(f"❌ CRITICAL: MCQ dimension mismatch! Got {mcq_actual_dim}, expected 768")
+                    app.logger.info(f"✅ Embedding backend: {embedding_backend}")
                 else:
-                    print(f"✅ RAG embedding backend: {embedding_backend}")
-                    print(f"✅ MCQ embedding model: BGE-base (shared with RAG)")
-                    print(f"✅ MCQ embedding dimension: {mcq_actual_dim} (expected: 768)")
-                    if mcq_actual_dim != 768:
-                        print(f"❌ CRITICAL: MCQ dimension mismatch! Got {mcq_actual_dim}, expected 768")
+                    print(f"✅ Embedding backend: {embedding_backend}")
                 
                 search_components['rag_index'] = rag_index
                 search_components['rag_model'] = rag_model
-                search_components['rag_index_name'] = rag_index_name
                 search_components['mcq_index'] = mcq_index
                 search_components['mcq_model'] = mcq_model
+
+                # Precompute common embeddings to avoid repeated model.encode calls
+                try:
+                    search_components['mcq_sample_embedding'] = encode_query(mcq_model, "sample question")
+                    search_components['mcq_filter_embedding'] = encode_query(mcq_model, "filter query")
+                    search_components['mcq_generic_embedding'] = encode_query(mcq_model, "general knowledge question")
+                    search_components['mcq_minimal_embedding'] = encode_query(mcq_model, "sample")
+                except Exception as e:
+                    if is_production:
+                        app.logger.warning(f"⚠️  Failed to precompute MCQ embeddings: {str(e)}")
+                    else:
+                        print(f"⚠️  Failed to precompute MCQ embeddings: {str(e)}")
                 
                 if is_production:
                     app.logger.info("✅ Pinecone components initialized")
@@ -813,29 +467,11 @@ def initialize_search_system():
                 else:
                     print(error_msg)
         
-        # Initialize OpenAI primary client
-        if openai_api_key and OpenAI is not None:
-            try:
-                openai_timeout = float(os.getenv("OPENAI_TIMEOUT_SECONDS", "20"))
-                search_components['openai_client'] = OpenAI(api_key=openai_api_key, timeout=openai_timeout)
-                search_components['openai_model'] = os.getenv('OPENAI_MODEL_NAME', 'gpt-4o-mini')
-                if is_production:
-                    app.logger.info("✅ OpenAI client initialized")
-                else:
-                    print("✅ OpenAI client initialized")
-            except Exception as e:
-                error_msg = f"⚠️  Failed to initialize OpenAI client: {str(e)}"
-                if is_production:
-                    app.logger.warning(error_msg)
-                else:
-                    print(error_msg)
-
-        # Initialize Groq fallback client
+        # Initialize Groq client for response generation
         if groq_api_key:
             try:
                 client = Groq(api_key=groq_api_key)
                 search_components['client'] = client
-                search_components['groq_model'] = os.getenv('GROQ_MODEL_NAME', 'llama-3.1-8b-instant')
                 
                 if is_production:
                     app.logger.info("✅ Groq client initialized")
@@ -906,7 +542,7 @@ def get_context_with_sources(results):
     
     for i, match in enumerate(results['matches'], 1):
         metadata = match.get('metadata', {})
-        text_content = metadata.get('content', metadata.get('text', metadata.get('question', '')))
+        text_content = metadata.get('text', metadata.get('question', ''))
         score = match.get('score', 0)
         
         # Add context with relevance indicator
@@ -1041,16 +677,10 @@ def health_check():
                 components['rag_model'] = {"status": "healthy"}
             if 'mcq_model' in search_components:
                 components['mcq_model'] = {"status": "healthy"}
-            if 'openai_client' in search_components:
-                components['openai_client'] = {"status": "healthy"}
-            else:
-                components['openai_client'] = {"status": "unavailable"}
             if 'client' in search_components:
                 components['groq_client'] = {"status": "healthy"}
             else:
                 components['groq_client'] = {"status": "unavailable"}
-
-            if 'openai_client' not in search_components and 'client' not in search_components:
                 health_status["status"] = "degraded"
                 
         except Exception as e:
@@ -1086,16 +716,13 @@ def search():
     query = data.get("query", "")
     n_results = data.get("n_results", int(os.getenv("DEFAULT_N_RESULTS", "5")))
     namespace = data.get("namespace", "")
-    selected_class = data.get("selected_class")
-    answer_length = data.get("answer_length", "normal")
     mcq_threshold = data.get("mcq_threshold", float(os.getenv("DEFAULT_MCQ_THRESHOLD", "0.25")))
     mcq_limit = data.get("mcq_limit", int(os.getenv("DEFAULT_MCQ_LIMIT", "0")))
     answer_settings = data.get("answer_settings", {}) or {}
 
-    answer_profile, resolved_answer_length = get_answer_length_profile(answer_length)
     llm_temperature = float(answer_settings.get("temperature", os.getenv("DEFAULT_ANSWER_TEMPERATURE", "0.3")))
     llm_top_p = float(answer_settings.get("top_p", os.getenv("DEFAULT_ANSWER_TOP_P", "0.9")))
-    llm_max_tokens = int(answer_settings.get("max_tokens", answer_profile["max_tokens"]))
+    llm_max_tokens = int(answer_settings.get("max_tokens", os.getenv("DEFAULT_ANSWER_MAX_TOKENS", "1500")))
     
     # Input validation
     if not query.strip():
@@ -1118,17 +745,27 @@ def search():
         else:
             rag_query_embedding = None
 
-        resolved_class_filter = resolve_class_filter(selected_class, query)
-
         # RAG search for contextual answer (only if Pinecone is available)
         if pinecone_available:
-            context, sources = search_rag_with_class_filter(
-                pinecone_index=search_components['rag_index'],
-                query_embedding=rag_query_embedding,
-                n_chunks=n_results,
-                namespace=namespace,
-                class_filter=resolved_class_filter,
-            )
+            if namespace and namespace != "all":
+                rag_results = semantic_search(
+                    search_components['rag_index'],
+                    search_components['rag_model'],
+                    query,
+                    n_results,
+                    namespace,
+                    query_embedding=rag_query_embedding
+                )
+                context, sources = get_context_with_sources(rag_results)
+            else:
+                # Search all namespaces
+                context, sources = search_all_namespaces(
+                    search_components['rag_index'],
+                    search_components['rag_model'],
+                    query,
+                    n_results,
+                    query_embedding=rag_query_embedding
+                )
         else:
             context, sources = "", []
         
@@ -1147,13 +784,15 @@ def search():
             # Try searching with relaxed parameters
             print("DEBUG: Context appears limited, trying broader search...")
             try:
-                broader_context, broader_sources = search_rag_with_class_filter(
-                    pinecone_index=search_components['rag_index'],
-                    query_embedding=rag_query_embedding,
-                    n_chunks=n_results + 3,
-                    namespace="",
-                    class_filter=resolved_class_filter,
+                broader_results = semantic_search(
+                    search_components['rag_index'],
+                    search_components['rag_model'],
+                    query,
+                    n_results + 3,  # Get more results
+                    "",  # Search all namespaces
+                    query_embedding=rag_query_embedding
                 )
+                broader_context, broader_sources = get_context_with_sources(broader_results)
                 if len(broader_context) > len(context):
                     context = broader_context
                     sources = broader_sources
@@ -1161,23 +800,35 @@ def search():
             except Exception as e:
                 print(f"DEBUG: Broader search failed: {e}")
         
-        compact_context = trim_context_from_sources(sources, max_chars=answer_profile['context_chars'])
-
-        # Generate RAG response using provider routing
+        # Generate RAG response using Groq with optimized parameters
         rag_response = None
         warning = None
-        provider_used = None
-        rag_response, provider_used, route_error = generate_with_model_routing(
-            query=query,
-            context=compact_context,
-            answer_profile=answer_profile,
-            llm_temperature=llm_temperature,
-            llm_top_p=llm_top_p,
-            llm_max_tokens=llm_max_tokens,
-        )
-
-        if not rag_response:
-            warning = route_error or "LLM unavailable"
+        if 'client' in search_components:
+            try:
+                prompt = get_prompt(context, query)
+                chat_completion = search_components['client'].chat.completions.create(
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are an expert educational assistant for NCERT content and competitive exam preparation. Provide detailed, accurate, and well-structured responses to help students learn effectively."
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt,
+                        }
+                    ],
+                    model="llama-3.1-8b-instant",  # Reliable and fast Groq model
+                    max_tokens=llm_max_tokens,
+                    temperature=llm_temperature,
+                    top_p=llm_top_p,
+                )
+                rag_response = chat_completion.choices[0].message.content
+            except Exception as e:
+                warning = f"LLM unavailable: {str(e)}"
+                print(f"⚠️ Groq call failed, using fallback response: {e}")
+                rag_response = build_fallback_response(context, sources, query)
+        else:
+            warning = "LLM client not configured (missing GROQ_API_KEY)"
             rag_response = build_fallback_response(context, sources, query)
         
         # MCQ search for related questions (only if Pinecone is available)
@@ -1198,9 +849,6 @@ def search():
             "mcq_results": mcq_results,
             "query": query,
             "namespace_used": namespace if namespace else "all",
-            "class_filter": resolved_class_filter,
-            "answer_length": resolved_answer_length,
-            "provider_used": provider_used,
             "search_settings": {
                 "n_results": n_results,
                 "mcq_threshold": mcq_threshold,
@@ -1223,12 +871,6 @@ def search():
     except Exception as e:
         print(f"Error in search: {str(e)}")
         return jsonify({"error": str(e)}), 500
-
-
-@app.route('/api/class-options', methods=['GET'])
-def get_class_options():
-    """Return available normalized class filters for chat retrieval."""
-    return jsonify({"classes": CLASS_OPTIONS}), 200
 
 @app.route("/api/total-questions", methods=["GET"])
 def get_total_questions():
@@ -1274,14 +916,6 @@ def get_search_settings():
             "temperature": float(os.getenv("DEFAULT_ANSWER_TEMPERATURE", "0.3")),
             "top_p": float(os.getenv("DEFAULT_ANSWER_TOP_P", "0.9")),
             "max_tokens": int(os.getenv("DEFAULT_ANSWER_MAX_TOKENS", "1500"))
-        },
-        "answer_length_modes": [
-            {"value": key, "label": value["label"], "max_tokens": value["max_tokens"]}
-            for key, value in ANSWER_LENGTH_PROFILES.items()
-        ],
-        "model_routing": {
-            "primary": "openai",
-            "fallback": "groq"
         },
         "notes": {
             "mcq_limit": "0 means no hard cap; returns all matches above threshold"
@@ -1360,15 +994,15 @@ def get_questions():
         all_questions = []
         
         # Query for questions - using dummy query to get random questions
-        mcq_model = search_components.get('mcq_model')
-        dummy_query = encode_query(mcq_model, "sample question")
+        dummy_query = search_components.get('mcq_sample_embedding')
+        if dummy_query is None:
+            dummy_query = encode_query(search_components['mcq_model'], "sample question")
         
         for namespace in pyq_namespaces:
             try:
                 # Get questions from each namespace
-                results = safe_pinecone_query(
-                    mcq_index,
-                    dummy_query,
+                results = mcq_index.query(
+                    vector=dummy_query,
                     top_k=min(limit * 2, 200),  # Get extra for filtering
                     include_metadata=True,
                     namespace=namespace
@@ -1509,15 +1143,15 @@ def get_filter_options():
         unique_subjects = set()
         
         # Query for questions from each namespace to extract metadata
-        mcq_model = search_components.get('mcq_model')
-        dummy_query = encode_query(mcq_model, "filter query")
+        dummy_query = search_components.get('mcq_filter_embedding')
+        if dummy_query is None:
+            dummy_query = encode_query(search_components['mcq_model'], "filter query")
         
         for namespace in pyq_namespaces:
             try:
                 # Get questions from each namespace
-                results = safe_pinecone_query(
-                    mcq_index,
-                    dummy_query,
+                results = mcq_index.query(
+                    vector=dummy_query,
                     top_k=1000,  # Get many results to extract all unique values
                     include_metadata=True,
                     namespace=namespace
@@ -1710,11 +1344,11 @@ def get_inserted_pyqs():
             if vector_count > 0:
                 # Query the namespace to get detailed exam information
                 try:
-                    mcq_model = search_components.get('mcq_model')
-                    dummy_query = encode_query(mcq_model, "sample")
-                    results = safe_pinecone_query(
-                        mcq_index,
-                        dummy_query,
+                    dummy_query = search_components.get('mcq_minimal_embedding')
+                    if dummy_query is None:
+                        dummy_query = encode_query(search_components['mcq_model'], "sample")
+                    results = mcq_index.query(
+                        vector=dummy_query,
                         top_k=min(vector_count, 1000),  # Get all or up to 1000 questions
                         include_metadata=True,
                         namespace=namespace
@@ -1826,7 +1460,7 @@ def get_inserted_pyqs():
 
 def search_all_namespaces(pinecone_index, model, query: str, n_chunks: int = 2, query_embedding=None):
     """Search across all namespaces and return best results"""
-    namespaces = EDU_NAMESPACES
+    namespaces = ["geography", "polity", "history", "economics", "science"]
     all_results = []
 
     if query_embedding is None:
@@ -1860,39 +1494,6 @@ def search_all_namespaces(pinecone_index, model, query: str, n_chunks: int = 2, 
     context, sources = get_context_with_sources(formatted_results)
 
     return context, sources
-
-
-def search_rag_with_class_filter(pinecone_index, query_embedding, n_chunks: int = 5, namespace: str = "", class_filter: str | None = None):
-    """Search RAG index with optional namespace and class filtering using class_normalized."""
-    namespaces = [namespace] if namespace and namespace != "all" else EDU_NAMESPACES
-    all_results = []
-    filter_dict = {"class_normalized": {"$eq": class_filter}} if class_filter else None
-
-    def _query_namespace(ns):
-        response = pinecone_index.query(
-            vector=query_embedding,
-            top_k=max(3, n_chunks * 2),
-            include_metadata=True,
-            namespace=ns,
-            filter=filter_dict,
-        )
-        return ns, response
-
-    with ThreadPoolExecutor(max_workers=min(4, len(namespaces))) as executor:
-        futures = [executor.submit(_query_namespace, ns) for ns in namespaces]
-        for future in futures:
-            try:
-                ns, response = future.result()
-                for match in response.get('matches', []):
-                    match['namespace'] = ns
-                    all_results.append(match)
-            except Exception as e:
-                app.logger.warning(f"RAG namespace query failed: {e}")
-
-    all_results.sort(key=lambda x: x.get('score', 0), reverse=True)
-    top_results = all_results[:max(1, n_chunks)]
-    formatted_results = {'matches': top_results}
-    return get_context_with_sources(formatted_results)
 
 def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=0):
     """Query MCQ index for relevant questions across all namespaces"""
@@ -2369,18 +1970,18 @@ def search_pyq_questions():
                 target_namespaces = namespaces  # fallback to all if no match
         
         # Precompute embedding once for all namespaces
-        mcq_model = search_components.get('mcq_model')
         if query:
             query_embedding = encode_query(mcq_model, query)
         else:
-            query_embedding = encode_query(mcq_model, "general knowledge question")
+            query_embedding = search_components.get('mcq_generic_embedding')
+            if query_embedding is None:
+                query_embedding = encode_query(mcq_model, "general knowledge question")
 
         # Query each namespace (limited for performance)
         for namespace in target_namespaces[:5]:  # Limit to first 5 namespaces for speed
             try:
-                results = safe_pinecone_query(
-                    mcq_index,
-                    query_embedding,
+                results = mcq_index.query(
+                    vector=query_embedding,
                     top_k=min(limit + 10, 100),  # Reduced from 500 to 100 for faster queries
                     include_metadata=True,
                     namespace=namespace
@@ -2509,14 +2110,14 @@ def get_pyq_filters():
         years_set = set()
         
         # Sample questions from each namespace to get filters
-        mcq_model = search_components.get('mcq_model')
-        dummy_query = encode_query(mcq_model, "sample")
+        dummy_query = search_components.get('mcq_minimal_embedding')
+        if dummy_query is None:
+            dummy_query = encode_query(mcq_model, "sample")
         
         for namespace in namespaces:
             try:
-                results = safe_pinecone_query(
-                    mcq_index,
-                    dummy_query,
+                results = mcq_index.query(
+                    vector=dummy_query,
                     top_k=100,
                     include_metadata=True,
                     namespace=namespace
