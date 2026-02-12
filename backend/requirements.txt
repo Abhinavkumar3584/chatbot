@@ -11,6 +11,7 @@ werkzeug==3.0.1
 python-dotenv==1.0.0
 
 # AI & ML APIs
+openai>=1.40.0,<2.0.0
 groq==0.4.2
 pinecone>=5.0.0,<7.0.0
 

@@ -9,10 +9,23 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
   const [availableSubjects, setAvailableSubjects] = useState([])
   const [selectedSubject, setSelectedSubject] = useState('All Subjects')
   const [showDropdown, setShowDropdown] = useState(false)
+  const [availableClasses, setAvailableClasses] = useState([])
+  const [selectedClass, setSelectedClass] = useState('All Classes')
+  const [showClassDropdown, setShowClassDropdown] = useState(false)
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(true)
+  const [isLoadingClasses, setIsLoadingClasses] = useState(true)
   const [inputValue, setInputValue] = useState('')
-  const dropdownRef = useRef(null)
+  const [answerLengthIndex, setAnswerLengthIndex] = useState(2)
+  const subjectDropdownRef = useRef(null)
+  const classDropdownRef = useRef(null)
   const textareaRef = useRef(null)
+
+  const answerLengthModes = [
+    { value: 'very_short', label: 'Very Short' },
+    { value: 'short', label: 'Short' },
+    { value: 'normal', label: 'Normal' },
+    { value: 'explanatory', label: 'Explanatory' }
+  ]
 
   // Load available subjects from Pinecone
   const loadAvailableSubjects = async () => {
@@ -46,16 +59,36 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
     }
   }
 
+  // Load class options for class-specific retrieval
+  const loadClassOptions = async () => {
+    setIsLoadingClasses(true)
+    try {
+      const response = await apiService.getClassOptions()
+      const classList = Array.isArray(response?.classes) ? response.classes : []
+      const classes = ['All Classes', ...classList.map((item) => item.label)]
+      setAvailableClasses(classes)
+    } catch (error) {
+      console.error('❌ EmbeddedSearchBar: Failed to load class options:', error)
+      setAvailableClasses(['All Classes'])
+    } finally {
+      setIsLoadingClasses(false)
+    }
+  }
+
   // Load subjects on component mount
   useEffect(() => {
     loadAvailableSubjects()
+    loadClassOptions()
   }, [])
 
   // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (subjectDropdownRef.current && !subjectDropdownRef.current.contains(event.target)) {
         setShowDropdown(false)
+      }
+      if (classDropdownRef.current && !classDropdownRef.current.contains(event.target)) {
+        setShowClassDropdown(false)
       }
     }
 
@@ -70,6 +103,11 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
     setShowDropdown(false)
   }
 
+  const handleClassSelect = (selectedClassLabel) => {
+    setSelectedClass(selectedClassLabel)
+    setShowClassDropdown(false)
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
     const query = inputValue.trim()
@@ -81,7 +119,21 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
       subjectId = selectedSubject.toLowerCase()
     }
     
-    onSendMessage(query, subjectId)
+    let selectedClassValue = null
+    if (selectedClass !== 'All Classes') {
+      const classNumMatch = selectedClass.match(/(6|7|8|9|10|11|12)/)
+      if (classNumMatch) {
+        selectedClassValue = `class-${classNumMatch[1]}`
+      }
+    }
+
+    const answerLength = answerLengthModes[answerLengthIndex]?.value || 'normal'
+
+    onSendMessage(query, {
+      subject: subjectId,
+      selectedClass: selectedClassValue,
+      answerLength
+    })
     setInputValue('')
     requestAnimationFrame(adjustTextareaHeight)
   }
@@ -117,10 +169,46 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
           border: isMobile ? 'none' : '1px solid #E3E7ED'
         }}
       >
+        <div className="px-2 pb-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-medium" style={{ color: '#52616B' }}>Answer Length</span>
+            <span className="text-[11px] font-semibold" style={{ color: '#3A7CA5' }}>
+              {answerLengthModes[answerLengthIndex]?.label}
+            </span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={answerLengthModes.length - 1}
+            step={1}
+            value={answerLengthIndex}
+            onChange={(e) => setAnswerLengthIndex(Number(e.target.value))}
+            className="w-full"
+            disabled={isLoading}
+          />
+          <div className="flex items-center justify-between mt-1">
+            {answerLengthModes.map((mode, idx) => (
+              <button
+                key={mode.value}
+                type="button"
+                onClick={() => setAnswerLengthIndex(idx)}
+                className="text-[10px] px-1 py-0.5 rounded"
+                style={{
+                  color: answerLengthIndex === idx ? '#1F2933' : '#6B7280',
+                  fontWeight: answerLengthIndex === idx ? 600 : 400,
+                  backgroundColor: answerLengthIndex === idx ? 'rgba(58, 124, 165, 0.12)' : 'transparent'
+                }}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {!isMobile ? (
           <div className="flex items-center space-x-1.5">
             {/* Subject Dropdown */}
-            <div className="relative flex-shrink-0" ref={dropdownRef}>
+            <div className="relative flex-shrink-0" ref={subjectDropdownRef}>
             <button 
               type="button"
               onClick={() => setShowDropdown(!showDropdown)}
@@ -187,6 +275,49 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
               </div>
             )}
           </div>
+
+            {/* Class Dropdown */}
+            <div className="relative flex-shrink-0" ref={classDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setShowClassDropdown(!showClassDropdown)}
+                className="flex items-center justify-between space-x-1 px-2 py-1.5 rounded-md text-xs hover:opacity-90 transition-opacity min-w-[78px] max-w-[110px]"
+                style={{
+                  backgroundColor: '#0E7490',
+                  color: '#FFFFFF'
+                }}
+                disabled={isLoadingClasses}
+              >
+                <span className="whitespace-nowrap truncate text-xs">
+                  {isLoadingClasses ? 'Loading...' : selectedClass === 'All Classes' ? 'Class' : selectedClass.replace('Class ', 'C-')}
+                </span>
+                <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform duration-200 ${
+                  showClassDropdown ? 'rotate-180' : ''
+                }`} />
+              </button>
+
+              {showClassDropdown && !isLoadingClasses && (
+                <div className="absolute bottom-full left-0 mb-1 w-36 rounded-md shadow-lg z-[60]" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E3E7ED' }}>
+                  <div className="py-1">
+                    {availableClasses.map((classLabel, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => handleClassSelect(classLabel)}
+                        className="w-full text-left px-2 py-1.5 text-xs transition-colors"
+                        style={{
+                          backgroundColor: selectedClass === classLabel ? 'rgba(14, 116, 144, 0.14)' : 'transparent',
+                          color: '#1F2933',
+                          fontWeight: selectedClass === classLabel ? '600' : '400'
+                        }}
+                      >
+                        {classLabel}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Search Input - Takes remaining space */}
             <div className="flex-1 relative">
@@ -257,33 +388,23 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
               />
             </div>
 
-            {/* Bottom row: actions */}
-            <div className="flex items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={toggleSidebar}
-                className="flex-shrink-0 p-2 rounded-md transition-colors"
-                style={{ backgroundColor: '#F6F7F9', border: '1px solid #E3E7ED', color: '#1F2933' }}
-                aria-label="Open sidebar"
-              >
-                <Menu className="w-4 h-4" />
-              </button>
-
-              <div className="relative flex-1" ref={dropdownRef}>
-                <button 
+            {/* Middle row: subject + class selectors */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1" ref={subjectDropdownRef}>
+                <button
                   type="button"
                   onClick={() => setShowDropdown(!showDropdown)}
                   className="flex w-full items-center justify-between space-x-1 px-2 py-1.5 rounded-md text-xs hover:opacity-90 transition-opacity"
-                  style={{ 
-                    backgroundColor: '#3A7CA5', 
-                    color: '#FFFFFF' 
+                  style={{
+                    backgroundColor: '#3A7CA5',
+                    color: '#FFFFFF'
                   }}
                   disabled={isLoadingSubjects}
                 >
                   <span className="whitespace-nowrap truncate text-xs">
                     {isLoadingSubjects ? 'Loading...' :
-                     selectedSubject === 'All Subjects' ? 'All' :
-                     selectedSubject.length > 10 ? selectedSubject.substring(0, 10) + '...' :
+                     selectedSubject === 'All Subjects' ? 'All Subjects' :
+                     selectedSubject.length > 14 ? selectedSubject.substring(0, 14) + '...' :
                      selectedSubject}
                   </span>
                   <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform duration-200 ${
@@ -304,34 +425,68 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
                             color: '#1F2933',
                             fontWeight: selectedSubject === subject ? '600' : '400'
                           }}
-                          onMouseEnter={(e) => {
-                            if (selectedSubject !== subject) {
-                              e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.08)'
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (selectedSubject !== subject) {
-                              e.currentTarget.style.backgroundColor = 'transparent'
-                            }
-                          }}
                         >
-                          <div className="flex items-center justify-between">
-                            <span>{subject}</span>
-                            {subject !== 'All Subjects' && (
-                              <span className="text-xs font-medium" style={{ color: '#3A7CA5' }}>✓</span>
-                            )}
-                          </div>
+                          {subject}
                         </button>
                       ))}
-                    </div>
-                    <div className="px-2 py-1" style={{ borderTop: '1px solid #E3E7ED' }}>
-                      <div className="text-xs" style={{ color: '#52616B' }}>
-                        {availableSubjects.length - 1} indexed subjects
-                      </div>
                     </div>
                   </div>
                 )}
               </div>
+
+              <div className="relative w-[42%]" ref={classDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowClassDropdown(!showClassDropdown)}
+                  className="flex w-full items-center justify-between space-x-1 px-2 py-1.5 rounded-md text-xs hover:opacity-90 transition-opacity"
+                  style={{
+                    backgroundColor: '#0E7490',
+                    color: '#FFFFFF'
+                  }}
+                  disabled={isLoadingClasses}
+                >
+                  <span className="whitespace-nowrap truncate text-xs">
+                    {isLoadingClasses ? 'Loading...' : selectedClass}
+                  </span>
+                  <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform duration-200 ${
+                    showClassDropdown ? 'rotate-180' : ''
+                  }`} />
+                </button>
+                {showClassDropdown && !isLoadingClasses && (
+                  <div className="absolute bottom-full right-0 mb-1 w-36 rounded-md shadow-lg z-[60]" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E3E7ED' }}>
+                    <div className="py-1">
+                      {availableClasses.map((classLabel, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleClassSelect(classLabel)}
+                          className="w-full text-left px-2 py-1.5 text-xs transition-colors"
+                          style={{
+                            backgroundColor: selectedClass === classLabel ? 'rgba(14, 116, 144, 0.14)' : 'transparent',
+                            color: '#1F2933',
+                            fontWeight: selectedClass === classLabel ? '600' : '400'
+                          }}
+                        >
+                          {classLabel}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom row: actions */}
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                className="flex-shrink-0 p-2 rounded-md transition-colors"
+                style={{ backgroundColor: '#F6F7F9', border: '1px solid #E3E7ED', color: '#1F2933' }}
+                aria-label="Open sidebar"
+              >
+                <Menu className="w-4 h-4" />
+              </button>
 
               <button
                 type="button"

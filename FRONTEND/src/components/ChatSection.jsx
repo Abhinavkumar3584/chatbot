@@ -792,10 +792,14 @@ const ChatSection = () => {
   }, [currentUser, currentChatId, currentChatTitle, addGuestChat, updateGuestChat, guestChatHistory])
 
   // Handle sending messages - can be called from EmbeddedSearchBar
-  const sendMessage = useCallback(async (query, selectedSubject = 'all') => {
+  const sendMessage = useCallback(async (query, chatControls = {}) => {
     if (!query.trim()) return
     if (isLoading) return
     setIsLoading(true)
+
+    const selectedSubject = chatControls.subject || 'all'
+    const selectedClass = chatControls.selectedClass || null
+    const answerLength = chatControls.answerLength || 'normal'
 
     const userMessage = {
       id: Date.now(),
@@ -862,6 +866,8 @@ const ChatSection = () => {
     try {
       const response = await apiService.search(query, {
         subject: selectedSubject,
+        selected_class: selectedClass,
+        answer_length: answerLength,
         n_results: SEARCH_SETTINGS.nResults,
         namespace: selectedSubject,
         mcq_threshold: SEARCH_SETTINGS.mcqThreshold,

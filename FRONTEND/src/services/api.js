@@ -82,6 +82,8 @@ class ApiService {
       n_results = 3,
       namespace = '',
       subject = 'all',
+      selected_class,
+      answer_length = 'normal',
       mcq_threshold,
       mcq_limit,
       answer_settings
@@ -95,6 +97,8 @@ class ApiService {
           n_results,
           namespace,
           subject,
+          ...(selected_class ? { selected_class } : {}),
+          ...(answer_length ? { answer_length } : {}),
           ...(mcq_threshold !== undefined ? { mcq_threshold } : {}),
           ...(mcq_limit !== undefined ? { mcq_limit } : {}),
           ...(answer_settings ? { answer_settings } : {})
@@ -168,6 +172,21 @@ class ApiService {
         total_exams: 0,
         total_subjects: 0,
         error: error.message 
+      };
+    }
+  }
+
+  /**
+   * Get class filter options for class-specific RAG retrieval
+   */
+  async getClassOptions() {
+    try {
+      return await this.request('/class-options');
+    } catch (error) {
+      console.error('Failed to get class options:', error);
+      return {
+        classes: [],
+        error: error.message
       };
     }
   }
