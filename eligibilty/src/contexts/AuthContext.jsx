@@ -2,8 +2,13 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   createUserWithEmailAndPassword,
+  getRedirectResult,
+  GithubAuthProvider,
+  GoogleAuthProvider,
   onIdTokenChanged,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  signInWithRedirect,
   signOut,
   updateProfile,
 } from 'firebase/auth';
@@ -102,6 +107,87 @@ export function AuthProvider({ children }) {
     return userCredential;
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account',
+      });
+
+      let result;
+      try {
+        result = await signInWithPopup(auth, provider);
+      } catch (popupError) {
+        if (
+          popupError.code === 'auth/popup-blocked' ||
+          popupError.code === 'auth/cancelled-popup-request' ||
+          popupError?.message?.includes('popup')
+        ) {
+          await signInWithRedirect(auth, provider);
+          return null;
+        }
+        throw popupError;
+      }
+
+      await upsertUserDocument(result.user);
+      await updateAuthSyncState(result.user.uid, true);
+      return result;
+    } catch (error) {
+      if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup was blocked by your browser. Please allow popups and try again.');
+      }
+      if (error.code === 'auth/cancelled-popup-request') {
+        throw new Error('Login was cancelled. Please try again.');
+      }
+      if (error.code === 'auth/network-request-failed') {
+        throw new Error('Network error. Please check your internet connection and try again.');
+      }
+      throw error;
+    }
+  };
+
+  const loginWithGithub = async () => {
+    try {
+      const provider = new GithubAuthProvider();
+      provider.setCustomParameters({
+        allow_signup: 'true',
+      });
+
+      let result;
+      try {
+        result = await signInWithPopup(auth, provider);
+      } catch (popupError) {
+        if (
+          popupError.code === 'auth/popup-blocked' ||
+          popupError.code === 'auth/cancelled-popup-request' ||
+          popupError?.message?.includes('popup')
+        ) {
+          await signInWithRedirect(auth, provider);
+          return null;
+        }
+        throw popupError;
+      }
+
+      await upsertUserDocument(result.user);
+      await updateAuthSyncState(result.user.uid, true);
+      return result;
+    } catch (error) {
+      if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup was blocked by your browser. Please allow popups and try again.');
+      }
+      if (error.code === 'auth/cancelled-popup-request') {
+        throw new Error('Login was cancelled. Please try again.');
+      }
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        throw new Error('An account already exists with this email using another login method.');
+      }
+      if (error.code === 'auth/network-request-failed') {
+        throw new Error('Network error. Please check your internet connection and try again.');
+      }
+      throw error;
+    }
+  };
+
   const logout = async () => {
     const uid = auth.currentUser?.uid;
     if (uid) {
@@ -161,12 +247,30 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (!result?.user) return;
+
+        await upsertUserDocument(result.user);
+        await updateAuthSyncState(result.user.uid, true);
+      } catch (error) {
+        console.error('Error handling auth redirect result:', error);
+      }
+    };
+
+    handleRedirectResult();
+  }, []);
+
   const value = useMemo(
     () => ({
       currentUser,
       loading,
       signup,
       login,
+      loginWithGoogle,
+      loginWithGithub,
       logout,
     }),
     [currentUser, loading]
