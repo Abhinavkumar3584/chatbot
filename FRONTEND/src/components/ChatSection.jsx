@@ -845,11 +845,14 @@ const ChatSection = () => {
       }
     }
 
-    try {
-      addToSearchHistory(query)
-    } catch (error) {
-      console.error('❌ Failed to update search history:', error)
-    }
+    // Update search history asynchronously to avoid state update during render
+    setTimeout(() => {
+      try {
+        addToSearchHistory(query)
+      } catch (error) {
+        console.error('❌ Failed to update search history:', error)
+      }
+    }, 0)
 
     // Create initial bot message with loading state
     const tempBotMessage = {
