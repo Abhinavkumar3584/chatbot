@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 const FAQS = () => {
   const faqData = [
     {
-      question: "What is ParikshaYogya?",
-      answer: "ParikshaYogya is an eligibility and exam attempt tracker that helps students check their eligibility for various government exams."
+      question: "What is PratiyogitaYogya?",
+      answer: "PratiyogitaYogya is an eligibility and exam attempt tracker that helps students check their eligibility for various government exams."
     },
     {
       question: "How does the eligibility checker work?",
@@ -27,7 +27,7 @@ const FAQS = () => {
       answer: "Yes, it calculates and updates the number of attempts left for exams with attempt limits."
     },
     {
-      question: "Is the information provided in ParikshaYogya accurate?",
+      question: "Is the information provided in PratiyogitaYogya accurate?",
       answer: "The system is integrated with official exam guidelines, ensuring up-to-date and accurate information."
     },
     {
@@ -35,11 +35,11 @@ const FAQS = () => {
       answer: "Absolutely! It helps first-time aspirants understand their eligibility and plan their exam strategy effectively."
     },
     {
-      question: "Does ParikshaYogya cover all government exams?",
+      question: "Does PratiyogitaYogya cover all government exams?",
       answer: "It covers major government exams like UPSC, CDS, SSC, NDA, and more."
     },
     {
-      question: "Is ParikshaYogya a paid service?",
+      question: "Is PratiyogitaYogya a paid service?",
       answer: "Basic eligibility checking is free, but premium features like detailed eligibility reports are available under a subscription plan."
     }
   ];
@@ -72,7 +72,7 @@ const FAQS = () => {
   return (
     <div className="max-w-5xl mx-auto px-3 py-6 m-5 bg-[#f5f5f5] border border-[rgba(0,0,0,0.4)] rounded-lg">
       <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-5">
-        FAQs (Pariksha Yogya)
+        FAQs (Pratiyogita Yogya)
       </h1>
       
       <div className="flex flex-col space-y-2">

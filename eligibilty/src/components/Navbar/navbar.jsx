@@ -54,12 +54,12 @@ const Navbar = () => {
           <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
             <img
               src="./logos/py.png"
-              alt="Pariksha Yogya Logo"
+              alt="Pratiyogita Yogya Logo"
               className="h-12 w-12 sm:h-14 sm:w-14 object-contain"
             />
             <img
               src="./logos/py_name.svg"
-              alt="Pariksha Yogya"
+              alt="Pratiyogita Yogya"
               className="h-4 sm:h-5 object-contain"
             />
           </Link>
@@ -82,12 +82,7 @@ const Navbar = () => {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="flex items-center text-gray-700 hover:text-blue-500 focus:outline-none"
               >
-                Features
-                <ChevronDown
-                  className={`ml-1 w-4 h-4 transition-transform duration-300 ${
-                    isDropdownOpen ? "rotate-180" : "rotate-0"
-                  }`}
-                />
+                Gyan Setu
               </button>
 
               {/* Dropdown Items with Animation */}
@@ -103,19 +98,19 @@ const Navbar = () => {
                   href="/"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                 >
-                  PARIKSHA YOGYA
+                  Pratiyogita YOGYA
                 </a>
                 <a
                   href="https://marg.psetu.com/"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                 >
-                  PARIKSHA MARG
+                  Pratiyogita MARG
                 </a>
                 <a
                   href="#"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                 >
-                  PARIKSHA GYAN
+                  Pratiyogita GYAN
                 </a>
               </div>
             </div>
@@ -208,19 +203,19 @@ const Navbar = () => {
                   href="/"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
                 >
-                  PARIKSHA YOGYA
+                  Pratiyogita YOGYA
                 </a>
                 <a
                   href="https://marg.psetu.com/"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
                 >
-                  PARIKSHA MARG
+                  Pratiyogita MARG
                 </a>
                 <a
                   href="#"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
                 >
-                  PARIKSHA GYAN
+                  Pratiyogita GYAN
                 </a>
               </div>
             </div>

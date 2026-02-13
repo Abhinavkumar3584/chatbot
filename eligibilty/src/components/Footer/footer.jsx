@@ -7,54 +7,8 @@ const Footer = () => {
       
       {/* Footer content */}
       <div className="relative z-10 flex flex-col lg:flex-row items-start justify-between px-6 max-w-7xl mx-auto">
-        {/* Left Section - Features */}
-        <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left mt-6 lg:mt-0 lg:pl-8">
-          {/* Boxed section title */}
-          <div className="inline-block bg-black rounded-lg px-2 py-0.5 mb-4">
-            <h3 className="text-base font-semibold text-white">Our Services</h3>
-          </div>
-                    
-          {/* Feature Cards with reduced spacing */}
-          <div className="flex flex-col items-center lg:items-start space-y-4">
-            <div className="flex flex-col items-center lg:items-start max-w-md">
-              <div className="mb-2">
-                <img src="./logos/py_name.svg" alt="Eligibility Calculator" className="p-2 w-50 h-10 border rounded-lg shadow-md bg-white border-[#a8a8a8]" />
-              </div>
-              <p className="text-black-700 text-sm text-justify">
-                Exam eligibility and attempts calculator providing personalized insights based on age, education, and criteria for competitive exams.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center lg:items-start max-w-md">
-              <div className="mb-2">
-                <img src="./logos/pm_name.svg" alt="Expert Roadmaps" className="p-2 w-50 h-10 border rounded-lg shadow-md bg-white border-[#a8a8a8]" />
-              </div>
-              <p className="text-black-700 text-sm text-justify">
-                Guided path to competitive exam success with Subject - Expert roadmaps, best practices, and essential study materials.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center lg:items-start max-w-md">
-              <div className="mb-2">
-                <img src="./logos/pg_name.svg" alt="AI Chatbot" className="p-2 w-50 h-10 border rounded-lg shadow-md bg-white border-[#a8a8a8]" />
-              </div>
-              <p className="text-black-700 text-sm text-justify">
-                AI-powered chatbot with all necessary books, references, and explanations for competitive exam preparation.
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Right Section - Description, Socials, and Footer */}
-        <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left mt-6 lg:mt-0 lg:pl-8">
-          {/* Boxed section title */}
-          <div className="inline-block bg-black rounded-lg px-2 py-0.5 mb-4">
-            <h3 className="text-base font-semibold text-white">About Us</h3>
-          </div>
-          
-          <div className="p-2 border rounded-lg shadow-md flex items-center space-x-4 mb-3 bg-white border-[#a8a8a8]">
-            <img src="./logos/ps_name.svg" alt="Pariksha Yogya" className="w-45 h-5" />
-          </div>
+        <div className="w-full flex flex-col items-center lg:items-start text-center lg:text-left mt-6 lg:mt-0 lg:pl-8">
 
           {/* Description with reduced spacing */}
           <div className="max-w-md text-black-700 mb-4">
