@@ -792,10 +792,15 @@ const ChatSection = () => {
   }, [currentUser, currentChatId, currentChatTitle, addGuestChat, updateGuestChat, guestChatHistory])
 
   // Handle sending messages - can be called from EmbeddedSearchBar
-  const sendMessage = useCallback(async (query, selectedSubject = 'all') => {
+  const sendMessage = useCallback(async (query, searchOptions = {}) => {
     if (!query.trim()) return
     if (isLoading) return
     setIsLoading(true)
+
+    // Extract search options with defaults
+    const selectedSubject = searchOptions.subject || searchOptions.selectedSubject || 'all'
+    const selectedClass = searchOptions.selectedClass || null
+    const answerLength = searchOptions.answerLength || 'normal'
 
     const userMessage = {
       id: Date.now(),
@@ -863,7 +868,9 @@ const ChatSection = () => {
       const response = await apiService.search(query, {
         subject: selectedSubject,
         n_results: SEARCH_SETTINGS.nResults,
-        namespace: selectedSubject,
+        namespace: '',  // Keep empty for backend to use all namespaces
+        selected_class: selectedClass,
+        answer_length: answerLength,
         mcq_threshold: SEARCH_SETTINGS.mcqThreshold,
         mcq_limit: SEARCH_SETTINGS.mcqLimit,
         answer_settings: {

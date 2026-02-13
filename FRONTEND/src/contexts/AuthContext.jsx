@@ -505,12 +505,23 @@ export function AuthProvider({ children }) {
     if (!currentUser) return;
 
     try {
+      const normalizedSubject = (() => {
+        if (typeof subject === 'string') return subject;
+        if (subject && typeof subject === 'object') {
+          if (typeof subject.name === 'string') return subject.name;
+          if (typeof subject.subject === 'string') return subject.subject;
+        }
+        return 'Others';
+      })();
+
+      const normalizedSubjectLower = String(normalizedSubject || 'Others').toLowerCase();
+
       // Get current subject stats
       const currentSubjectStats = await getSubjectStats();
       
       // Find the subject in the stats
       const subjectIndex = currentSubjectStats.findIndex(s => 
-        s.name.toLowerCase() === subject.toLowerCase()
+        String(s.name || '').toLowerCase() === normalizedSubjectLower
       );
       
       let targetSubject = null;
@@ -555,18 +566,18 @@ export function AuthProvider({ children }) {
       // Also track the general interaction
       await trackUserInteraction({
         type: interactionType,
-        subject: subject,
+        subject: normalizedSubject,
         ...data
       });
 
-      console.log('✅ Subject interaction tracked:', interactionType, 'for', subject);
+      console.log('✅ Subject interaction tracked:', interactionType, 'for', normalizedSubject);
     } catch (error) {
       console.error('❌ Error tracking subject interaction:', error);
     }
   }
 
   // Get recent user interactions
-  async function getRecentActivity(limit = 10) {
+  async function getRecentActivity(limitCount = 10) {
     if (!currentUser) return [];
 
     try {
@@ -574,7 +585,7 @@ export function AuthProvider({ children }) {
         collection(db, 'userInteractions'),
         where('userId', '==', currentUser.uid),
         orderBy('timestamp', 'desc'),
-        limit(limit)
+        limit(limitCount)
       );
 
       const querySnapshot = await getDocs(q);
@@ -590,8 +601,29 @@ export function AuthProvider({ children }) {
 
       return activities;
     } catch (error) {
-      console.error('❌ Error getting recent activity:', error);
-      return [];
+      // Fallback when composite index is not present
+      try {
+        const fallbackQ = query(
+          collection(db, 'userInteractions'),
+          where('userId', '==', currentUser.uid),
+          limit(limitCount)
+        );
+        const fallbackSnapshot = await getDocs(fallbackQ);
+        const fallbackActivities = [];
+        fallbackSnapshot.forEach((item) => {
+          const data = item.data();
+          fallbackActivities.push({
+            id: item.id,
+            ...data,
+            timestamp: data.timestamp?.toDate?.() || data.createdAt
+          });
+        });
+        fallbackActivities.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+        return fallbackActivities.slice(0, limitCount);
+      } catch (fallbackError) {
+        console.error('❌ Error getting recent activity:', fallbackError);
+        return [];
+      }
     }
   }
 
@@ -640,8 +672,28 @@ export function AuthProvider({ children }) {
 
       return achievements;
     } catch (error) {
-      console.error('❌ Error getting achievements:', error);
-      return [];
+      // Fallback when composite index is not present
+      try {
+        const fallbackQ = query(
+          collection(db, 'userAchievements'),
+          where('userId', '==', currentUser.uid)
+        );
+        const fallbackSnapshot = await getDocs(fallbackQ);
+        const achievements = [];
+        fallbackSnapshot.forEach((item) => {
+          const data = item.data();
+          achievements.push({
+            id: item.id,
+            ...data,
+            earnedAt: data.earnedAt?.toDate?.() || data.createdAt
+          });
+        });
+        achievements.sort((a, b) => new Date(b.earnedAt || 0) - new Date(a.earnedAt || 0));
+        return achievements;
+      } catch (fallbackError) {
+        console.error('❌ Error getting achievements:', fallbackError);
+        return [];
+      }
     }
   }
 
@@ -691,8 +743,29 @@ export function AuthProvider({ children }) {
 
       return goals;
     } catch (error) {
-      console.error('❌ Error getting learning goals:', error);
-      return [];
+      // Fallback when composite index is not present
+      try {
+        const fallbackQ = query(
+          collection(db, 'learningGoals'),
+          where('userId', '==', currentUser.uid)
+        );
+        const fallbackSnapshot = await getDocs(fallbackQ);
+        const goals = [];
+        fallbackSnapshot.forEach((item) => {
+          const data = item.data();
+          goals.push({
+            id: item.id,
+            ...data,
+            createdAt: data.createdAt?.toDate?.(),
+            updatedAt: data.updatedAt?.toDate?.()
+          });
+        });
+        goals.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        return goals;
+      } catch (fallbackError) {
+        console.error('❌ Error getting learning goals:', fallbackError);
+        return [];
+      }
     }
   }
 

@@ -851,9 +851,9 @@ def build_generation_prompt(context: str, query: str, answer_profile: dict, has_
     )
 
 
-def generate_with_model_routing(query: str, context: str, answer_profile: dict, llm_temperature: float, llm_top_p: float, llm_max_tokens: int, has_context: bool = True):
+def generate_with_model_routing(query: str, context: str, answer_profile: dict, llm_temperature: float, llm_top_p: float, llm_max_tokens: int):
     """Generate answer with provider routing: OpenAI (primary) -> Groq (fallback)."""
-    prompt = build_generation_prompt(context, query, answer_profile, has_context)
+    prompt = build_generation_prompt(context, query, answer_profile)
     max_tokens = max(180, min(llm_max_tokens, answer_profile['max_tokens']))
 
     # 1) Primary: OpenAI
@@ -1259,7 +1259,16 @@ def search():
     
     query = data.get("query", "")
     n_results = data.get("n_results", int(os.getenv("DEFAULT_N_RESULTS", "5")))
-    namespace = data.get("namespace", "")
+    
+    # Handle namespace - frontend sometimes sends dict instead of string
+    namespace_raw = data.get("namespace", "")
+    if isinstance(namespace_raw, dict):
+        # Frontend sent dict, extract subject field or default to empty string
+        namespace = ""
+        print(f"WARNING: Frontend sent dict for namespace: {namespace_raw}, using empty string")
+    else:
+        namespace = namespace_raw if isinstance(namespace_raw, str) else ""
+    
     selected_class = data.get("selected_class")
     answer_length = data.get("answer_length", "normal")
     mcq_threshold = data.get("mcq_threshold", float(os.getenv("DEFAULT_MCQ_THRESHOLD", "0.25")))
@@ -1311,6 +1320,7 @@ def search():
 
         # RAG search for contextual answer (only if Pinecone is available)
         if pinecone_available:
+            print(f"DEBUG: Searching with namespace='{namespace}', class_filter='{resolved_class_filter}', n_chunks={n_results}")
             context, sources = search_rag_with_class_filter(
                 pinecone_index=search_components['rag_index'],
                 query_embedding=rag_query_embedding,
@@ -1330,6 +1340,7 @@ def search():
         print(f"DEBUG: Context length: {len(context)} characters")
         if sources:
             print(f"DEBUG: Best match score: {sources[0]['score']}")
+            print(f"DEBUG: First source metadata: {sources[0].get('subject', 'N/A')}, {sources[0].get('class', 'N/A')}, {sources[0].get('chapter_name', 'N/A')}")
         
         # Enhance context if it's too short or has low relevance scores
         if len(context.strip()) < 100 or (sources and sources[0]['score'] < 0.3):
@@ -1351,9 +1362,6 @@ def search():
                 print(f"DEBUG: Broader search failed: {e}")
         
         compact_context = trim_context_from_sources(sources, max_chars=answer_profile['context_chars'])
-        
-        # Check if we have meaningful context
-        has_context = len(compact_context.strip()) > 50 and (sources and sources[0].get('score', 0) > 0.2)
 
         # Generate RAG response using provider routing
         rag_response = None
@@ -1366,12 +1374,7 @@ def search():
             llm_temperature=llm_temperature,
             llm_top_p=llm_top_p,
             llm_max_tokens=llm_max_tokens,
-            has_context=has_context,
         )
-        
-        # Add disclaimer if no context was found
-        if not has_context and rag_response:
-            rag_response = "⚠️ **Note**: No relevant content found in NCERT materials for this query. The response below is based on general knowledge.\n\n" + rag_response
 
         if not rag_response:
             warning = route_error or "LLM unavailable"
@@ -2064,16 +2067,23 @@ def search_rag_with_class_filter(pinecone_index, query_embedding, n_chunks: int 
     namespaces = [namespace] if namespace and namespace != "all" else EDU_NAMESPACES
     all_results = []
     filter_dict = {"class_normalized": {"$eq": class_filter}} if class_filter else None
+    
+    print(f"DEBUG RAG: Searching namespaces={namespaces}, filter={filter_dict}, n_chunks={n_chunks}")
 
     def _query_namespace(ns):
-        response = pinecone_index.query(
-            vector=query_embedding,
-            top_k=max(3, n_chunks * 2),
-            include_metadata=True,
-            namespace=ns,
-            filter=filter_dict,
-        )
-        return ns, response
+        try:
+            response = pinecone_index.query(
+                vector=query_embedding,
+                top_k=max(3, n_chunks * 2),
+                include_metadata=True,
+                namespace=ns,
+                filter=filter_dict,
+            )
+            print(f"DEBUG RAG: Namespace '{ns}' returned {len(response.get('matches', []))} matches")
+            return ns, response
+        except Exception as e:
+            print(f"ERROR RAG: Failed to query namespace '{ns}': {e}")
+            raise
 
     with ThreadPoolExecutor(max_workers=min(4, len(namespaces))) as executor:
         futures = [executor.submit(_query_namespace, ns) for ns in namespaces]
@@ -2085,9 +2095,12 @@ def search_rag_with_class_filter(pinecone_index, query_embedding, n_chunks: int 
                     all_results.append(match)
             except Exception as e:
                 app.logger.warning(f"RAG namespace query failed: {e}")
+                print(f"ERROR RAG: Exception during namespace query: {e}")
 
+    print(f"DEBUG RAG: Total results across all namespaces: {len(all_results)}")
     all_results.sort(key=lambda x: x.get('score', 0), reverse=True)
     top_results = all_results[:max(1, n_chunks)]
+    print(f"DEBUG RAG: Returning top {len(top_results)} results")
     formatted_results = {'matches': top_results}
     return get_context_with_sources(formatted_results)
 

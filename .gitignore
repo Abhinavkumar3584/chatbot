@@ -255,3 +255,5 @@ credentials.json
 .env
 # Ignore backend env copies
 backend/.env*
+
+eligibilty

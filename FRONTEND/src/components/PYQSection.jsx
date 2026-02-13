@@ -141,11 +141,16 @@ const PYQSection = () => {
   const extractFiltersFromResults = (questions) => {
     const uniqueExams = new Set()
     const uniqueSubjects = new Set()
+
+    const isPlaceholderExam = (name) => {
+      const value = String(name || '').toLowerCase()
+      return value.includes('coming soon') || value === 'tbd' || value.includes('to be announced')
+    }
     
     questions.forEach(question => {
       // Extract exam name
       const examName = question.metadata?.exam_name || question.metadata?.exam || question.exam_name || ''
-      if (examName && examName.trim()) {
+      if (examName && examName.trim() && !isPlaceholderExam(examName)) {
         uniqueExams.add(examName.trim())
       }
       

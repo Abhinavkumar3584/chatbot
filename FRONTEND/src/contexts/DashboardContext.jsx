@@ -118,7 +118,14 @@ export const DashboardProvider = ({ children }) => {
     if (!currentUser) return;
 
     try {
-      const subject = data.subject || 'Others';
+      const subject = (() => {
+        if (typeof data.subject === 'string') return data.subject;
+        if (data.subject && typeof data.subject === 'object') {
+          if (typeof data.subject.name === 'string') return data.subject.name;
+          if (typeof data.subject.subject === 'string') return data.subject.subject;
+        }
+        return 'Others';
+      })();
       
       // Track subject-specific interaction (this also tracks general interaction)
       await trackSubjectInteraction(subject, type, data);

@@ -173,7 +173,7 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
           <div className="px-2 pb-2">
             <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 w-full">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[11px] font-medium shrink-0" style={{ color: '#52616B' }}>
+                <span className="text-[11px] font-bold shrink-0" style={{ color: '#52616B' }}>
                   Answer
                 </span>
                 <div className="flex items-center rounded-lg p-0.5 gap-1 flex-wrap min-w-0" style={{ backgroundColor: '#F4F6F8' }}>
@@ -183,10 +183,10 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
                       type="button"
                       onClick={() => setAnswerLengthIndex(idx)}
                       disabled={isLoading}
-                      className="rounded-md transition-all whitespace-nowrap text-[10px] px-2.5 py-1"
+                      className="rounded-md transition-all whitespace-nowrap text-[10px] px-2.5 py-1 font-semibold"
                       style={{
                         color: answerLengthIndex === idx ? '#1F2933' : '#6B7280',
-                        fontWeight: answerLengthIndex === idx ? 600 : 500,
+                        fontWeight: answerLengthIndex === idx ? 700 : 600,
                         backgroundColor: answerLengthIndex === idx ? 'rgba(58, 124, 165, 0.18)' : 'transparent',
                         border: answerLengthIndex === idx ? '1px solid rgba(58, 124, 165, 0.35)' : '1px solid transparent'
                       }}
@@ -205,7 +205,7 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
                   style={{ backgroundColor: '#3A7CA5', color: '#FFFFFF' }}
                   disabled={isLoadingSubjects}
                 >
-                  <span className="whitespace-nowrap truncate text-xs">
+                  <span className="whitespace-nowrap truncate text-xs font-bold">
                     {isLoadingSubjects
                       ? 'Loading...'
                       : selectedSubject === 'All Subjects'
@@ -250,7 +250,7 @@ const EmbeddedSearchBar = ({ onSendMessage, isLoading }) => {
                   style={{ backgroundColor: '#0E7490', color: '#FFFFFF' }}
                   disabled={isLoadingClasses}
                 >
-                  <span className="whitespace-nowrap truncate text-xs">
+                  <span className="whitespace-nowrap truncate text-xs font-bold">
                     {isLoadingClasses ? 'Loading...' : selectedClass === 'All Classes' ? 'Class' : selectedClass.replace('Class ', 'C-')}
                   </span>
                   <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform duration-200 ${
