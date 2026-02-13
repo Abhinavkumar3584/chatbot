@@ -44,10 +44,10 @@ const Navbar = () => {
   return (
     <div className="fixed top-1 left-3 right-3 z-50">
       <nav
-        className={`max-w-8xl px-4 sm:px-2 md:px-4 py-1.5 rounded-lg shadow-lg transition-all duration-300 
+        className={`max-w-8xl px-4 sm:px-2 md:px-4 py-1.5 rounded-lg shadow-md transition-all duration-300 
           ${
-            isScrolled ? "backdrop-blur-lg bg-white/15" : "bg-white"
-          } border border-gray-300`}
+            isScrolled ? "backdrop-blur-lg bg-white/90" : "bg-white"
+          } border border-[#E3E7ED]`}
       >
         <div className="max-w-7xl mx-auto flex justify-between items-center h-10 sm:h-12">
           {/* Logo and Brand */}
@@ -66,13 +66,13 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-6 items-center">
-            <a href="/" className="text-gray-700 hover:text-blue-500">
+            <a href="/" className="text-[#1F2933] hover:text-[#3A7CA5]">
               Home
             </a>
-            <a href="/about" className="text-gray-700 hover:text-blue-500">
+            <a href="/about" className="text-[#1F2933] hover:text-[#3A7CA5]">
               About Us
             </a>
-            <a href="/contact" className="text-gray-700 hover:text-blue-500">
+            <a href="/contact" className="text-[#1F2933] hover:text-[#3A7CA5]">
               Contact Us
             </a>
 
@@ -80,7 +80,7 @@ const Navbar = () => {
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center text-gray-700 hover:text-blue-500 focus:outline-none"
+                className="flex items-center text-[#1F2933] hover:text-[#3A7CA5] focus:outline-none"
               >
                 Features
                 <ChevronDown
@@ -92,7 +92,7 @@ const Navbar = () => {
 
               {/* Dropdown Items with Animation */}
               <div
-                className={`absolute left-0 mt-2 w-48 bg-white shadow-lg rounded-lg z-50 transition-all duration-300 transform origin-top 
+                className={`absolute left-0 mt-2 w-48 bg-white border border-[#E3E7ED] shadow-md rounded-lg z-50 transition-all duration-300 transform origin-top 
                       ${
                         isDropdownOpen
                           ? "opacity-100 scale-y-100"
@@ -101,19 +101,19 @@ const Navbar = () => {
               >
                 <a
                   href="/"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)]"
                 >
                   PARIKSHA YOGYA
                 </a>
                 <a
                   href="https://marg.psetu.com/"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)]"
                 >
                   PARIKSHA MARG
                 </a>
                 <a
                   href="#"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)]"
                 >
                   PARIKSHA GYAN
                 </a>
@@ -122,20 +122,20 @@ const Navbar = () => {
 
             {!currentUser ? (
               <>
-                <Link to="/login" className="text-gray-700 hover:text-blue-500">
+                <Link to="/login" className="text-[#1F2933] hover:text-[#3A7CA5]">
                   Log In
                 </Link>
-                <Link to="/signup" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                <Link to="/signup" className="bg-[#3A7CA5] text-white px-4 py-2 rounded-lg hover:bg-[#336f94]">
                   Try for Free
                 </Link>
               </>
             ) : (
               <>
-                <span className="text-sm text-gray-700">Hi, {currentUser.displayName || "User"}</span>
+                <span className="text-sm text-[#52616B]">Hi, {currentUser.displayName || "User"}</span>
                 <button
                   onClick={handleLogout}
                   disabled={isLoggingOut}
-                  className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-black disabled:opacity-60"
+                  className="bg-[#6B7C93] text-white px-4 py-2 rounded-lg hover:bg-[#5f6f85] disabled:opacity-60"
                 >
                   {isLoggingOut ? "Logging out..." : "Logout"}
                 </button>
@@ -147,7 +147,7 @@ const Navbar = () => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden text-gray-700 p-2 focus:outline-none"
+              className="md:hidden text-[#1F2933] p-2 focus:outline-none"
               aria-expanded={isOpen}
               aria-label="Toggle menu"
             >
@@ -158,7 +158,7 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         <div
-          className={`md:hidden bg-white border-t absolute left-4 right-4 shadow-md rounded-b-lg overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`md:hidden bg-white border border-[#E3E7ED] absolute left-4 right-4 shadow-md rounded-b-lg overflow-hidden transition-all duration-300 ease-in-out ${
             isOpen
               ? "max-h-[500px] opacity-100"
               : "max-h-0 opacity-0 pointer-events-none"
@@ -167,19 +167,19 @@ const Navbar = () => {
           <div className="py-2 animate-fadeIn">
             <a
               href="/"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
+              className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)] text-center"
             >
               Home
             </a>
             <a
               href="/about"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
+              className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)] text-center"
             >
               About Us
             </a>
             <a
               href="/contact"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
+              className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)] text-center"
             >
               Contact Us
             </a>
@@ -188,7 +188,7 @@ const Navbar = () => {
             <div className="px-4 py-1">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-full text-center py-2 flex items-center justify-center text-gray-700 hover:text-blue-500 focus:outline-none"
+                className="w-full text-center py-2 flex items-center justify-center text-[#1F2933] hover:text-[#3A7CA5] focus:outline-none"
               >
                 Features
                 <ChevronDown
@@ -198,7 +198,7 @@ const Navbar = () => {
                 />
               </button>
               <div
-                className={`mt-1 bg-gray-50 rounded-lg overflow-hidden transition-all duration-300 ease-in-out ${
+                className={`mt-1 bg-[#F6F7F9] rounded-lg overflow-hidden transition-all duration-300 ease-in-out ${
                   isDropdownOpen
                     ? "max-h-[200px] opacity-100"
                     : "max-h-0 opacity-0"
@@ -206,19 +206,19 @@ const Navbar = () => {
               >
                 <a
                   href="/"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
+                  className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)] text-center"
                 >
                   PARIKSHA YOGYA
                 </a>
                 <a
                   href="https://marg.psetu.com/"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
+                  className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)] text-center"
                 >
                   PARIKSHA MARG
                 </a>
                 <a
                   href="#"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
+                  className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)] text-center"
                 >
                   PARIKSHA GYAN
                 </a>
@@ -229,7 +229,7 @@ const Navbar = () => {
               <>
                 <Link
                   to="/login"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center mt-1"
+                  className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)] text-center mt-1"
                 >
                   Log In
                 </Link>
@@ -237,7 +237,7 @@ const Navbar = () => {
                 <div className="px-4 py-2">
                   <Link
                     to="/signup"
-                    className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center"
+                    className="block w-full bg-[#3A7CA5] text-white px-4 py-2 rounded-lg hover:bg-[#336f94] transition-colors text-center"
                   >
                     Try for Free
                   </Link>
@@ -248,7 +248,7 @@ const Navbar = () => {
                 <button
                   onClick={handleLogout}
                   disabled={isLoggingOut}
-                  className="w-full bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-black transition-colors disabled:opacity-60"
+                  className="w-full bg-[#6B7C93] text-white px-4 py-2 rounded-lg hover:bg-[#5f6f85] transition-colors disabled:opacity-60"
                 >
                   {isLoggingOut ? "Logging out..." : "Logout"}
                 </button>

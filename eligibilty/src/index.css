@@ -19,7 +19,10 @@ html, body {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
   /* Prevent white gaps on short pages / overscroll */
-  background-color: #1f2937; /* tailwind gray-800 */
+  background-color: var(--py-bg-secondary);
+  color: var(--py-text-primary);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 html::-webkit-scrollbar,
@@ -31,6 +34,17 @@ body::-webkit-scrollbar {
   overflow-x: hidden;
   position: relative;
   width: 100%;
+}
+
+:root {
+  --py-primary: #3A7CA5;
+  --py-secondary: #6B7C93;
+  --py-text-primary: #1F2933;
+  --py-text-secondary: #52616B;
+  --py-bg-primary: #FFFFFF;
+  --py-bg-secondary: #F6F7F9;
+  --py-border: #E3E7ED;
+  --py-hover: rgba(58, 124, 165, 0.12);
 }
 
 :root {
