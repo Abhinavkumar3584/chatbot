@@ -1,0 +1,52 @@
+#root {
+  
+  text-align: center;
+  position: relative;
+}
+
+/* Animation for background lines with beam */
+.animated-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Grid layout for the lines */
+.line-grid {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(to right, rgba(100, 100, 100, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(100, 100, 100, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Diagonal lines for edges */
+.diagonal-lines {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(45deg, rgba(100, 100, 100, 0.03) 1px, transparent 1px),
+    linear-gradient(-45deg, rgba(100, 100, 100, 0.03) 1px, transparent 1px);
+  background-size: 70px 70px;
+}
+
+
+/* Rest of your existing CSS */
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+
+
+
+
