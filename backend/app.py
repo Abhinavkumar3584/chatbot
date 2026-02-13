@@ -831,29 +831,56 @@ def is_greeting_or_casual(query: str) -> tuple[bool, str]:
     return False, ""
 
 
-def build_generation_prompt(context: str, query: str, answer_profile: dict, has_context: bool = True):
-    """Create compact, completion-safe prompt for accurate educational answers."""
-    disclaimer = ""
-    if not has_context or len(context.strip()) < 50:
-        disclaimer = "\n⚠️ Note: No relevant context found in NCERT materials. Response based on general knowledge.\n\n"
+def build_generation_prompt(context: str, query: str, answer_profile: dict, best_match_score: float = 0.0):
+    """Create compact, completion-safe prompt for accurate educational answers with clarity checks."""
+    
+    # Detect unclear/short queries with low match quality
+    query_words = query.strip().split()
+    is_very_short = len(query_words) <= 2
+    is_low_quality = best_match_score > 0 and best_match_score < 0.4
+    
+    # Build context quality warnings
+    warnings = []
+    if is_very_short and is_low_quality:
+        warnings.append(
+            f"⚠️ Your query '{query}' is very short and may contain typos or be unclear. "
+            "Retrieved context may not be relevant."
+        )
+    elif best_match_score > 0 and best_match_score < 0.3:
+        warnings.append(
+            f"⚠️ Context relevance is LOW ({best_match_score:.1%}). The answer may not be accurate."
+        )
+    
+    context_warnings = "\n".join(warnings) + "\n\n" if warnings else ""
+    
+    # Add instruction to handle unclear queries
+    unclear_query_instruction = ""
+    if is_very_short and is_low_quality:
+        unclear_query_instruction = (
+            "IMPORTANT: This query appears unclear or may have a typo. "
+            "Start your response by acknowledging this and politely asking the user to rephrase with more details. "
+            "Do NOT attempt to answer based on irrelevant context.\n\n"
+        )
     
     return (
         "You are an expert NCERT learning assistant. "
+        f"{unclear_query_instruction}"
         "Use the provided context as the primary source of truth. "
-        "If context is limited, be transparent and provide safe, educationally useful guidance. "
+        "If context is clearly irrelevant to the question, acknowledge this and ask for clarification. "
         "Never fabricate exact textbook citations. "
         "Ensure the final answer is complete and not abruptly cut.\n\n"
         f"Answer style: {answer_profile['instruction']}\n\n"
         f"Question:\n{query}\n\n"
+        f"{context_warnings}"
         f"Context:\n{context if context else 'No relevant context retrieved.'}\n\n"
-        f"{disclaimer}"
         "Provide the final answer now."
     )
+    
 
 
-def generate_with_model_routing(query: str, context: str, answer_profile: dict, llm_temperature: float, llm_top_p: float, llm_max_tokens: int):
+def generate_with_model_routing(query: str, context: str, answer_profile: dict, llm_temperature: float, llm_top_p: float, llm_max_tokens: int, best_match_score: float = 0.0):
     """Generate answer with provider routing: OpenAI (primary) -> Groq (fallback)."""
-    prompt = build_generation_prompt(context, query, answer_profile)
+    prompt = build_generation_prompt(context, query, answer_profile, best_match_score)
     max_tokens = max(180, min(llm_max_tokens, answer_profile['max_tokens']))
 
     # 1) Primary: OpenAI
@@ -1362,6 +1389,9 @@ def search():
                 print(f"DEBUG: Broader search failed: {e}")
         
         compact_context = trim_context_from_sources(sources, max_chars=answer_profile['context_chars'])
+        
+        # Get best match score for prompt quality assessment
+        best_score = sources[0]['score'] if sources else 0.0
 
         # Generate RAG response using provider routing
         rag_response = None
@@ -1374,6 +1404,7 @@ def search():
             llm_temperature=llm_temperature,
             llm_top_p=llm_top_p,
             llm_max_tokens=llm_max_tokens,
+            best_match_score=best_score,
         )
 
         if not rag_response:
@@ -1381,11 +1412,33 @@ def search():
             rag_response = build_fallback_response(context, sources, query)
         
         # MCQ search for related questions (only if Pinecone is available)
+        # Use enhanced query based on retrieved context for better MCQ matching
+        mcq_query = query
+        if sources and len(sources) > 0:
+            # Extract key terms from best matching sources to improve MCQ search
+            # This helps when user has typos (e.g., "ganfa" -> should find "ganga" PYQs)
+            top_source = sources[0]
+            topic = top_source.get('topic', '')
+            chapter_name = top_source.get('chapter_name', '')
+            subject = top_source.get('subject', '')
+            
+            # Build enhanced query using metadata from best match
+            enhanced_terms = []
+            if topic and len(topic) > 3:
+                enhanced_terms.append(topic)
+            if chapter_name and len(chapter_name) > 3:
+                enhanced_terms.append(chapter_name)
+            
+            # If we have good metadata, enhance the query
+            if enhanced_terms:
+                mcq_query = f"{query} {' '.join(enhanced_terms[:2])}"  # Combine original + top 2 metadata terms
+                print(f"DEBUG MCQ: Enhanced query from '{query}' to '{mcq_query}' based on source metadata")
+            
         if pinecone_available and 'mcq_index' in search_components and 'mcq_model' in search_components:
             mcq_results = query_mcq(
                 search_components['mcq_index'],
                 search_components['mcq_model'],
-                query,
+                mcq_query,
                 mcq_threshold,
                 mcq_limit
             )
