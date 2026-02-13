@@ -88,15 +88,15 @@ function Hero() {
       className="w-full pt-16 md:pt-20"
       style={{
         background:
-          "linear-gradient(143.6deg, rgba(192, 132, 252, 0) 20.79%, rgba(232, 121, 249, 0.26) 40.92%, rgba(204, 171, 238, 0) 70.35%)",
-        backgroundImage: "var(--hero-gradient, linear-gradient(143.6deg, rgba(192, 132, 252, 0) 20.79%, rgba(232, 121, 249, 0.26) 40.92%, rgba(204, 171, 238, 0) 70.35%))",
+          "linear-gradient(143.6deg, rgba(58, 124, 165, 0) 20.79%, rgba(58, 124, 165, 0.12) 40.92%, rgba(107, 124, 147, 0) 70.35%)",
+        backgroundImage: "var(--hero-gradient, linear-gradient(143.6deg, rgba(58, 124, 165, 0) 20.79%, rgba(58, 124, 165, 0.12) 40.92%, rgba(107, 124, 147, 0) 70.35%))",
       }}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-8 py-10 lg:py-20 items-center justify-center">
           <div className="flex flex-col gap-4 text-center">
-            <h1 className="text-3xl sm:text-5xl md:text-7xl max-w-7xl tracking-tighter font-regular">
-              <span className="text-spektr-cyan-50 font-semibold">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl max-w-7xl tracking-tighter font-regular text-[#1F2933]">
+              <span className="font-semibold">
                 Know your Competitive exam eligibility & attempts with{" "}
               </span>
               <div>
@@ -105,7 +105,7 @@ function Hero() {
                   alt=""
                   className="mx-auto mt-2 md:mt-5 h-8 md:h-16"
                 />
-                <hr className="w-1/2 md:w-1/2 mx-auto my-2 border-t-3 border-[#ff6600]" />
+                <hr className="w-1/2 md:w-1/2 mx-auto my-2 border-t-3 border-[#3A7CA5]" />
               </div>
               <span className="relative flex w-full justify-center overflow-hidden md:pb-5 md:pt-2">
                 &nbsp;
@@ -121,7 +121,7 @@ function Hero() {
                         : { y: titleNumber > index ? -150 : 150, opacity: 0 }
                     }
                     style={{
-                      color: index % 2 === 0 ? "blue" : "green",
+                      color: index % 2 === 0 ? "#3A7CA5" : "#6B7C93",
                     }}
                   >
                     {title}
@@ -132,7 +132,7 @@ function Hero() {
           </div>
           <Button
             size="lg"
-            className="bg-[#ff6600] hover:bg-[#e55a00] text-white font-semibold px-8 py-3 rounded-lg shadow-lg transition-all duration-300 hover:scale-105"
+            className="bg-[#3A7CA5] hover:bg-[#336f94] text-white font-semibold px-8 py-3 rounded-lg shadow-md transition-all duration-300 hover:scale-105"
             onClick={() => navigate("/check-eligibility")}
           >
             Check Now

@@ -52,7 +52,7 @@ const FAQS = () => {
 
   // SVG Components for Open/Close buttons
   const CloseIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" className="text-gray-500">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" className="text-[#6B7C93]">
       <path 
         fill="currentColor" 
         d="M12,2C6.5,2,2,6.5,2,12s4.5,10,10,10s10-4.5,10-10S17.5,2,12,2z M16.7,15.3l-1.4,1.4L12,13.4l-3.3,3.3l-1.4-1.4l3.3-3.3 L7.3,8.7l1.4-1.4l3.3,3.3l3.3-3.3l1.4,1.4L13.4,12L16.7,15.3z">
@@ -61,7 +61,7 @@ const FAQS = () => {
   );
 
   const OpenIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" className="text-gray-500">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" className="text-[#6B7C93]">
       <path 
         fill="currentColor" 
         d="M12,2C6.5,2,2,6.5,2,12s4.5,10,10,10s10-4.5,10-10S17.5,2,12,2z M17,13h-4v4h-2v-4H7v-2h4V7h2v4h4V13z">
@@ -70,8 +70,8 @@ const FAQS = () => {
   );
 
   return (
-    <div className="max-w-5xl mx-auto px-3 py-6 m-5 bg-[#f5f5f5] border border-[rgba(0,0,0,0.4)] rounded-lg">
-      <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-5">
+    <div className="max-w-5xl mx-auto px-3 py-6 m-5 bg-[#F6F7F9] border border-[#E3E7ED] rounded-xl shadow-sm">
+      <h1 className="text-2xl md:text-3xl font-bold text-center text-[#1F2933] mb-5">
         FAQs (Pariksha Yogya)
       </h1>
       
@@ -79,13 +79,14 @@ const FAQS = () => {
         {faqData.map((faq, index) => (
           <div 
             key={index} 
-            className={`border border-gray-200 rounded-lg bg-white
+            className={`border border-[#E3E7ED] rounded-lg bg-white
                       transition-all duration-700 ease-in-out cursor-pointer
-                      ${activeIndex === index ? 'border-gray-300' : ''}`}
+                      hover:border-[#3A7CA5]/40
+                      ${activeIndex === index ? 'border-[#3A7CA5]/50' : ''}`}
             onClick={() => toggleFAQ(index)}
           >
             <div className="flex justify-between items-center px-4 py-2">
-              <h3 className="text-sm md:text-base text-left font-medium text-gray-700 pr-4">
+              <h3 className="text-sm md:text-base text-left font-medium text-[#1F2933] pr-4">
                 {faq.question}
               </h3>
               <div className="flex-shrink-0 transform transition-transform duration-300 ease-in-out">
@@ -100,8 +101,8 @@ const FAQS = () => {
                   : 'max-h-0 opacity-0 -translate-y-1'
                 }`}
             >
-              <div className="px-4 pb-4 pt-1 border-t border-gray-100">
-                <p className="text-gray-600 text-left text-sm md:text-sm leading-relaxed">
+              <div className="px-4 pb-4 pt-1 border-t border-[#E3E7ED]">
+                <p className="text-[#52616B] text-left text-sm md:text-sm leading-relaxed">
                   {faq.answer}
                 </p>
               </div>

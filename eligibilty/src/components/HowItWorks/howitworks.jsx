@@ -16,9 +16,9 @@ const steps = [
     subtitle: "Check Your Eligibility",
     description: "Instantly discover which exams you qualify for from 3000+ options.",
     icon: CheckCircle2,
-    color: "from-violet-500 to-purple-600",
-    bgColor: "bg-violet-50",
-    borderColor: "border-violet-300",
+    color: "from-[#3A7CA5] to-[#6B7C93]",
+    bgColor: "bg-[#F6F7F9]",
+    borderColor: "border-[#E3E7ED]",
     features: ["Age Check", "Education", "Category", "Attempts"]
   },
   {
@@ -27,9 +27,9 @@ const steps = [
     subtitle: "Get Your Roadmap",
     description: "Personalized, topic-wise syllabus roadmap for your target exam.",
     icon: Map,
-    color: "from-blue-500 to-cyan-600",
-    bgColor: "bg-blue-50",
-    borderColor: "border-blue-300",
+    color: "from-[#3A7CA5] to-[#6B7C93]",
+    bgColor: "bg-[#F6F7F9]",
+    borderColor: "border-[#E3E7ED]",
     features: ["Study Plan", "Topics", "Timeline", "Milestones"]
   },
   {
@@ -38,9 +38,9 @@ const steps = [
     subtitle: "Learn with AI",
     description: "AI assistant trained on NCERT to master concepts & PYQs.",
     icon: Brain,
-    color: "from-emerald-500 to-teal-600",
-    bgColor: "bg-emerald-50",
-    borderColor: "border-emerald-300",
+    color: "from-[#3A7CA5] to-[#6B7C93]",
+    bgColor: "bg-[#F6F7F9]",
+    borderColor: "border-[#E3E7ED]",
     features: ["AI Learning", "PYQs", "Concepts", "Doubts"]
   },
   {
@@ -49,9 +49,9 @@ const steps = [
     subtitle: "Clear Your Exam",
     description: "Track progress and clear your dream government exam.",
     icon: Trophy,
-    color: "from-amber-500 to-orange-600",
-    bgColor: "bg-amber-50",
-    borderColor: "border-amber-300",
+    color: "from-[#3A7CA5] to-[#6B7C93]",
+    bgColor: "bg-[#F6F7F9]",
+    borderColor: "border-[#E3E7ED]",
     features: ["Progress", "Analytics", "Mocks", "Success"]
   }
 ];
@@ -60,7 +60,7 @@ export default function HowItWorks() {
   const [activeStep, setActiveStep] = useState(0);
 
   return (
-    <section className="py-10 md:py-14 bg-gradient-to-b from-white via-slate-50/50 to-white overflow-hidden">
+    <section className="py-10 md:py-14 bg-gradient-to-b from-white via-[#F6F7F9] to-white overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
         {/* Header */}
         <motion.div 
@@ -71,17 +71,17 @@ export default function HowItWorks() {
           transition={{ duration: 0.5 }}
         >
           <motion.div 
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-violet-100 to-purple-100 border border-violet-200 mb-3"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#e9f1f6] to-[#edf1f5] border border-[#E3E7ED] mb-3"
             whileHover={{ scale: 1.05 }}
           >
-            <Sparkles className="w-3 h-3 text-violet-600" />
-            <span className="text-xs font-semibold text-violet-700">Simple Process</span>
+            <Sparkles className="w-3 h-3 text-[#3A7CA5]" />
+            <span className="text-xs font-semibold text-[#3A7CA5]">Simple Process</span>
           </motion.div>
           
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            How It <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">Works</span>
+          <h2 className="text-2xl md:text-3xl font-bold text-[#1F2933] mb-2">
+            How It <span className="bg-gradient-to-r from-[#3A7CA5] to-[#6B7C93] bg-clip-text text-transparent">Works</span>
           </h2>
-          <p className="text-sm text-gray-600 max-w-lg mx-auto">
+          <p className="text-sm text-[#52616B] max-w-lg mx-auto">
             Four simple steps to transform your exam preparation journey
           </p>
         </motion.div>
@@ -90,10 +90,10 @@ export default function HowItWorks() {
         <div className="hidden lg:block">
           {/* Connecting Line with Beam */}
           <div className="relative mb-6">
-            <div className="absolute top-1/2 left-8 right-8 h-1 bg-gray-200 rounded-full transform -translate-y-1/2 overflow-hidden">
+            <div className="absolute top-1/2 left-8 right-8 h-1 bg-[#E3E7ED] rounded-full transform -translate-y-1/2 overflow-hidden">
               {/* Sharp Snake Beam */}
               <motion.div
-                className="absolute top-0 h-full w-16 bg-gradient-to-r from-violet-500 via-blue-500 to-emerald-500 rounded-full"
+                className="absolute top-0 h-full w-16 bg-gradient-to-r from-[#3A7CA5] via-[#6B7C93] to-[#3A7CA5] rounded-full"
                 animate={{
                   left: ["-10%", "110%"]
                 }}
@@ -151,7 +151,7 @@ function CompactCard({ step, index, isActive, onClick }) {
       className={`relative flex-1 cursor-pointer rounded-xl border-2 p-4 transition-all duration-300 ${
         isActive 
           ? `${step.borderColor} ${step.bgColor} shadow-md` 
-          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+          : 'border-[#E3E7ED] bg-white hover:border-[#3A7CA5]/40 hover:shadow-sm'
       }`}
       onClick={onClick}
       initial={{ opacity: 0, y: 30 }}
@@ -179,15 +179,15 @@ function CompactCard({ step, index, isActive, onClick }) {
       <h3 className={`text-sm font-bold bg-gradient-to-r ${step.color} bg-clip-text text-transparent`}>
         {step.title}
       </h3>
-      <p className="text-gray-700 font-medium text-xs mt-0.5">{step.subtitle}</p>
-      <p className="text-gray-500 text-xs mt-2 line-clamp-2">{step.description}</p>
+      <p className="text-[#52616B] font-medium text-xs mt-0.5">{step.subtitle}</p>
+      <p className="text-[#6B7C93] text-xs mt-2 line-clamp-2">{step.description}</p>
 
       {/* Features */}
       <div className="flex flex-wrap gap-1 mt-3">
         {step.features.map((feature, i) => (
           <span
             key={i}
-            className={`px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/80 border ${step.borderColor} text-gray-600`}
+            className={`px-2 py-0.5 rounded-full text-[10px] font-medium bg-white border ${step.borderColor} text-[#52616B]`}
           >
             {feature}
           </span>
@@ -212,10 +212,10 @@ function MobileTimeline({ steps }) {
   return (
     <div className="relative">
       {/* Timeline Line */}
-      <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200 rounded-full overflow-hidden">
+      <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-[#E3E7ED] rounded-full overflow-hidden">
         {/* Sharp Snake Beam for Mobile */}
         <motion.div
-          className="absolute left-0 w-full h-10 bg-gradient-to-b from-violet-500 via-blue-500 to-emerald-500 rounded-full"
+          className="absolute left-0 w-full h-10 bg-gradient-to-b from-[#3A7CA5] via-[#6B7C93] to-[#3A7CA5] rounded-full"
           animate={{
             top: ["-40px", "100%"]
           }}
@@ -263,17 +263,17 @@ function MobileTimeline({ steps }) {
                     <h3 className={`text-sm font-bold bg-gradient-to-r ${step.color} bg-clip-text text-transparent`}>
                       {step.title}
                     </h3>
-                    <p className="text-gray-600 text-[10px]">{step.subtitle}</p>
+                    <p className="text-[#52616B] text-[10px]">{step.subtitle}</p>
                   </div>
                 </div>
-                <p className="text-gray-500 text-xs leading-relaxed">{step.description}</p>
+                <p className="text-[#6B7C93] text-xs leading-relaxed">{step.description}</p>
                 
                 {/* Features */}
                 <div className="flex flex-wrap gap-1 mt-2">
                   {step.features.map((feature, i) => (
                     <span
                       key={i}
-                      className={`px-1.5 py-0.5 rounded text-[9px] font-medium bg-white/70 border ${step.borderColor} text-gray-600`}
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-medium bg-white border ${step.borderColor} text-[#52616B]`}
                     >
                       {feature}
                     </span>

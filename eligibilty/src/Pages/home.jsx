@@ -15,7 +15,7 @@ function Home() {
         <Hero />
       </div>
 
-      <div>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         <StatsAnalytics/>
       </div>
 
@@ -28,7 +28,7 @@ function Home() {
         <HowItWorks />
       </div>
 
-      <div className="w-full p-4 m-auto overflow-hidden">
+      <div className="w-full p-4 m-auto overflow-hidden max-w-7xl">
         <GlowingEffectDemo />
       </div>
 
@@ -36,11 +36,11 @@ function Home() {
         <InfinityExams />
       </div>
 
-      <div className="w-full p-4 pb-0 pt-0 m-auto">
+      <div className="w-full p-4 pb-0 pt-0 m-auto max-w-7xl">
         <FAQS />
       </div>
 
-      <div className="w-full p-4 pt-0 m-auto">
+      <div className="w-full p-4 pt-0 m-auto max-w-7xl">
         <Footer />
       </div>
     </>

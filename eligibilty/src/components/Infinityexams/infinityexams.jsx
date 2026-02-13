@@ -45,27 +45,27 @@ const InfinityExams = () => {
   
   // Light mode colors
   const colors1 = [
-    "bg-blue-100 border-blue-300 text-blue-800",
-    "bg-red-100 border-red-300 text-red-800",
-    "bg-green-100 border-green-300 text-green-800",
-    "bg-purple-100 border-purple-300 text-purple-800",
-    "bg-yellow-100 border-yellow-300 text-yellow-800"
+    "bg-white border-[#E3E7ED] text-[#1F2933]",
+    "bg-[#edf4f8] border-[#cfe0eb] text-[#3A7CA5]",
+    "bg-[#f3f6f9] border-[#d8e1e8] text-[#52616B]",
+    "bg-[#edf4f8] border-[#cfe0eb] text-[#3A7CA5]",
+    "bg-white border-[#E3E7ED] text-[#1F2933]"
   ];
   
   const colors2 = [
-    "bg-pink-100 border-pink-300 text-pink-800",
-    "bg-indigo-100 border-indigo-300 text-indigo-800",
-    "bg-teal-100 border-teal-300 text-teal-800",
-    "bg-orange-100 border-orange-300 text-orange-800",
-    "bg-cyan-100 border-cyan-300 text-cyan-800"
+    "bg-[#edf4f8] border-[#cfe0eb] text-[#3A7CA5]",
+    "bg-white border-[#E3E7ED] text-[#1F2933]",
+    "bg-[#f3f6f9] border-[#d8e1e8] text-[#52616B]",
+    "bg-white border-[#E3E7ED] text-[#1F2933]",
+    "bg-[#edf4f8] border-[#cfe0eb] text-[#3A7CA5]"
   ];
   
   const colors3 = [
-    "bg-emerald-100 border-emerald-300 text-emerald-800",
-    "bg-sky-100 border-sky-300 text-sky-800",
-    "bg-amber-100 border-amber-300 text-amber-800",
-    "bg-violet-100 border-violet-300 text-violet-800",
-    "bg-rose-100 border-rose-300 text-rose-800"
+    "bg-[#f3f6f9] border-[#d8e1e8] text-[#52616B]",
+    "bg-[#edf4f8] border-[#cfe0eb] text-[#3A7CA5]",
+    "bg-white border-[#E3E7ED] text-[#1F2933]",
+    "bg-[#edf4f8] border-[#cfe0eb] text-[#3A7CA5]",
+    "bg-[#f3f6f9] border-[#d8e1e8] text-[#52616B]"
   ];
 
   // Function to assign a color to an exam
@@ -83,7 +83,7 @@ const InfinityExams = () => {
   );
 
   return (
-    <div className="w-full overflow-hidden py-6 bg-slate-100">
+    <div className="w-full overflow-hidden py-6 bg-[#F6F7F9] border-y border-[#E3E7ED]">
       {/* Inject custom animation styles */}
       <style>{customStyles}</style>
       
