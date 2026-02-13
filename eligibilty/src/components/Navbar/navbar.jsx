@@ -62,7 +62,7 @@ const Navbar = () => {
             </a>
 
             <a
-              href="https://www.pratiyogitagyan.com"
+              href="https://chatbot-pearl-mu-41.vercel.app/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#1F2933] hover:text-[#3A7CA5]"
