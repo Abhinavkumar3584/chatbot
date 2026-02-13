@@ -164,50 +164,6 @@ const theme = createTheme({
     },
 });
 
-const thinScrollbarStyle = {
-    '&::-webkit-scrollbar': {
-        width: '4px',
-        height: '4px',
-    },
-    '&::-webkit-scrollbar-track': {
-        background: '#f1f1f1',
-        borderRadius: '2px',
-    },
-    '&::-webkit-scrollbar-thumb': {
-        background: '#c1c1c1',
-        borderRadius: '2px',
-    },
-    '&::-webkit-scrollbar-thumb:hover': {
-        background: '#a1a1a1',
-    },
-    scrollbarWidth: 'thin',
-    scrollbarColor: '#c1c1c1 #f1f1f1',
-};
-
-// Green scrollbar for the /checkeligibility form/page scroll area
-const greenScrollbarStyle = {
-    paddingRight: '4px',
-    marginRight: '2px',
-    '&::-webkit-scrollbar': {
-        width: '6px',
-    },
-    '&::-webkit-scrollbar-track': {
-        background: 'transparent',
-        borderRadius: '999px',
-        margin: '8px 0',
-    },
-    '&::-webkit-scrollbar-thumb': {
-        background: 'linear-gradient(180deg, #22c55e, #16a34a)',
-        borderRadius: '999px',
-        border: '1px solid rgba(255,255,255,0.3)',
-    },
-    '&::-webkit-scrollbar-thumb:hover': {
-        background: 'linear-gradient(180deg, #16a34a, #15803d)',
-    },
-    scrollbarWidth: 'thin',
-    scrollbarColor: '#22c55e transparent',
-};
-
 // ============================================
 // STATIC OPTIONS (User Input Choices)
 // ============================================
@@ -1275,8 +1231,7 @@ function CheckEligibilityPage() {
                 </div>
 
                 <div 
-                    className="overflow-x-auto max-h-[350px] overflow-y-auto"
-                    style={thinScrollbarStyle}
+                    className="overflow-x-auto max-h-[350px] overflow-y-auto thin-scrollbar"
                 >
                     <table className="w-full">
                         <thead className="bg-gray-100 sticky top-0">
@@ -1422,8 +1377,7 @@ function CheckEligibilityPage() {
                 </div>
 
                 <div 
-                    className="overflow-x-auto overflow-y-auto max-h-[500px]"
-                    style={thinScrollbarStyle}
+                    className="overflow-x-auto overflow-y-auto max-h-[500px] thin-scrollbar"
                 >
                     <table className="w-full border-collapse">
                         <thead className="bg-gray-800 sticky top-0 z-10">
@@ -1544,8 +1498,7 @@ function CheckEligibilityPage() {
                 </div>
 
                 <div 
-                    className="p-2 max-h-[350px] overflow-y-auto"
-                    style={thinScrollbarStyle}
+                    className="p-2 max-h-[350px] overflow-y-auto thin-scrollbar"
                 >
                     {results.map((result, index) => (
                         <div 
@@ -1751,7 +1704,7 @@ function CheckEligibilityPage() {
                 </Dialog>
 
                 {/* Scrollable Content (form + results) */}
-                <div className="flex-1 overflow-y-auto pb-4" style={greenScrollbarStyle}>
+                <div className="flex-1 overflow-y-auto pb-4 green-scrollbar pr-1 mr-0.5">
                     {error && (
                         <Alert severity="error" className="mb-4" onClose={() => setError("")}>
                             {error}

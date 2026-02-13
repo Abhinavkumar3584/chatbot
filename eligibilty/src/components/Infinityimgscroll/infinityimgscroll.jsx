@@ -87,35 +87,41 @@ const InfinityImgScroll = () => {
           {[...Array(3)].map((_, copyIndex) => (
             <div key={`copy-${copyIndex}`} className="flex gap-5 md:gap-30 px-1 md:px-2 flex-none">
               {images.map((image, imgIndex) => (
-                <div 
-                  key={`img-${copyIndex}-${imgIndex}`} 
-                  className="flex-none"
-                  style={{
-                    width: `${image.mobileDimensions.width}px`,
-                    height: `${image.mobileDimensions.height}px`,
-                    '@media (min-width: 768px)': {
-                      width: `${image.desktopDimensions.width}px`,
-                      height: `${image.desktopDimensions.height}px`,
-                    }
-                  }}
-                >
-                  <picture>
-                    <source 
-                      media="(min-width: 768px)" 
-                      srcSet={image.src} 
-                      width={image.desktopDimensions.width} 
-                      height={image.desktopDimensions.height}
-                    />
-                    <img 
-                      src={image.src} 
+                <React.Fragment key={`img-${copyIndex}-${imgIndex}`}>
+                  <div
+                    className="flex-none md:hidden"
+                    style={{
+                      width: `${image.mobileDimensions.width}px`,
+                      height: `${image.mobileDimensions.height}px`,
+                    }}
+                  >
+                    <img
+                      src={image.src}
                       alt={`Scrolling image ${imgIndex + 1}`}
                       loading="lazy"
                       className="object-contain h-full w-full"
                       width={image.mobileDimensions.width}
                       height={image.mobileDimensions.height}
                     />
-                  </picture>
-                </div>
+                  </div>
+
+                  <div
+                    className="hidden md:block flex-none"
+                    style={{
+                      width: `${image.desktopDimensions.width}px`,
+                      height: `${image.desktopDimensions.height}px`,
+                    }}
+                  >
+                    <img
+                      src={image.src}
+                      alt={`Scrolling image ${imgIndex + 1}`}
+                      loading="lazy"
+                      className="object-contain h-full w-full"
+                      width={image.desktopDimensions.width}
+                      height={image.desktopDimensions.height}
+                    />
+                  </div>
+                </React.Fragment>
               ))}
             </div>
           ))}

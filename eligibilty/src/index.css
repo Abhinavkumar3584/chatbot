@@ -130,6 +130,57 @@ body::-webkit-scrollbar {
     @apply bg-background text-foreground;
   }
 }
+
+/* Scrollbars for /check-eligibility containers */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+.green-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #22c55e transparent;
+}
+
+.green-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.green-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 999px;
+  margin: 8px 0;
+}
+
+.green-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.green-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #16a34a, #15803d);
+}
+
 .mesh-gradient-bg {
   background-color: #1a1a2e;
   background-image: 

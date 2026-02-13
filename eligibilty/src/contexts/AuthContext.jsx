@@ -228,17 +228,27 @@ export function AuthProvider({ children }) {
         ? new Date(user.metadata.lastSignInTime).getTime()
         : Date.now();
 
-      unsubscribeSync = onSnapshot(getAuthSyncRef(user.uid), async (snapshot) => {
-        const data = snapshot.data();
-        if (!data) return;
+      unsubscribeSync = onSnapshot(
+        getAuthSyncRef(user.uid),
+        async (snapshot) => {
+          const data = snapshot.data();
+          if (!data) return;
 
-        const updatedAtMs = data?.updatedAt?.toMillis?.() || 0;
-        const isRemoteLogout = data.loggedIn === false && updatedAtMs >= userSignInAt - 5000;
+          const updatedAtMs = data?.updatedAt?.toMillis?.() || 0;
+          const isRemoteLogout = data.loggedIn === false && updatedAtMs >= userSignInAt - 5000;
 
-        if (isRemoteLogout && auth.currentUser) {
-          await signOut(auth);
+          if (isRemoteLogout && auth.currentUser) {
+            await signOut(auth);
+          }
+        },
+        (error) => {
+          if (error?.code === 'permission-denied') {
+            console.warn('Auth sync listener disabled due to Firestore permissions.');
+            return;
+          }
+          console.warn('Auth sync listener error:', error);
         }
-      });
+      );
     });
 
     return () => {
