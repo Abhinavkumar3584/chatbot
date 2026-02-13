@@ -1,14 +1,25 @@
 import { useState, useEffect, useRef } from "react";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
-import login from "../../Pages/login";
-import signup from "../../Pages/signup";
+import { useAuth } from "../../contexts/AuthContext";
 
 const Navbar = () => {
+  const { currentUser, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef(null);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+      setIsOpen(false);
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -109,12 +120,27 @@ const Navbar = () => {
               </div>
             </div>
 
-            <a href="/login" className="text-gray-700 hover:text-blue-500">
+            {!currentUser ? (
+              <>
+                <Link to="/login" className="text-gray-700 hover:text-blue-500">
                   Log In
-                </a>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                </Link>
+                <Link to="/signup" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
                   Try for Free
+                </Link>
+              </>
+            ) : (
+              <>
+                <span className="text-sm text-gray-700">Hi, {currentUser.displayName || "User"}</span>
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-black disabled:opacity-60"
+                >
+                  {isLoggingOut ? "Logging out..." : "Logout"}
                 </button>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -199,19 +225,35 @@ const Navbar = () => {
               </div>
             </div>
 
-            <a
-                href="/login"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center mt-1"
-              >
-                Log In
-              </a>
+            {!currentUser ? (
+              <>
+                <Link
+                  to="/login"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center mt-1"
+                >
+                  Log In
+                </Link>
 
-            {/* Button with Proper Margins */}
-            <div className="px-4 py-2">
-                <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                  Try for Free
+                <div className="px-4 py-2">
+                  <Link
+                    to="/signup"
+                    className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center"
+                  >
+                    Try for Free
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <div className="px-4 py-2">
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="w-full bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-black transition-colors disabled:opacity-60"
+                >
+                  {isLoggingOut ? "Logging out..." : "Logout"}
                 </button>
               </div>
+            )}
           </div>
         </div>
       </nav>

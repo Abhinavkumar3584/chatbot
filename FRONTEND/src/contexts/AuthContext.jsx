@@ -19,6 +19,7 @@ import {
   doc, 
   setDoc, 
   getDoc,
+  onSnapshot,
   collection,
   addDoc,
   query,
@@ -33,6 +34,31 @@ import {
 
 const AuthContext = createContext();
 const STARRED_PYQ_LOCAL_STORAGE_KEY = 'pyqPracticeStarredQuestions';
+const AUTH_SYNC_COLLECTION = 'authSync';
+const AUTH_SYNC_DOC = 'state';
+const AUTH_SYNC_SOURCE = 'main-frontend';
+
+function getAuthSyncRef(uid) {
+  return doc(db, 'users', uid, AUTH_SYNC_COLLECTION, AUTH_SYNC_DOC);
+}
+
+async function updateAuthSyncState(uid, loggedIn) {
+  if (!uid) return;
+
+  try {
+    await setDoc(
+      getAuthSyncRef(uid),
+      {
+        loggedIn,
+        source: AUTH_SYNC_SOURCE,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  } catch (error) {
+    console.warn('⚠️ Could not update auth sync state:', error);
+  }
+}
 
 function readLocalStarredPyqs() {
   try {
@@ -82,6 +108,8 @@ export function AuthProvider({ children }) {
         totalQueries: 0
       });
 
+      await updateAuthSyncState(user.uid, true);
+
       return userCredential;
     } catch (error) {
       console.error('Signup error:', error);
@@ -92,7 +120,9 @@ export function AuthProvider({ children }) {
   // Sign in with email and password
   async function login(email, password) {
     try {
-      return await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await updateAuthSyncState(userCredential.user.uid, true);
+      return userCredential;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -144,6 +174,8 @@ export function AuthProvider({ children }) {
           provider: 'google'
         });
       }
+
+      await updateAuthSyncState(user.uid, true);
       
       return result;
     } catch (error) {
@@ -209,6 +241,8 @@ export function AuthProvider({ children }) {
           provider: 'github'
         });
       }
+
+      await updateAuthSyncState(user.uid, true);
       
       return result;
     } catch (error) {
@@ -234,6 +268,10 @@ export function AuthProvider({ children }) {
   // Sign out
   async function logout() {
     try {
+      const uid = auth.currentUser?.uid;
+      if (uid) {
+        await updateAuthSyncState(uid, false);
+      }
       return await signOut(auth);
     } catch (error) {
       console.error('Logout error:', error);
@@ -1101,9 +1139,32 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
+    let unsubscribeSync = null;
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (unsubscribeSync) {
+        unsubscribeSync();
+        unsubscribeSync = null;
+      }
+
       setCurrentUser(user);
       setLoading(false);
+
+      if (!user) return;
+
+      const lastSignInMs = user.metadata?.lastSignInTime
+        ? new Date(user.metadata.lastSignInTime).getTime()
+        : Date.now();
+
+      unsubscribeSync = onSnapshot(getAuthSyncRef(user.uid), async (snapshot) => {
+        const data = snapshot.data();
+        if (!data || data.loggedIn !== false) return;
+
+        const updatedAtMs = data?.updatedAt?.toMillis?.() || 0;
+        if (updatedAtMs >= lastSignInMs - 5000 && auth.currentUser) {
+          await signOut(auth);
+        }
+      });
     });
 
     // Handle redirect result for Google login
@@ -1127,6 +1188,8 @@ export function AuthProvider({ children }) {
               provider: 'google'
             });
           }
+
+          await updateAuthSyncState(user.uid, true);
         }
       } catch (error) {
         console.error('Error handling redirect result:', error);
@@ -1135,7 +1198,10 @@ export function AuthProvider({ children }) {
 
     handleRedirectResult();
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (unsubscribeSync) unsubscribeSync();
+    };
   }, []);
 
   // Handle Firebase configuration errors

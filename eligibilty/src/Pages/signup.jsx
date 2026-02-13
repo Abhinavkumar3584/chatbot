@@ -1,18 +1,38 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Apple, Facebook, Github, Twitter } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
+import { useAuth } from "../contexts/AuthContext";
 
 const Signup = () => {
+  const navigate = useNavigate();
+  const { signup, currentUser } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (currentUser) {
+      navigate("/", { replace: true });
+    }
+  }, [currentUser, navigate]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle signup logic here
-    console.log({ name, email, password, rememberMe });
+
+    setError("");
+    setLoading(true);
+    try {
+      await signup(email.trim(), password, name.trim(), rememberMe);
+      navigate("/", { replace: true });
+    } catch (err) {
+      setError(err?.message || "Unable to create account right now. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -61,6 +81,11 @@ const Signup = () => {
           </div>
 
           {/* Signup Form */}
+          {error && (
+            <p className="mb-2 text-xs text-red-600 text-center" role="alert">
+              {error}
+            </p>
+          )}
           <form onSubmit={handleSubmit} className="space-y-2">
             <div>
               <label htmlFor="name" className="block text-xs font-medium text-gray-700 mb-1 text-left">
@@ -127,9 +152,10 @@ const Signup = () => {
 
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition text-sm mt-2"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition text-sm mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Sign up
+              {loading ? "Creating account..." : "Sign up"}
             </button>
 
             <p className="text-xs text-center text-gray-600 mt-2">
