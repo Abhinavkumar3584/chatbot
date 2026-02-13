@@ -12,6 +12,7 @@ import {
 } from "./eligibilityChecker";
 
 import {
+    ensureExamCatalogLoaded,
     getExamDropdownOptions,
     loadExamData,
     getDivisionOptions,
@@ -52,6 +53,7 @@ const extractSessionNumber = (session) => {
  * @returns {Promise<Object>} - Object with unified table data
  */
 export const checkEligibilityBasis = async (formData, educationTableData, onProgress = null) => {
+    await ensureExamCatalogLoaded();
     const examOptions = getExamDropdownOptions();
     const allResults = [];
     

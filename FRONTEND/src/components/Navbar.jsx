@@ -202,7 +202,7 @@ const Navbar = ({ onViewChange, currentView }) => {
                   lineHeight: 1
                 }}
               >
-                GYAN SETU
+                PRATIYOGITA GYAN
               </Typography>
             </Box>
 

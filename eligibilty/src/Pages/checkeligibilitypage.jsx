@@ -40,6 +40,7 @@ import {
     checkExamBasisEligibility,
     getDisplayDetails
 } from "../eligibility/exambasis";
+import { ensureExamCatalogLoaded } from "../eligibility/examDataLoader";
 
 // Import eligibility basis logic
 import {
@@ -602,8 +603,18 @@ function CheckEligibilityPage() {
     // ============================================
 
     useEffect(() => {
-        const options = getExamDropdownOptions();
-        setExamOptions(options);
+        const loadExamOptions = async () => {
+            try {
+                await ensureExamCatalogLoaded();
+                const options = getExamDropdownOptions();
+                setExamOptions(options);
+            } catch (err) {
+                console.error('Failed to load exam catalog from Firestore:', err);
+                setError('Failed to load exams. Please login and try again.');
+            }
+        };
+
+        loadExamOptions();
     }, []);
 
     useEffect(() => {

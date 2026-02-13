@@ -2,28 +2,63 @@
  * Exam Data Loader Utility
  * For PRATIYOGITA YOGYA - Exam Eligibility Tracker
  * 
- * This module handles loading exam data from JSON files and allexamnames.json
+ * This module loads exam catalog and exam payloads from Firestore.
  */
 
-import allExamNames from '../../examsdata/allexamnames.json';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { buildExamDataDocId } from './examDataDocId';
 
-// ============================================
-// EXAM DATA IMPORTS (Static imports for Vite)
-// ============================================
+const EXAM_CATALOG_COLLECTION = import.meta.env.VITE_EXAM_CATALOG_COLLECTION || 'examCatalog';
+const EXAM_CATALOG_DOC_ID = import.meta.env.VITE_EXAM_CATALOG_DOC_ID || 'allExamNames';
+const EXAM_DATA_COLLECTION = import.meta.env.VITE_EXAM_DATA_COLLECTION || 'examData';
 
-// Import all exam JSON files statically for Vite bundling
-const examDataModules = import.meta.glob('../../examsdata/**/*.json', { eager: true });
+let allExamNamesCache = null;
+let catalogLoadPromise = null;
 
 // ============================================
 // EXAM NAMES AND CATEGORIES
 // ============================================
+
+const normalizeCatalogPayload = (payload) => {
+    if (!payload || typeof payload !== 'object') return {};
+    if (payload.categories && typeof payload.categories === 'object') {
+        return payload.categories;
+    }
+    return payload;
+};
+
+/**
+ * Ensure exam catalog is loaded from Firestore.
+ * @returns {Promise<Record<string, any>>}
+ */
+export const ensureExamCatalogLoaded = async () => {
+    if (allExamNamesCache) return allExamNamesCache;
+    if (catalogLoadPromise) return catalogLoadPromise;
+
+    catalogLoadPromise = (async () => {
+        const snapshot = await getDoc(doc(db, EXAM_CATALOG_COLLECTION, EXAM_CATALOG_DOC_ID));
+        if (!snapshot.exists()) {
+            throw new Error(`Exam catalog not found in Firestore (${EXAM_CATALOG_COLLECTION}/${EXAM_CATALOG_DOC_ID})`);
+        }
+
+        allExamNamesCache = normalizeCatalogPayload(snapshot.data());
+        return allExamNamesCache;
+    })();
+
+    try {
+        return await catalogLoadPromise;
+    } finally {
+        catalogLoadPromise = null;
+    }
+};
 
 /**
  * Get all exam categories (folder names)
  * @returns {string[]} - Array of category names like "DEFENCE_ED", "UG_ED", etc.
  */
 export const getAllCategories = () => {
-    return Object.keys(allExamNames);
+    return Object.keys(allExamNamesCache || {});
 };
 
 /**
@@ -32,7 +67,7 @@ export const getAllCategories = () => {
  * @returns {Array} - Array of exam objects
  */
 export const getExamsByCategory = (category) => {
-    return allExamNames[category] || [];
+    return (allExamNamesCache && allExamNamesCache[category]) || [];
 };
 
 /**
@@ -41,8 +76,9 @@ export const getExamsByCategory = (category) => {
  */
 export const getLinkedExams = () => {
     const linkedExams = [];
+    const catalog = allExamNamesCache || {};
     
-    Object.entries(allExamNames).forEach(([category, exams]) => {
+    Object.entries(catalog).forEach(([category, exams]) => {
         exams.forEach(exam => {
             if (exam.linked_json_file && exam.linked_json_file !== '') {
                 linkedExams.push({
@@ -65,7 +101,9 @@ export const getLinkedExams = () => {
  * @returns {Object|null} - Exam object with category info or null
  */
 export const getExamByName = (examName) => {
-    for (const [category, exams] of Object.entries(allExamNames)) {
+    const catalog = allExamNamesCache || {};
+
+    for (const [category, exams] of Object.entries(catalog)) {
         const exam = exams.find(e => 
             e.exam_name.toUpperCase() === examName.toUpperCase() ||
             e.exam_code.toUpperCase() === examName.toUpperCase()
@@ -103,22 +141,19 @@ export const loadExamData = async (linkedJsonFile) => {
     }
     
     try {
-        // Find the matching module from the glob imports
-        const modulePath = Object.keys(examDataModules).find(path => 
-            path.includes(linkedJsonFile)
-        );
-        
-        if (modulePath && examDataModules[modulePath]) {
-            const data = examDataModules[modulePath].default || examDataModules[modulePath];
-            // Cache the data
-            examDataCache[linkedJsonFile] = data;
-            return data;
+        const docId = buildExamDataDocId(linkedJsonFile);
+        const snapshot = await getDoc(doc(db, EXAM_DATA_COLLECTION, docId));
+        if (!snapshot.exists()) {
+            console.error(`Exam data not found in Firestore for: ${linkedJsonFile}`);
+            return null;
         }
-        
-        console.error(`No matching module found for: ${linkedJsonFile}`);
-        return null;
+
+        const data = snapshot.data();
+        const payload = data?.payload && typeof data.payload === 'object' ? data.payload : data;
+        examDataCache[linkedJsonFile] = payload;
+        return payload;
     } catch (error) {
-        console.error(`Error loading exam data from ${linkedJsonFile}:`, error);
+        console.error(`Error loading exam data from Firestore (${linkedJsonFile}):`, error);
         return null;
     }
 };
@@ -129,6 +164,8 @@ export const loadExamData = async (linkedJsonFile) => {
  * @returns {Promise<Object|null>} - Exam data object or null
  */
 export const loadExamDataByName = async (examName) => {
+    await ensureExamCatalogLoaded();
+
     const examInfo = getExamByName(examName);
     if (!examInfo || !examInfo.linked_json_file) {
         console.warn(`No linked JSON file found for exam: ${examName}`);
@@ -143,6 +180,8 @@ export const loadExamDataByName = async (examName) => {
  * @returns {Promise<Object>} - Object with exam names as keys and data as values
  */
 export const preloadAllExamData = async () => {
+    await ensureExamCatalogLoaded();
+
     const linkedExams = getLinkedExams();
     const loadedData = {};
     
@@ -400,6 +439,7 @@ export const getExamSessionOptions = (examData) => {
 };
 
 export default {
+    ensureExamCatalogLoaded,
     getAllCategories,
     getExamsByCategory,
     getLinkedExams,

@@ -1,28 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import allExamsData from '../../../examsdata/allexamnames.json';
+import { ensureExamCatalogLoaded, getAllCategories, getLinkedExams } from '../../eligibility/examDataLoader';
 
 const StatsAnalytics = () => {
-  // Count total exams from allexamnames.json
   const [examCount, setExamCount] = useState(0);
   const [mainFolderCount, setMainFolderCount] = useState(0);
   
   useEffect(() => {
-    // Count only active exams (with linked_json_file) across all categories
-    let activeExams = 0;
-    let categoryCount = 0;
-    
-    for (const category in allExamsData) {
-      if (Array.isArray(allExamsData[category])) {
-        // Count only exams that have a linked JSON file (active exams)
-        activeExams += allExamsData[category].filter(
-          exam => exam.linked_json_file && exam.linked_json_file !== ''
-        ).length;
-        categoryCount++;
+    const loadStats = async () => {
+      try {
+        await ensureExamCatalogLoaded();
+        setExamCount(getLinkedExams().length);
+        setMainFolderCount(getAllCategories().length);
+      } catch (error) {
+        console.error('Failed to load exam stats from Firestore:', error);
       }
-    }
-    
-    setExamCount(activeExams);
-    setMainFolderCount(categoryCount);
+    };
+
+    loadStats();
   }, []);
   
   // Telegram channel link

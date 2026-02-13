@@ -37,3 +37,38 @@ This app now uses Firebase Authentication and must share the **same Firebase pro
 	- Site B signs out via `authSync` state.
 4. Logout from Site B, keep Site A open:
 	- Site A signs out via `authSync` state.
+
+## Secure exam data (moved from frontend JSON to Firestore)
+
+Exam JSON is no longer bundled in the client app. The app now reads:
+
+- catalog doc: `examCatalog/allExamNames`
+- payload docs: `examData/{docId}`
+
+### 1) Seed Firestore from local examsdata
+
+Set one of these before running:
+
+- `GOOGLE_APPLICATION_CREDENTIALS` (recommended), or
+- `FIREBASE_SERVICE_ACCOUNT_PATH` (path to service account json)
+
+Then run:
+
+- `npm run seed:exam-data`
+
+### 2) Deploy Firestore rules
+
+Use [firestore.rules](firestore.rules).
+
+This enforces:
+
+- exam data readable only by authenticated users
+- no client writes to exam data collections
+
+### 3) Frontend env
+
+Add these to `.env` (already in [.env.example](.env.example)):
+
+- `VITE_EXAM_CATALOG_COLLECTION=examCatalog`
+- `VITE_EXAM_CATALOG_DOC_ID=allExamNames`
+- `VITE_EXAM_DATA_COLLECTION=examData`

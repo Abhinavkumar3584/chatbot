@@ -1196,7 +1196,7 @@ const ChatSection = () => {
                         className="text-lg font-semibold mb-2 transition-colors duration-300" 
                         style={{ color: '#000000' }}
                       >
-                        Welcome to GYAN SETU!
+                        Welcome to PRATIYOGITA GYAN!
                       </h3>
                       <p 
                         className="mb-2 text-sm transition-colors duration-300" 
