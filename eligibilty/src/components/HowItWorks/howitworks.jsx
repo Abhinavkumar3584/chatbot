@@ -1,4 +1,5 @@
 "use client";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { 
@@ -12,7 +13,7 @@ import {
 const steps = [
   {
     number: "01",
-    title: "Pratiyogita Yogya",
+    title: "Pariksha Yogya",
     subtitle: "Check Your Eligibility",
     description: "Instantly discover which exams you qualify for from 3000+ options.",
     icon: CheckCircle2,
@@ -23,7 +24,7 @@ const steps = [
   },
   {
     number: "02",
-    title: "Pratiyogita Marg",
+    title: "Pariksha Marg",
     subtitle: "Get Your Roadmap",
     description: "Personalized, topic-wise syllabus roadmap for your target exam.",
     icon: Map,
@@ -34,7 +35,7 @@ const steps = [
   },
   {
     number: "03",
-    title: "Pratiyogita Gyan",
+    title: "Gyan Setu",
     subtitle: "Learn with AI",
     description: "AI assistant trained on NCERT to master concepts & PYQs.",
     icon: Brain,

@@ -100,11 +100,9 @@ function Hero() {
                 Know your Competitive exam eligibility & attempts with{" "}
               </span>
               <div>
-                <img
-                  src="./logos/py_name.svg"
-                  alt=""
-                  className="mx-auto mt-2 md:mt-5 h-8 md:h-16"
-                />
+                <p className="mx-auto mt-2 md:mt-5 text-2xl md:text-5xl font-bold text-[#3A7CA5]">
+                  Pariksha Yogya
+                </p>
                 <hr className="w-1/2 md:w-1/2 mx-auto my-2 border-t-3 border-[#3A7CA5]" />
               </div>
               <span className="relative flex w-full justify-center overflow-hidden md:pb-5 md:pt-2">

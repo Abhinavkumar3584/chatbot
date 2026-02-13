@@ -1,6 +1,6 @@
 /**
  * Eligibility Checker Utility Functions
- * For PRATIYOGITA YOGYA - Exam Eligibility Tracker
+ * For PARIKSHA YOGYA - Exam Eligibility Tracker
  * 
  * 14 CHECKS ACTIVE:
  * ✅ 1. Gender

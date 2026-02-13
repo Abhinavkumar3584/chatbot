@@ -1649,7 +1649,7 @@ function CheckEligibilityPage() {
                         <div className="space-y-4">
                             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
                                 <Typography variant="h6" className="text-blue-800 font-bold mb-2">
-                                    🙏 Welcome to Pratiyogita Yogya!
+                                    🙏 Welcome to Pariksha Yogya!
                                 </Typography>
                                 <Typography variant="body2" className="text-blue-700">
                                     Your trusted companion for exam eligibility checking.

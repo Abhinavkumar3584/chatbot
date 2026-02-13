@@ -5,9 +5,7 @@ const Footer = () => {
   return (
     <div className="relative bg-[#F6F7F9] border border-[#E3E7ED] py-3 overflow-hidden rounded-xl shadow-sm">
       <div className="relative z-10 px-6 py-4 max-w-7xl mx-auto text-center">
-        <div className="mb-3">
-          {/* <img src="./logos/ps_name.svg" alt="Pariksha Setu" className="h-6 mx-auto" /> */}
-        </div>
+        <div className="mb-3 text-lg font-bold text-[#1F2933]">Pariksha Yogya</div>
 
         <p className="text-[#52616B] text-sm mb-3">
           For help and support: <a href="mailto:askparikshasetu@gmail.com" className="text-[#3A7CA5] hover:underline">askparikshasetu@gmail.com</a>

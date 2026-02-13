@@ -1,6 +1,6 @@
 /**
  * Exam Data Loader Utility
- * For PRATIYOGITA YOGYA - Exam Eligibility Tracker
+ * For PARIKSHA YOGYA - Exam Eligibility Tracker
  * 
  * This module handles loading exam data from JSON files and allexamnames.json
  */

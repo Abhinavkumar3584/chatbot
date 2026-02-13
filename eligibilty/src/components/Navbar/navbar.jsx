@@ -41,14 +41,12 @@ const Navbar = () => {
           <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
             <img
               src="./logos/py.png"
-              alt="Pariksha Yogya Logo"
+              alt="Pariksha Yogya"
               className="h-12 w-12 sm:h-14 sm:w-14 object-contain"
             />
-            <img
-              src="./logos/py_name.svg"
-              alt="Pariksha Yogya"
-              className="h-4 sm:h-5 object-contain"
-            />
+            <span className="text-md sm:text-base font-bold text-[#1F2933] tracking-wide">
+              Pariksha Yogya
+            </span>
           </Link>
 
           {/* Desktop Menu */}
