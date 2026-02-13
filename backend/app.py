@@ -831,7 +831,7 @@ def is_greeting_or_casual(query: str) -> tuple[bool, str]:
     return False, ""
 
 
-def build_generation_prompt(context: str, query: str, answer_profile: dict, best_match_score: float = 0.0):
+def build_generation_prompt(context: str, query: str, answer_profile: dict, best_match_score: float = 0.0, source_metadata: dict = None):
     """Create compact, completion-safe prompt for accurate educational answers with clarity checks."""
     
     # Detect unclear/short queries with low match quality
@@ -839,48 +839,61 @@ def build_generation_prompt(context: str, query: str, answer_profile: dict, best
     is_very_short = len(query_words) <= 2
     is_low_quality = best_match_score > 0 and best_match_score < 0.4
     
-    # Build context quality warnings
-    warnings = []
-    if is_very_short and is_low_quality:
-        warnings.append(
-            f"⚠️ Your query '{query}' is very short and may contain typos or be unclear. "
-            "Retrieved context may not be relevant."
-        )
-    elif best_match_score > 0 and best_match_score < 0.3:
-        warnings.append(
-            f"⚠️ Context relevance is LOW ({best_match_score:.1%}). The answer may not be accurate."
-        )
+    # Extract topic for intelligent guessing
+    likely_topic = ""
+    if source_metadata:
+        likely_topic = source_metadata.get('topic', '') or source_metadata.get('chapter_name', '')
     
-    context_warnings = "\n".join(warnings) + "\n\n" if warnings else ""
+    # For unclear queries, use a completely different prompt format
+    if is_very_short and is_low_quality and likely_topic:
+        return (
+            "You are a helpful NCERT learning assistant. The user's query appears to have typos or is unclear.\n\n"
+            f"User Query: '{query}' (appears to be a typo)\n"
+            f"Most Relevant Topic Found: '{likely_topic}'\n\n"
+            "INSTRUCTIONS - Follow this EXACT format:\n\n"
+            "Line 1: 🤔 I noticed your query \"{query}\" might have a typo. Did you mean \"{topic}\"?\n\n"
+            "Line 2-4: [Provide a brief 2-3 sentence answer about {topic} based on the context below]\n\n"
+            "Last line: If this isn't what you're looking for, please rephrase your question.\n\n"
+            f"Context:\n{context if context else 'No context available.'}\n\n"
+            "Generate response now:"
+        ).format(query=query, topic=likely_topic)
     
-    # Add instruction to handle unclear queries
-    unclear_query_instruction = ""
-    if is_very_short and is_low_quality:
-        unclear_query_instruction = (
-            "IMPORTANT: This query appears unclear or may have a typo. "
-            "Start your response by acknowledging this and politely asking the user to rephrase with more details. "
-            "Do NOT attempt to answer based on irrelevant context.\n\n"
-        )
+    # For very low quality matches without clear topic
+    elif is_very_short and is_low_quality:
+        return (
+            "You are a helpful NCERT learning assistant. The user's query is unclear.\n\n"
+            f"User Query: '{query}'\n\n"
+            "INSTRUCTIONS - Follow this EXACT format:\n\n"
+            "🤔 Your query \"{query}\" is too short or unclear. Please provide more details so I can help you better.\n\n"
+            "For example:\n"
+            "- What specific topic are you asking about?\n"
+            "- Which subject or chapter?\n"
+            "- Can you rephrase with a complete question?\n\n"
+            "Generate response now:"
+        ).format(query=query)
+    
+    # Standard prompt for clear queries
+    context_warning = ""
+    if best_match_score > 0 and best_match_score < 0.3:
+        context_warning = f"\n⚠️ Note: Context relevance is low ({best_match_score:.1%}). Answer may not be fully accurate.\n\n"
     
     return (
         "You are an expert NCERT learning assistant. "
-        f"{unclear_query_instruction}"
         "Use the provided context as the primary source of truth. "
-        "If context is clearly irrelevant to the question, acknowledge this and ask for clarification. "
-        "Never fabricate exact textbook citations. "
-        "Ensure the final answer is complete and not abruptly cut.\n\n"
+        "Be direct and concise. "
+        "Never fabricate citations.\n\n"
         f"Answer style: {answer_profile['instruction']}\n\n"
         f"Question:\n{query}\n\n"
-        f"{context_warnings}"
+        f"{context_warning}"
         f"Context:\n{context if context else 'No relevant context retrieved.'}\n\n"
         "Provide the final answer now."
     )
     
 
 
-def generate_with_model_routing(query: str, context: str, answer_profile: dict, llm_temperature: float, llm_top_p: float, llm_max_tokens: int, best_match_score: float = 0.0):
+def generate_with_model_routing(query: str, context: str, answer_profile: dict, llm_temperature: float, llm_top_p: float, llm_max_tokens: int, best_match_score: float = 0.0, source_metadata: dict = None):
     """Generate answer with provider routing: OpenAI (primary) -> Groq (fallback)."""
-    prompt = build_generation_prompt(context, query, answer_profile, best_match_score)
+    prompt = build_generation_prompt(context, query, answer_profile, best_match_score, source_metadata)
     max_tokens = max(180, min(llm_max_tokens, answer_profile['max_tokens']))
 
     # 1) Primary: OpenAI
@@ -1390,8 +1403,9 @@ def search():
         
         compact_context = trim_context_from_sources(sources, max_chars=answer_profile['context_chars'])
         
-        # Get best match score for prompt quality assessment
+        # Get best match score and metadata for prompt quality assessment
         best_score = sources[0]['score'] if sources else 0.0
+        source_metadata = sources[0] if sources else None
 
         # Generate RAG response using provider routing
         rag_response = None
@@ -1405,6 +1419,7 @@ def search():
             llm_top_p=llm_top_p,
             llm_max_tokens=llm_max_tokens,
             best_match_score=best_score,
+            source_metadata=source_metadata,
         )
 
         if not rag_response:
