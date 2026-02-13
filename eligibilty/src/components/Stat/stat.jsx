@@ -1,30 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import allExamsData from '../../../examsdata/allexamnames.json';
+import React from 'react';
 
 const StatsAnalytics = () => {
-  // Count total exams from allexamnames.json
-  const [examCount, setExamCount] = useState(0);
-  const [mainFolderCount, setMainFolderCount] = useState(0);
-  
-  useEffect(() => {
-    // Count only active exams (with linked_json_file) across all categories
-    let activeExams = 0;
-    let categoryCount = 0;
-    
-    for (const category in allExamsData) {
-      if (Array.isArray(allExamsData[category])) {
-        // Count only exams that have a linked JSON file (active exams)
-        activeExams += allExamsData[category].filter(
-          exam => exam.linked_json_file && exam.linked_json_file !== ''
-        ).length;
-        categoryCount++;
-      }
-    }
-    
-    setExamCount(activeExams);
-    setMainFolderCount(categoryCount);
-  }, []);
-  
   // Telegram channel link
   const telegramChannelLink = "https://t.me/pratiyogitasetu";
 
@@ -61,10 +37,10 @@ const StatsAnalytics = () => {
           <div className="bg-white flex flex-col items-center p-2 md:p-3 lg:p-5 border border-[#E3E7ED] rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 min-w-[90px] md:min-w-[130px] lg:min-w-[160px] overflow-hidden relative">
             <div className="absolute -left-4 -bottom-4 w-12 h-12 bg-[#dfe7ee] rounded-full opacity-30"></div>
             <div className="text-[10px] md:text-xs lg:text-sm mb-1 md:mb-2">
-              <span className="bg-[#3A7CA5] text-white px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-lg font-medium">+90k</span>
+              <span className="bg-[#3A7CA5] text-white px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-lg font-medium">+0</span>
               <span className="text-[#52616B] ml-1.5 font-medium">monthly</span>
             </div>
-            <div className="text-sm md:text-2xl lg:text-4xl xl:text-5xl font-bold my-1 md:my-2 lg:my-3 text-[#1F2933]">1.5M</div>
+            <div className="text-sm md:text-2xl lg:text-4xl xl:text-5xl font-bold my-1 md:my-2 lg:my-3 text-[#1F2933]">0</div>
             <div className="text-[#3A7CA5] text-[10px] md:text-xs lg:text-base font-medium">Registered Users</div>
           </div>
 
@@ -72,10 +48,10 @@ const StatsAnalytics = () => {
           <div className="bg-white flex flex-col items-center p-2 md:p-3 lg:p-5 border border-[#E3E7ED] rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 min-w-[90px] md:min-w-[130px] lg:min-w-[160px] overflow-hidden relative">
             <div className="absolute -right-4 -top-4 w-12 h-12 bg-[#dbe8f1] rounded-full opacity-30"></div>
             <div className="text-[10px] md:text-xs lg:text-sm mb-1 md:mb-2">
-              <span className="bg-[#3A7CA5] text-white px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-lg font-medium">+120k</span>
+              <span className="bg-[#3A7CA5] text-white px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-lg font-medium">+0</span>
               <span className="text-[#52616B] ml-1.5 font-medium">yearly</span>
             </div>
-            <div className="text-sm md:text-2xl lg:text-4xl xl:text-5xl font-bold my-1 md:my-2 lg:my-3 text-[#1F2933]">2.7M</div>
+            <div className="text-sm md:text-2xl lg:text-4xl xl:text-5xl font-bold my-1 md:my-2 lg:my-3 text-[#1F2933]">0</div>
             <div className="text-[#3A7CA5] text-[10px] md:text-xs lg:text-base font-medium">Total Users</div>
           </div>
 
@@ -83,10 +59,10 @@ const StatsAnalytics = () => {
           <div className="bg-white flex flex-col items-center p-2 md:p-3 lg:p-5 border border-[#E3E7ED] rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 min-w-[90px] md:min-w-[130px] lg:min-w-[160px] overflow-hidden relative">
             <div className="absolute -right-4 -top-4 w-12 h-12 bg-[#dfe7ee] rounded-full opacity-30"></div>
             <div className="text-[10px] md:text-xs lg:text-sm mb-1 md:mb-2">
-              <span className="bg-[#3A7CA5] text-white px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-lg font-medium">+35k</span>
+              <span className="bg-[#3A7CA5] text-white px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-lg font-medium">+0</span>
               <span className="text-[#52616B] ml-1.5 font-medium">weekly</span>
             </div>
-            <div className="text-sm md:text-2xl lg:text-4xl xl:text-5xl font-bold my-1 md:my-2 lg:my-3 text-[#1F2933]">895K</div>
+            <div className="text-sm md:text-2xl lg:text-4xl xl:text-5xl font-bold my-1 md:my-2 lg:my-3 text-[#1F2933]">0</div>
             <div className="text-[#3A7CA5] text-[10px] md:text-xs lg:text-base font-medium">Eligible Aspirants</div>
           </div>
 
@@ -94,10 +70,10 @@ const StatsAnalytics = () => {
           <div className="bg-white flex flex-col items-center p-2 md:p-3 lg:p-5 border border-[#E3E7ED] rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 min-w-[90px] md:min-w-[130px] lg:min-w-[160px] overflow-hidden relative">
             <div className="absolute -left-4 -bottom-4 w-12 h-12 bg-[#dbe8f1] rounded-full opacity-30"></div>
             <div className="text-[10px] md:text-xs lg:text-sm mb-1 md:mb-2">
-              <span className="bg-[#3A7CA5] text-white px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-lg font-medium">+2</span>
+              <span className="bg-[#3A7CA5] text-white px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-lg font-medium">+1</span>
               <span className="text-[#52616B] ml-1.5 font-medium">quarterly</span>
             </div>
-            <div className="text-sm md:text-2xl lg:text-4xl xl:text-5xl font-bold my-1 md:my-2 lg:my-3 text-[#1F2933]">{mainFolderCount}</div>
+            <div className="text-sm md:text-2xl lg:text-4xl xl:text-5xl font-bold my-1 md:my-2 lg:my-3 text-[#1F2933]">1</div>
             <div className="text-[#3A7CA5] text-[10px] md:text-xs lg:text-base font-medium">Main Categories</div>
           </div>
 
@@ -105,10 +81,10 @@ const StatsAnalytics = () => {
           <div className="bg-white flex flex-col items-center p-2 md:p-3 lg:p-5 border border-[#E3E7ED] rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 min-w-[90px] md:min-w-[130px] lg:min-w-[160px] overflow-hidden relative">
             <div className="absolute -left-4 -bottom-4 w-12 h-12 bg-[#dfe7ee] rounded-full opacity-30"></div>
             <div className="text-[10px] md:text-xs lg:text-sm mb-1 md:mb-2">
-              <span className="bg-[#3A7CA5] text-white px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-lg font-medium">+15</span>
+              <span className="bg-[#3A7CA5] text-white px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-lg font-medium">+1</span>
               <span className="text-[#52616B] ml-1.5 font-medium">monthly</span>
             </div>
-            <div className="text-sm md:text-2xl lg:text-4xl xl:text-5xl font-bold my-1 md:my-2 lg:my-3 text-[#1F2933]">{examCount}</div>
+            <div className="text-sm md:text-2xl lg:text-4xl xl:text-5xl font-bold my-1 md:my-2 lg:my-3 text-[#1F2933]">1</div>
             <div className="text-[#3A7CA5] text-[10px] md:text-xs lg:text-base font-medium">Available Exams</div>
           </div>
 
@@ -116,10 +92,10 @@ const StatsAnalytics = () => {
           <div className="bg-white flex flex-col items-center p-2 md:p-3 lg:p-5 border border-[#E3E7ED] rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 min-w-[90px] md:min-w-[130px] lg:min-w-[160px] overflow-hidden relative">
             <div className="absolute -right-4 -top-4 w-12 h-12 bg-[#dbe8f1] rounded-full opacity-30"></div>
             <div className="text-[10px] md:text-xs lg:text-sm mb-1 md:mb-2">
-              <span className="bg-[#3A7CA5] text-white px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-lg font-medium">12+42</span>
+              <span className="bg-[#3A7CA5] text-white px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-lg font-medium">0+1</span>
               <span className="text-[#52616B] ml-1.5 font-medium">fields</span>
             </div>
-            <div className="text-sm md:text-2xl lg:text-4xl xl:text-5xl font-bold my-1 md:my-2 lg:my-3 text-[#1F2933]">54</div>
+            <div className="text-sm md:text-2xl lg:text-4xl xl:text-5xl font-bold my-1 md:my-2 lg:my-3 text-[#1F2933]">1</div>
             <div className="text-[#3A7CA5] text-[10px] md:text-xs lg:text-base font-medium">Form Inputs</div>
           </div>
         </div>

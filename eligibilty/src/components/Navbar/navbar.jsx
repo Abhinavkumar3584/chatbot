@@ -1,15 +1,13 @@
-import { useState, useEffect, useRef } from "react";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 const Navbar = () => {
   const { currentUser, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const dropdownRef = useRef(null);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -20,17 +18,6 @@ const Navbar = () => {
       setIsOpen(false);
     }
   };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   // Add scroll event listener for blur effect
   useEffect(() => {
@@ -76,49 +63,14 @@ const Navbar = () => {
               Contact Us
             </a>
 
-            {/* Features Dropdown with Animation */}
-            <div className="relative">
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center text-[#1F2933] hover:text-[#3A7CA5] focus:outline-none"
-              >
-                Features
-                <ChevronDown
-                  className={`ml-1 w-4 h-4 transition-transform duration-300 ${
-                    isDropdownOpen ? "rotate-180" : "rotate-0"
-                  }`}
-                />
-              </button>
-
-              {/* Dropdown Items with Animation */}
-              <div
-                className={`absolute left-0 mt-2 w-48 bg-white border border-[#E3E7ED] shadow-md rounded-lg z-50 transition-all duration-300 transform origin-top 
-                      ${
-                        isDropdownOpen
-                          ? "opacity-100 scale-y-100"
-                          : "opacity-0 scale-y-0 pointer-events-none"
-                      }`}
-              >
-                <a
-                  href="/"
-                  className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)]"
-                >
-                  PARIKSHA YOGYA
-                </a>
-                <a
-                  href="https://marg.psetu.com/"
-                  className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)]"
-                >
-                  PARIKSHA MARG
-                </a>
-                <a
-                  href="#"
-                  className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)]"
-                >
-                  PARIKSHA GYAN
-                </a>
-              </div>
-            </div>
+            <a
+              href="https://www.pratiyogitagyan.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#1F2933] hover:text-[#3A7CA5]"
+            >
+              Gyan Setu
+            </a>
 
             {!currentUser ? (
               <>
@@ -184,46 +136,14 @@ const Navbar = () => {
               Contact Us
             </a>
 
-            {/* Features Dropdown in Mobile with Improved Animation */}
-            <div className="px-4 py-1">
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-full text-center py-2 flex items-center justify-center text-[#1F2933] hover:text-[#3A7CA5] focus:outline-none"
-              >
-                Features
-                <ChevronDown
-                  className={`ml-1 w-4 h-4 transition-transform duration-300 ${
-                    isDropdownOpen ? "rotate-180" : "rotate-0"
-                  }`}
-                />
-              </button>
-              <div
-                className={`mt-1 bg-[#F6F7F9] rounded-lg overflow-hidden transition-all duration-300 ease-in-out ${
-                  isDropdownOpen
-                    ? "max-h-[200px] opacity-100"
-                    : "max-h-0 opacity-0"
-                }`}
-              >
-                <a
-                  href="/"
-                  className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)] text-center"
-                >
-                  PARIKSHA YOGYA
-                </a>
-                <a
-                  href="https://marg.psetu.com/"
-                  className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)] text-center"
-                >
-                  PARIKSHA MARG
-                </a>
-                <a
-                  href="#"
-                  className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)] text-center"
-                >
-                  PARIKSHA GYAN
-                </a>
-              </div>
-            </div>
+            <a
+              href="https://www.pratiyogitagyan.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block px-4 py-2 text-[#1F2933] hover:bg-[rgba(58,124,165,0.12)] text-center"
+            >
+              Gyan Setu
+            </a>
 
             {!currentUser ? (
               <>
