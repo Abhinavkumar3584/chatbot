@@ -51,10 +51,24 @@
 
 @layer base {
   * {
-    @apply border-border text-xs;
+    @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Responsive desktop/tablet scaling foundation
+   - Keeps HD (1366x768) close to current look
+   - Scales naturally up toward Full HD (1920x1080)
+   - No layout redesign, only typography baseline scaling */
+html {
+  font-size: 16px;
+}
+
+@media (min-width: 1366px) {
+  html {
+    font-size: clamp(16px, calc(16px + ((100vw - 1366px) / 554) * 2), 18px);
   }
 }
 
