@@ -557,29 +557,85 @@ CLASS_OPTIONS = [
 ANSWER_LENGTH_PROFILES = {
     "very_short": {
         "label": "Very Short",
-        "max_tokens": 220,
-        "context_chars": 3400,
-        "instruction": "Respond in 2-4 concise bullet points."
+        "max_tokens": 120,
+        "context_chars": 2200,
+        "min_words": 12,
+        "max_words": 40,
+        "instruction": (
+            "Output 2-3 bullets only. Max 35 words total. "
+            "No intro, no conclusion, no extra explanation."
+        ),
+        "format_hint": "2-3 bullets, 1 line each"
     },
     "short": {
         "label": "Short",
-        "max_tokens": 420,
-        "context_chars": 5200,
-        "instruction": "Respond in a compact answer with key points only."
+        "max_tokens": 220,
+        "context_chars": 3600,
+        "min_words": 45,
+        "max_words": 90,
+        "instruction": (
+            "Output 3-5 bullets with brief context. 60-90 words. "
+            "Stay concise."
+        ),
+        "format_hint": "3-5 bullets"
     },
     "normal": {
         "label": "Normal",
-        "max_tokens": 780,
-        "context_chars": 7600,
-        "instruction": "Respond with a balanced explanation and clear structure."
+        "max_tokens": 420,
+        "context_chars": 6400,
+        "min_words": 120,
+        "max_words": 180,
+        "instruction": (
+            "Balanced explanation. Start with 1 short paragraph, then 3-5 bullets. "
+            "120-180 words total."
+        ),
+        "format_hint": "1 paragraph + bullets"
     },
     "explanatory": {
         "label": "Explanatory",
-        "max_tokens": 1200,
-        "context_chars": 10200,
-        "instruction": "Provide a detailed explanation with examples and learning guidance."
+        "max_tokens": 900,
+        "context_chars": 9800,
+        "min_words": 220,
+        "max_words": 360,
+        "instruction": (
+            "Detailed explanation with sections: Explanation, Steps, Example (if possible). "
+            "250-350 words total."
+        ),
+        "format_hint": "Sectioned explanation"
     },
 }
+
+_SENTENCE_END_RE = re.compile(r"([.!?])\s+")
+
+def _trim_to_sentence_boundary(text: str) -> str:
+    if not text:
+        return text
+    # Find last sentence-ending punctuation and trim after it
+    matches = list(_SENTENCE_END_RE.finditer(text))
+    if matches:
+        end_idx = matches[-1].end()
+        return text[:end_idx].strip()
+    # If no sentence boundary, ensure it ends with a period
+    text = text.strip()
+    if text and text[-1] not in ".!?":
+        return text + "."
+    return text
+
+
+def enforce_answer_length(text: str, answer_profile: dict) -> str:
+    """Trim responses to avoid mid-sentence truncation and enforce max words."""
+    if not text:
+        return text
+    max_words = answer_profile.get("max_words")
+    if not max_words:
+        return _trim_to_sentence_boundary(text)
+
+    words = text.split()
+    if len(words) <= max_words:
+        return _trim_to_sentence_boundary(text)
+
+    clipped = " ".join(words[:max_words]).strip()
+    return _trim_to_sentence_boundary(clipped)
 
 
 def normalize_class_label(class_label):
@@ -877,12 +933,24 @@ def build_generation_prompt(context: str, query: str, answer_profile: dict, best
     if best_match_score > 0 and best_match_score < 0.3:
         context_warning = f"\n⚠️ Note: Context relevance is low ({best_match_score:.1%}). Answer may not be fully accurate.\n\n"
     
+    min_words = answer_profile.get("min_words")
+    max_words = answer_profile.get("max_words")
+    word_target = ""
+    if min_words and max_words:
+        word_target = f"Target length: {min_words}-{max_words} words."
+
+    format_hint = answer_profile.get("format_hint", "")
+    format_line = f"Format: {format_hint}." if format_hint else ""
+
     return (
         "You are an expert NCERT learning assistant. "
         "Use the provided context as the primary source of truth. "
         "Be direct and concise. "
-        "Never fabricate citations.\n\n"
-        f"Answer style: {answer_profile['instruction']}\n\n"
+        "Never fabricate citations. "
+        "Do not exceed the word limit and end with a complete sentence.\n\n"
+        f"Answer style: {answer_profile['instruction']}\n"
+        f"{word_target}\n"
+        f"{format_line}\n\n"
         f"Question:\n{query}\n\n"
         f"{context_warning}"
         f"Context:\n{context if context else 'No relevant context retrieved.'}\n\n"
@@ -894,7 +962,7 @@ def build_generation_prompt(context: str, query: str, answer_profile: dict, best
 def generate_with_model_routing(query: str, context: str, answer_profile: dict, llm_temperature: float, llm_top_p: float, llm_max_tokens: int, best_match_score: float = 0.0, source_metadata: dict = None):
     """Generate answer with provider routing: OpenAI (primary) -> Groq (fallback)."""
     prompt = build_generation_prompt(context, query, answer_profile, best_match_score, source_metadata)
-    max_tokens = max(180, min(llm_max_tokens, answer_profile['max_tokens']))
+    max_tokens = min(llm_max_tokens, answer_profile['max_tokens'])
 
     # 1) Primary: OpenAI
     openai_client = search_components.get('openai_client')
@@ -1318,7 +1386,8 @@ def search():
     answer_profile, resolved_answer_length = get_answer_length_profile(answer_length)
     llm_temperature = float(answer_settings.get("temperature", os.getenv("DEFAULT_ANSWER_TEMPERATURE", "0.3")))
     llm_top_p = float(answer_settings.get("top_p", os.getenv("DEFAULT_ANSWER_TOP_P", "0.9")))
-    llm_max_tokens = int(answer_settings.get("max_tokens", answer_profile["max_tokens"]))
+    # Enforce profile-specific token limits regardless of client overrides
+    llm_max_tokens = answer_profile["max_tokens"]
     
     # Input validation
     if not query.strip():
@@ -1425,6 +1494,7 @@ def search():
         if not rag_response:
             warning = route_error or "LLM unavailable"
             rag_response = build_fallback_response(context, sources, query)
+        rag_response = enforce_answer_length(rag_response, answer_profile)
         
         # MCQ search for related questions (only if Pinecone is available)
         # Use enhanced query based on retrieved context for better MCQ matching
@@ -1544,7 +1614,14 @@ def get_search_settings():
             "max_tokens": int(os.getenv("DEFAULT_ANSWER_MAX_TOKENS", "1500"))
         },
         "answer_length_modes": [
-            {"value": key, "label": value["label"], "max_tokens": value["max_tokens"]}
+            {
+                "value": key,
+                "label": value["label"],
+                "max_tokens": value["max_tokens"],
+                "min_words": value.get("min_words"),
+                "max_words": value.get("max_words"),
+                "context_chars": value.get("context_chars")
+            }
             for key, value in ANSWER_LENGTH_PROFILES.items()
         ],
         "model_routing": {
