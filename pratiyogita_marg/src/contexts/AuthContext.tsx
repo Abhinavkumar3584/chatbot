@@ -4,8 +4,9 @@ import {
   getRedirectResult,
   GithubAuthProvider,
   GoogleAuthProvider,
-  onAuthStateChanged,
+  onIdTokenChanged,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signInWithRedirect,
   signOut,
   updateProfile,
@@ -26,6 +27,7 @@ const AUTH_SYNC_SOURCE = 'pratiyogita-marg';
 
 type AuthContextValue = {
   currentUser: User | null;
+  loading: boolean;
   signup: (email: string, password: string, displayName: string) => Promise<any>;
   login: (email: string, password: string) => Promise<any>;
   loginWithGoogle: () => Promise<any>;
@@ -53,8 +55,39 @@ async function updateAuthSyncState(uid: string, loggedIn: boolean) {
       { merge: true }
     );
   } catch (error) {
-    console.warn('⚠️ Could not update auth sync state:', error);
+    console.warn('Auth sync state update failed:', error);
   }
+}
+
+async function upsertUserDocument(user: User, displayName: string | null = null) {
+  if (!user?.uid) return;
+
+  const userRef = doc(db, 'users', user.uid);
+  const existing = await getDoc(userRef);
+
+  if (!existing.exists()) {
+    await setDoc(
+      userRef,
+      {
+        email: user.email || null,
+        displayName: displayName || user.displayName || null,
+        createdAt: serverTimestamp(),
+        provider: user.providerData?.[0]?.providerId || 'password',
+      },
+      { merge: true }
+    );
+    return;
+  }
+
+  await setDoc(
+    userRef,
+    {
+      email: user.email || existing.data()?.email || null,
+      displayName: displayName || user.displayName || existing.data()?.displayName || null,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
 }
 
 export function useAuth() {
@@ -69,27 +102,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function ensureUserDocument(user: User, provider: string) {
-    const userRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userRef);
-
-    if (!userDoc.exists()) {
-      await setDoc(userRef, {
-        email: user.email,
-        displayName: user.displayName || 'User',
-        photoURL: user.photoURL || null,
-        provider,
-        createdAt: serverTimestamp(),
-      });
-    }
-  }
-
   async function signup(email: string, password: string, displayName: string) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    await updateProfile(user, { displayName });
-    await ensureUserDocument(user, 'password');
+    if (displayName?.trim()) {
+      await updateProfile(user, { displayName: displayName.trim() });
+    }
+
+    await upsertUserDocument(user, displayName?.trim());
     await updateAuthSyncState(user.uid, true);
 
     return userCredential;
@@ -97,22 +118,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(email: string, password: string) {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    await upsertUserDocument(userCredential.user);
     await updateAuthSyncState(userCredential.user.uid, true);
     return userCredential;
   }
 
   async function loginWithGoogle() {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    await signInWithRedirect(auth, provider);
-    return null;
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+
+      let result;
+      try {
+        result = await signInWithPopup(auth, provider);
+      } catch (popupError: any) {
+        if (
+          popupError.code === 'auth/popup-blocked' ||
+          popupError.code === 'auth/cancelled-popup-request' ||
+          popupError?.message?.includes('popup')
+        ) {
+          await signInWithRedirect(auth, provider);
+          return null;
+        }
+        throw popupError;
+      }
+
+      await upsertUserDocument(result.user);
+      await updateAuthSyncState(result.user.uid, true);
+      return result;
+    } catch (error: any) {
+      if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup was blocked by your browser. Please allow popups and try again.');
+      }
+      if (error.code === 'auth/cancelled-popup-request') {
+        throw new Error('Login was cancelled. Please try again.');
+      }
+      if (error.code === 'auth/network-request-failed') {
+        throw new Error('Network error. Please check your internet connection and try again.');
+      }
+      throw error;
+    }
   }
 
   async function loginWithGithub() {
-    const provider = new GithubAuthProvider();
-    provider.setCustomParameters({ allow_signup: 'true' });
-    await signInWithRedirect(auth, provider);
-    return null;
+    try {
+      const provider = new GithubAuthProvider();
+      provider.setCustomParameters({ allow_signup: 'true' });
+
+      let result;
+      try {
+        result = await signInWithPopup(auth, provider);
+      } catch (popupError: any) {
+        if (
+          popupError.code === 'auth/popup-blocked' ||
+          popupError.code === 'auth/cancelled-popup-request' ||
+          popupError?.message?.includes('popup')
+        ) {
+          await signInWithRedirect(auth, provider);
+          return null;
+        }
+        throw popupError;
+      }
+
+      await upsertUserDocument(result.user);
+      await updateAuthSyncState(result.user.uid, true);
+      return result;
+    } catch (error: any) {
+      if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup was blocked by your browser. Please allow popups and try again.');
+      }
+      if (error.code === 'auth/cancelled-popup-request') {
+        throw new Error('Login was cancelled. Please try again.');
+      }
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        throw new Error('An account already exists with this email using another login method.');
+      }
+      if (error.code === 'auth/network-request-failed') {
+        throw new Error('Network error. Please check your internet connection and try again.');
+      }
+      throw error;
+    }
   }
 
   async function logout() {
@@ -126,73 +211,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let unsubscribeSync: null | (() => void) = null;
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onIdTokenChanged(auth, async (user) => {
       if (unsubscribeSync) {
         unsubscribeSync();
         unsubscribeSync = null;
       }
 
+      if (!user) {
+        setCurrentUser(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        await user.getIdToken();
+      } catch (error) {
+        console.warn('Session token invalid or expired. Logging out.', error);
+        await signOut(auth);
+        setCurrentUser(null);
+        setLoading(false);
+        return;
+      }
+
       setCurrentUser(user);
       setLoading(false);
 
-      if (!user) return;
-
-      const lastSignInMs = user.metadata?.lastSignInTime
+      const userSignInAt = user.metadata?.lastSignInTime
         ? new Date(user.metadata.lastSignInTime).getTime()
         : Date.now();
 
-      unsubscribeSync = onSnapshot(
-        getAuthSyncRef(user.uid),
-        async (snapshot) => {
-          const data = snapshot.data();
-          if (!data || data.loggedIn !== false) return;
+      unsubscribeSync = onSnapshot(getAuthSyncRef(user.uid), async (snapshot) => {
+        const data = snapshot.data();
+        if (!data) return;
 
-          const updatedAtMs = data?.updatedAt?.toMillis?.() || 0;
-          if (updatedAtMs >= lastSignInMs - 5000 && auth.currentUser) {
-            await signOut(auth);
-          }
-        },
-        (error) => {
-          if (error?.code === 'permission-denied') {
-            console.warn('⚠️ Auth sync listener permission denied. Cross-site logout sync unavailable.');
-            return;
-          }
-          console.error('Auth sync listener error:', error);
+        const updatedAtMs = data?.updatedAt?.toMillis?.() || 0;
+        const isRemoteLogout = data.loggedIn === false && updatedAtMs >= userSignInAt - 5000;
+
+        if (isRemoteLogout && auth.currentUser) {
+          await signOut(auth);
         }
-      );
+      });
     });
 
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeSync) unsubscribeSync();
+    };
+  }, []);
+
+  useEffect(() => {
     const handleRedirectResult = async () => {
       try {
         const result = await getRedirectResult(auth);
-        if (!result) return;
+        if (!result?.user) return;
 
-        const providerId = result.providerId === 'github.com' ? 'github' : 'google';
-        await ensureUserDocument(result.user, providerId);
+        await upsertUserDocument(result.user);
         await updateAuthSyncState(result.user.uid, true);
       } catch (error) {
-        console.error('Error handling redirect result:', error);
+        console.error('Error handling auth redirect result:', error);
       }
     };
 
     handleRedirectResult();
-
-    return () => {
-      unsubscribe();
-      if (unsubscribeSync) unsubscribeSync();
-    };
   }, []);
 
   const value = useMemo(
     () => ({
       currentUser,
+      loading,
       signup,
       login,
       loginWithGoogle,
       loginWithGithub,
       logout,
     }),
-    [currentUser]
+    [currentUser, loading]
   );
 
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;

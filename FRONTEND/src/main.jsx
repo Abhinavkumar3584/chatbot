@@ -3,6 +3,14 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 
+// Disable debug console output in production
+if (import.meta.env.PROD) {
+  console.log = () => {}
+  console.debug = () => {}
+  console.info = () => {}
+  console.warn = () => {}
+}
+
 
 
 // Register service worker for offline support

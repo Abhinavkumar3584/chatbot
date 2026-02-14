@@ -230,9 +230,9 @@ export const ExportedMindMap = ({ predefinedMindMap, containerHeight = "100vh" }
 
       {/* Mind Map Canvas - Full Screen when data is available */}
       {(mindMapData || predefinedMindMap) && (
-        <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', background: 'white' }}>
+        <div className="w-full h-screen flex flex-col bg-white">
           {/* Mind Map Header - Fixed at top */}
-          <div style={{ flexShrink: 0, background: 'white', borderBottom: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', zIndex: 100 }}>
+          <div className="flex-shrink-0 bg-white border-b border-gray-200 shadow-sm z-[100]">
             <MindMapHeader
               data={mindMapData?.headerData || defaultHeaderData}
               onChange={() => {}} // Read-only in view mode
@@ -243,7 +243,7 @@ export const ExportedMindMap = ({ predefinedMindMap, containerHeight = "100vh" }
           </div>
 
           {/* Mind Map Canvas - Takes remaining height */}
-          <div style={{ flex: 1, position: 'relative', background: 'white' }}>
+          <div className="flex-1 relative bg-white overflow-hidden">
             <ReactFlow
               nodes={(mindMapData?.nodes || []).filter(n => n.id !== '__workspace_boundary__')}
               edges={(mindMapData?.edges || []).map(edge => {
@@ -267,32 +267,28 @@ export const ExportedMindMap = ({ predefinedMindMap, containerHeight = "100vh" }
               onNodeClick={handleNodeClick}
               defaultViewport={{ x: 50, y: 50, zoom: 0.95 }}
               fitView
-              fitViewOptions={{ padding: 0.15, minZoom: 0.85, maxZoom: 1.1 }}
-              minZoom={0.3}
-              maxZoom={2.5}
+              fitViewOptions={{ padding: 0.15, minZoom: 0.5, maxZoom: 1.1 }}
+              minZoom={0.2}
+              maxZoom={3}
               nodesDraggable={false}
               nodesConnectable={false}
               elementsSelectable={true}
               zoomOnScroll={true}
               zoomOnPinch={true}
-              zoomOnDoubleClick={false}
+              zoomOnDoubleClick={true}
               panOnDrag={true}
-              panOnScroll={true}
+              panOnScroll={false}
               defaultEdgeOptions={{
                 type: 'default',
                 style: { stroke: '#333', strokeWidth: 2 },
                 markerEnd: { type: MarkerType.ArrowClosed, color: '#333' }
               }}
-              className="mindmap-display"
+              className="mindmap-display touchscreen:select-none"
               data-viewmode="true"
               proOptions={{ hideAttribution: true }}
-              style={{ 
-                width: '100%', 
-                height: '100%',
-                background: 'white'
-              }}
             >
-              <Controls showInteractive={false} />
+              <Controls showInteractive={false} position="bottom-right" className="!bottom-4 !right-4" />
+              <Background />
             </ReactFlow>
           </div>
         </div>

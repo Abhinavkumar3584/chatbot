@@ -1,0 +1,222 @@
+import { useState, useEffect, useRef } from "react";
+import { Menu, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+
+const PRATIYOGITA_GYAN_URL =
+  import.meta.env.VITE_PRATIYOGITA_GYAN_URL || "https://gyan.psetu.com/";
+const PRATIYOGITA_YOGYA_URL =
+  import.meta.env.VITE_PRATIYOGITA_YOGYA_URL || "https://yogya.psetu.com/";
+
+const Navbar = () => {
+  const { currentUser, logout } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+      setIsOpen(false);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Add scroll event listener for blur effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  const getRedirectUrlWithLoginHint = (baseUrl: string) => {
+    try {
+      const url = new URL(baseUrl, window.location.origin);
+      if (currentUser) {
+        url.searchParams.set("loggedIn", "1");
+        url.searchParams.set("source", "pratiyogita_marg");
+      }
+      return url.toString();
+    } catch {
+      return baseUrl;
+    }
+  };
+
+  return (
+    <div className="fixed top-1 left-0 right-0 z-50">
+      <nav
+        className={`w-full px-2 sm:px-3 md:px-4 py-1.5 rounded-none md:rounded-lg shadow-lg transition-all duration-300 
+          ${
+            isScrolled ? "backdrop-blur-lg bg-white/15" : "bg-white"
+          } border border-gray-300`}
+      >
+        <div className="w-full flex items-center h-10 sm:h-12 relative">
+          {/* Logo and Brand */}
+          <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
+            <img
+              src="./logos/pm.svg"
+              alt="Pratiyogita Marg Logo"
+              className="h-12 w-12 sm:h-14 sm:w-14 object-contain"
+            />
+            <img
+              src="./logos/pm_name.svg"
+              alt="Pratiyogita Marg"
+              className="h-4 sm:h-5 object-contain"
+            />
+          </Link>
+
+          {/* Center - Desktop Menu */}
+          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center">
+            <div className="flex items-center space-x-6">
+            <a href="/" className="text-gray-700 hover:text-blue-500">
+              Home
+            </a>
+            <a
+              href={getRedirectUrlWithLoginHint(PRATIYOGITA_GYAN_URL)}
+              className="text-gray-700 hover:text-blue-500"
+            >
+              Pratiyogita Gyan
+            </a>
+            <a
+              href={getRedirectUrlWithLoginHint(PRATIYOGITA_YOGYA_URL)}
+              className="text-gray-700 hover:text-blue-500"
+            >
+              Pratiyogita Yogya
+            </a>
+            <a href="/about" className="text-gray-700 hover:text-blue-500">
+              About Us
+            </a>
+
+
+            </div>
+          </div>
+
+          {/* Right - Desktop Auth Actions */}
+          <div className="hidden md:flex items-center gap-3 ml-auto flex-shrink-0">
+            {!currentUser ? (
+              <>
+                <Link to="/login" className="text-gray-700 hover:text-blue-500">
+                  Log In
+                </Link>
+                <Link to="/signup" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                  Try for Free
+                </Link>
+              </>
+            ) : (
+              <>
+                <span className="text-sm text-gray-700">Hi, {currentUser.displayName || "User"}</span>
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-black disabled:opacity-60"
+                >
+                  {isLoggingOut ? "Logging out..." : "Logout"}
+                </button>
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto md:hidden">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="md:hidden text-gray-700 p-2 focus:outline-none"
+              aria-expanded={isOpen}
+              aria-label="Toggle menu"
+            >
+              {isOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu Drawer */}
+        {isOpen && (
+          <>
+            <div
+              onClick={() => {
+                setIsOpen(false);
+                setIsDropdownOpen(false);
+              }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
+            />
+
+            <div className="fixed top-[52px] sm:top-[60px] right-0 bottom-0 w-[82vw] max-w-[320px] bg-white border-l border-gray-200 shadow-2xl z-50 md:hidden p-3 overflow-y-auto flex flex-col">
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  setIsDropdownOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 mb-2"
+              >
+                ← Back
+              </button>
+
+              <div className="space-y-1">
+                <a href="/" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">Home</a>
+                <a href={getRedirectUrlWithLoginHint(PRATIYOGITA_GYAN_URL)} onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">Pratiyogita Gyan</a>
+                <a href={getRedirectUrlWithLoginHint(PRATIYOGITA_YOGYA_URL)} onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">Pratiyogita Yogya</a>
+                <a href="/about" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">About Us</a>
+              </div>
+
+              <div className="border-t border-gray-200 mt-auto pt-3">
+                {!currentUser ? (
+                  <>
+                    <Link to="/login" onClick={() => setIsOpen(false)} className="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md text-center">Log In</Link>
+                    <div className="pt-2">
+                      <Link to="/signup" onClick={() => setIsOpen(false)} className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center">Try for Free</Link>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="px-3 py-2 mb-2 text-center bg-gray-50 rounded-md">
+                      <p className="text-sm text-gray-500">Logged in as</p>
+                      <p className="font-medium text-gray-900">{currentUser.displayName || currentUser.email}</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="w-full bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-black transition-colors disabled:opacity-60"
+                    >
+                      {isLoggingOut ? "Logging out..." : "Logout"}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </nav>
+    </div>
+  );
+};
+
+export default Navbar;
