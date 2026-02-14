@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import AuthModal from '@/components/AuthModal';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Accordion,
   AccordionContent,
@@ -20,8 +23,11 @@ import {
   Facebook,
   Twitter,
   Instagram,
+  LogIn,
+  LogOut,
   Mail,
   Heart,
+  UserPlus,
 } from 'lucide-react';
 
 // Exam logos for scrolling marquee
@@ -140,6 +146,23 @@ const services = [
 ];
 
 const LandingPage = () => {
+  const { currentUser, logout } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+
+  const handleAuthClick = (mode: 'login' | 'signup') => {
+    setAuthMode(mode);
+    setShowAuthModal(true);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-base">
       {/* Header */}
@@ -154,7 +177,41 @@ const LandingPage = () => {
                 ParikshaMarg
               </span>
             </div>
-            <nav className="flex items-center gap-4">
+            <nav className="flex items-center gap-3">
+              {!currentUser ? (
+                <>
+                  <Button
+                    variant="outline"
+                    className="gap-2 text-base px-5 py-2"
+                    onClick={() => handleAuthClick('login')}
+                  >
+                    <LogIn className="h-5 w-5" />
+                    Login
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="gap-2 text-base px-5 py-2"
+                    onClick={() => handleAuthClick('signup')}
+                  >
+                    <UserPlus className="h-5 w-5" />
+                    Sign Up
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="hidden md:flex items-center px-3 py-2 rounded-lg border bg-white text-sm font-medium text-gray-700">
+                    {currentUser.displayName || currentUser.email}
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="gap-2 text-base px-5 py-2"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-5 w-5" />
+                    Logout
+                  </Button>
+                </>
+              )}
               <Link to="/editor">
                 <Button variant="outline" className="gap-2 text-base px-5 py-2">
                   <Map className="h-5 w-5" />
@@ -171,6 +228,12 @@ const LandingPage = () => {
           </div>
         </div>
       </header>
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        initialMode={authMode}
+      />
 
       {/* Hero Section */}
       <section className="py-20 px-4">

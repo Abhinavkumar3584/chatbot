@@ -2,7 +2,9 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, BookOpen, Map, ArrowLeft } from 'lucide-react';
+import AuthModal from '@/components/AuthModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { Search, BookOpen, Map, ArrowLeft, LogIn, LogOut, UserPlus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getAllMindMaps } from '@/utils/mindmapStorage';
 import { EXAM_CATEGORIES, ExamCategory } from '@/components/mindmap/types';
@@ -42,7 +44,23 @@ const ExamCatalog = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ExamCategory>(EXAM_CATEGORIES[0]);
   const [mindMaps, setMindMaps] = useState<MindMapItem[]>([]);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+
+  const handleAuthClick = (mode: 'login' | 'signup') => {
+    setAuthMode(mode);
+    setShowAuthModal(true);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   useEffect(() => {
     const loadMindMaps = () => {
@@ -129,15 +147,45 @@ const ExamCatalog = () => {
                 <span className="text-lg font-bold">ParikshaMarg</span>
               </div>
             </div>
-            <Link to="/editor">
-              <Button className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                <BookOpen className="h-4 w-4" />
-                Create New Map
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              {!currentUser ? (
+                <>
+                  <Button variant="outline" className="gap-2" onClick={() => handleAuthClick('login')}>
+                    <LogIn className="h-4 w-4" />
+                    Login
+                  </Button>
+                  <Button variant="outline" className="gap-2" onClick={() => handleAuthClick('signup')}>
+                    <UserPlus className="h-4 w-4" />
+                    Sign Up
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="hidden md:flex items-center px-3 py-2 rounded-lg border bg-white text-sm font-medium text-gray-700">
+                    {currentUser.displayName || currentUser.email}
+                  </div>
+                  <Button variant="outline" className="gap-2" onClick={handleLogout}>
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </Button>
+                </>
+              )}
+              <Link to="/editor">
+                <Button className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                  <BookOpen className="h-4 w-4" />
+                  Create New Map
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        initialMode={authMode}
+      />
 
       <div className="max-w-7xl mx-auto p-6">
         {/* Title */}
