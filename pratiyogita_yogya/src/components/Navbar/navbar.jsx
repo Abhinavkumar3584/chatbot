@@ -3,6 +3,11 @@ import { Menu, X, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
+const PRATIYOGITA_GYAN_URL =
+  import.meta.env.VITE_PRATIYOGITA_GYAN_URL || "https://gyan.psetu.com/";
+const PRATIYOGITA_MARG_URL =
+  import.meta.env.VITE_PRATIYOGITA_MARG_URL || "https://marg.psetu.com/";
+
 const Navbar = () => {
   const { currentUser, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -41,15 +46,28 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const getRedirectUrlWithLoginHint = (baseUrl) => {
+    try {
+      const url = new URL(baseUrl, window.location.origin);
+      if (currentUser) {
+        url.searchParams.set("loggedIn", "1");
+        url.searchParams.set("source", "pratiyogita_yogya");
+      }
+      return url.toString();
+    } catch {
+      return baseUrl;
+    }
+  };
+
   return (
-    <div className="fixed top-1 left-3 right-3 z-50">
+    <div className="fixed top-1 left-0 right-0 z-50">
       <nav
-        className={`max-w-8xl px-4 sm:px-2 md:px-4 py-1.5 rounded-lg shadow-lg transition-all duration-300 
+        className={`w-full px-2 sm:px-3 md:px-4 py-1.5 rounded-none md:rounded-lg shadow-lg transition-all duration-300 
           ${
             isScrolled ? "backdrop-blur-lg bg-white/15" : "bg-white"
           } border border-gray-300`}
       >
-        <div className="max-w-7xl mx-auto flex justify-between items-center h-10 sm:h-12">
+        <div className="w-full flex items-center h-10 sm:h-12 relative">
           {/* Logo and Brand */}
           <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
             <img
@@ -64,57 +82,34 @@ const Navbar = () => {
             />
           </Link>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-6 items-center">
+          {/* Center - Desktop Menu */}
+          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center">
+            <div className="flex items-center space-x-6">
             <a href="/" className="text-gray-700 hover:text-blue-500">
               Home
+            </a>
+            <a
+              href={getRedirectUrlWithLoginHint(PRATIYOGITA_GYAN_URL)}
+              className="text-gray-700 hover:text-blue-500"
+            >
+              Pratiyogita Gyan
+            </a>
+            <a
+              href={getRedirectUrlWithLoginHint(PRATIYOGITA_MARG_URL)}
+              className="text-gray-700 hover:text-blue-500"
+            >
+              Pratiyogita Marg
             </a>
             <a href="/about" className="text-gray-700 hover:text-blue-500">
               About Us
             </a>
-            <a href="/contact" className="text-gray-700 hover:text-blue-500">
-              Contact Us
-            </a>
 
-            {/* Features Dropdown with Animation */}
-            <div className="relative">
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center text-gray-700 hover:text-blue-500 focus:outline-none"
-              >
-                Gyan Setu
-              </button>
 
-              {/* Dropdown Items with Animation */}
-              <div
-                className={`absolute left-0 mt-2 w-48 bg-white shadow-lg rounded-lg z-50 transition-all duration-300 transform origin-top 
-                      ${
-                        isDropdownOpen
-                          ? "opacity-100 scale-y-100"
-                          : "opacity-0 scale-y-0 pointer-events-none"
-                      }`}
-              >
-                <a
-                  href="/"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Pratiyogita YOGYA
-                </a>
-                <a
-                  href="https://marg.psetu.com/"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Pratiyogita MARG
-                </a>
-                <a
-                  href="#"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Pratiyogita GYAN
-                </a>
-              </div>
             </div>
+          </div>
 
+          {/* Right - Desktop Auth Actions */}
+          <div className="hidden md:flex items-center gap-3 ml-auto flex-shrink-0">
             {!currentUser ? (
               <>
                 <Link to="/login" className="text-gray-700 hover:text-blue-500">
@@ -138,7 +133,7 @@ const Navbar = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto md:hidden">
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -173,10 +168,16 @@ const Navbar = () => {
               About Us
             </a>
             <a
-              href="/contact"
+              href={getRedirectUrlWithLoginHint(PRATIYOGITA_GYAN_URL)}
               className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
             >
-              Contact Us
+              Pratiyogita Gyan
+            </a>
+            <a
+              href={getRedirectUrlWithLoginHint(PRATIYOGITA_MARG_URL)}
+              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
+            >
+              Pratiyogita Marg
             </a>
 
             {/* Features Dropdown in Mobile with Improved Animation */}
@@ -206,13 +207,13 @@ const Navbar = () => {
                   Pratiyogita YOGYA
                 </a>
                 <a
-                  href="https://marg.psetu.com/"
+                  href={getRedirectUrlWithLoginHint(PRATIYOGITA_MARG_URL)}
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
                 >
                   Pratiyogita MARG
                 </a>
                 <a
-                  href="#"
+                  href={getRedirectUrlWithLoginHint(PRATIYOGITA_GYAN_URL)}
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
                 >
                   Pratiyogita GYAN
