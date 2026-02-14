@@ -32,6 +32,9 @@ const Sidebar = () => {
   const [isLoadingChats, setIsLoadingChats] = useState(false)
   const [chatError, setChatError] = useState('')
 
+  const pratiyogitaYogyaUrl = import.meta.env.VITE_PRATIYOGITA_YOGYA_URL
+  const pratiyogitaMargUrl = import.meta.env.VITE_PRATIYOGITA_MARG_URL
+
   // Load chat history
   const loadChatHistory = useCallback(async ({ silent = false } = {}) => {
     if (!currentUser) {
@@ -207,18 +210,22 @@ const Sidebar = () => {
     window.dispatchEvent(new CustomEvent('switchToPyqPractice'))
   }
 
-  const handleEligibilityClick = () => {
+  const openExternalApp = (url, featureName) => {
     if (isMobile) closeTransientOverlays()
-    // Show coming soon modal
-    setComingSoonFeature('Check Eligibility')
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer')
+      return
+    }
+    setComingSoonFeature(featureName)
     setShowComingSoonModal(true)
   }
 
+  const handleEligibilityClick = () => {
+    openExternalApp(pratiyogitaYogyaUrl, 'Pratiyogita Yogya')
+  }
+
   const handleSyllabusClick = () => {
-    if (isMobile) closeTransientOverlays()
-    // Show coming soon modal
-    setComingSoonFeature('Exam Syllabus')
-    setShowComingSoonModal(true)
+    openExternalApp(pratiyogitaMargUrl, 'Pratiyogita Marg')
   }
 
   const handleQuizClick = () => {
@@ -588,10 +595,10 @@ const Sidebar = () => {
                     AI for GD Topics
                   </Button> */}
                   <Button onClick={() => { handleEligibilityClick(); toggleSidebar(); }} variant="contained" startIcon={<CheckCircle className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
-                    Check Eligibility
+                    Pratiyogita Yogya
                   </Button>
                   <Button onClick={() => { handleSyllabusClick(); toggleSidebar(); }} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke="currentColor" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
-                    Exam Syllabus
+                    Pratiyogita Marg
                   </Button>
                   <Button onClick={() => { handleQuizClick(); toggleSidebar(); }} variant="contained" startIcon={<PenTool className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.75, fontSize: '0.75rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
                     Attempt Quiz
@@ -624,10 +631,10 @@ const Sidebar = () => {
                     AI for GD Topics
                   </Button> */}
                   <Button onClick={handleEligibilityClick} variant="contained" startIcon={<CheckCircle className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.6, minHeight: 30, fontSize: '0.72rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
-                    Check Eligibility
+                    Pratiyogita Yogya
                   </Button>
                   <Button onClick={handleSyllabusClick} variant="contained" startIcon={<Network width={16} height={16} strokeWidth={2} stroke="currentColor" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.6, minHeight: 30, fontSize: '0.72rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
-                    Exam Syllabus
+                    Pratiyogita Marg
                   </Button>
                   <Button onClick={handleQuizClick} variant="contained" startIcon={<PenTool className="w-4 h-4" />} sx={{ backgroundColor: 'primary.main', color: 'primary.contrastText', py: 0.6, minHeight: 30, fontSize: '0.72rem', '&:hover': { backgroundColor: 'primary.dark' } }}>
                     Attempt Quiz
@@ -718,7 +725,7 @@ const Sidebar = () => {
                 style={{ color: '#000000' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                title="Check Exams Eligibility and Attempts"
+                title="Pratiyogita Yogya"
               >
                 <CheckCircle className="w-4 h-4" />
               </button>
@@ -728,7 +735,7 @@ const Sidebar = () => {
                 style={{ color: '#000000' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(58, 124, 165, 0.12)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                title="Exam Syllabus"
+                title="Pratiyogita Marg"
               >
                 <Network width={16} height={16} strokeWidth={2} stroke="currentColor" />
               </button>

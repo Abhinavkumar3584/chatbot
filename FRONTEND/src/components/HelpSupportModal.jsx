@@ -43,15 +43,15 @@ const HelpSupportModal = ({ isOpen, onClose }) => {
               <div className="space-y-2 text-xs text-blue-700">
                 <div className="flex items-center space-x-2">
                   <MessageCircle className="w-3 h-3 flex-shrink-0" />
-                  <span>Type questions, select subject, get instant answers</span>
+                  <span>Type your question and choose a subject for better relevance</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Search className="w-3 h-3 flex-shrink-0" />
-                  <span>Choose from 5 subjects or "All Subjects"</span>
+                  <span>Use specific keywords (chapter, topic, class) for precise answers</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <FileText className="w-3 h-3 flex-shrink-0" />
-                  <span>Get related PYQs from competitive exams</span>
+                  <span>Use PYQ Practice for question-wise preparation and revision</span>
                 </div>
               </div>
             </div>
@@ -62,15 +62,15 @@ const HelpSupportModal = ({ isOpen, onClose }) => {
               <div className="space-y-2 text-xs text-green-700">
                 <div className="flex items-center space-x-2">
                   <Lightbulb className="w-3 h-3 flex-shrink-0" />
-                  <span>Use specific keywords for better results</span>
+                  <span>If answer feels off, re-ask with subject + class selected</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Book className="w-3 h-3 flex-shrink-0" />
-                  <span>Click source buttons for detailed references</span>
+                  <span>Sign in to keep chat history and dashboard progress synced</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Settings className="w-3 h-3 flex-shrink-0" />
-                  <span>Create account to save chat history</span>
+                  <span>If history duplicates, reload once and reopen the chat</span>
                 </div>
               </div>
             </div>
@@ -86,15 +86,15 @@ const HelpSupportModal = ({ isOpen, onClose }) => {
               </div>
               <div>
                 <p className="font-semibold text-gray-700">Q: Are answers accurate?</p>
-                <p className="text-gray-600">A: All content is from NCERT textbooks.</p>
+                <p className="text-gray-600">A: Answers are generated from indexed study content; verify important points with your syllabus/textbook.</p>
               </div>
               <div>
                 <p className="font-semibold text-gray-700">Q: Any question limits?</p>
-                <p className="text-gray-600">A: No limits! Ask as many as you need.</p>
+                <p className="text-gray-600">A: You can ask multiple questions, but response speed may vary with load.</p>
               </div>
               <div>
                 <p className="font-semibold text-gray-700">Q: How to get best results?</p>
-                <p className="text-gray-600">A: Be specific, select right subject.</p>
+                <p className="text-gray-600">A: Be specific, select the right subject/class, and ask one clear question at a time.</p>
               </div>
             </div>
           </div>
@@ -102,7 +102,7 @@ const HelpSupportModal = ({ isOpen, onClose }) => {
         
         <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-3 rounded-b-lg">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-600">Need help? support@pratiyogitagyan.com</span>
+            <span className="text-gray-600">Need help? support@pratiyogitagyan.com (include screenshot + query)</span>
             <button
               onClick={onClose}
               className="bg-blue-600 text-white py-1 px-3 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"

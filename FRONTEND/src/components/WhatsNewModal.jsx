@@ -6,66 +6,50 @@ const WhatsNewModal = ({ isOpen, onClose }) => {
 
   const updates = [
     {
-      date: "July 2025",
-      version: "v2.1",
+      date: "Feb 2026",
+      version: "Latest",
       features: [
         {
-          icon: <MessageCircle className="w-4 h-4 text-blue-600" />,
-          title: "Enhanced Chat Experience",
-          description: "Improved message display with better source references and expandable content sections."
+          icon: <Book className="w-4 h-4 text-blue-600" />,
+          title: "Pratiyogita Dashboard",
+          description: "Added a dedicated performance dashboard with subject-wise analysis, quiz trends, and activity-based insights."
         },
         {
           icon: <Search className="w-4 h-4 text-green-600" />,
-          title: "Smart Source Discovery",
-          description: "Click individual source buttons to view detailed references with relevance scores."
+          title: "External Product Navigation",
+          description: "Sidebar now supports direct access to Pratiyogita Yogya and Pratiyogita Marg through configurable links."
         }
       ]
     },
     {
-      date: "June 2025",
-      version: "v2.0",
+      date: "Jan 2026",
+      version: "Major Update",
       features: [
         {
           icon: <Shield className="w-4 h-4 text-purple-600" />,
-          title: "User Authentication",
-          description: "Sign up and login to save your chat history permanently across devices."
+          title: "Account & Profile Experience",
+          description: "Improved authentication flow with profile editing, better login gating, and cleaner account-driven navigation."
         },
         {
-          icon: <Book className="w-4 h-4 text-orange-600" />,
-          title: "Chat Management",
-          description: "Create, view, and delete chat conversations with automatic title generation."
+          icon: <MessageCircle className="w-4 h-4 text-orange-600" />,
+          title: "Enhanced Chat Workspace",
+          description: "Upgraded chat UX with improved history handling, smoother session switching, and better answer rendering."
         }
       ]
     },
     {
-      date: "May 2025",
-      version: "v1.5",
+      date: "Dec 2025",
+      version: "Platform Expansion",
       features: [
         {
           icon: <Zap className="w-4 h-4 text-yellow-600" />,
-          title: "Faster Response Times",
-          description: "Optimized backend for 50% faster question processing and answer delivery."
+          title: "PYQ Practice Improvements",
+          description: "Expanded PYQ workflows for practice-oriented preparation with better question handling and user controls."
         },
         {
           icon: <Star className="w-4 h-4 text-red-600" />,
-          title: "Subject-Specific Learning",
-          description: "Enhanced subject selection with Geography, History, Polity, Science, and Economics."
-        }
-      ]
-    },
-    {
-      date: "April 2025",
-      version: "v1.0",
-      features: [
-        {
-          icon: <Book className="w-4 h-4 text-indigo-600" />,
-          title: "NCERT Integration",
-          description: "Complete integration with NCERT textbooks for accurate, curriculum-based answers."
-        },
-        {
-          icon: <Search className="w-4 h-4 text-teal-600" />,
-          title: "PYQ Database",
-          description: "Extensive database of Previous Year Questions from UPSC, SSC, Banking, and more."
+          title: "Answer Mode Controls",
+          description: "Introduced multiple answer-length modes to support quick revision as well as detailed concept learning."
         }
       ]
     }
@@ -170,17 +154,16 @@ const WhatsNewModal = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Coming Soon Section */}
+          {/* Product direction section */}
           <div className="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border border-purple-200">
             <div className="flex items-center space-x-2 mb-2">
               <Star className="w-4 h-4 text-purple-600" />
-              <span className="font-semibold text-purple-800 text-sm">Coming Soon</span>
+              <span className="font-semibold text-purple-800 text-sm">Product Direction</span>
             </div>
             <div className="space-y-2 text-xs text-purple-700">
-              <p>🎯 Advanced question suggestions based on your study pattern</p>
-              <p>📊 Performance analytics and progress tracking</p>
-              <p>🔔 Daily study reminders and custom notifications</p>
-              <p>📱 Mobile app for iOS and Android</p>
+              <p>• Keep core preparation tools simple, fast, and reliable.</p>
+              <p>• Improve answer relevance and subject-level tracking accuracy.</p>
+              <p>• Strengthen integration across Pratiyogita Gyan, Yogya, and Marg.</p>
             </div>
           </div>
         </div>
