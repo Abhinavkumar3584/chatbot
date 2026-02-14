@@ -33,7 +33,7 @@ const StatsAnalytics = () => {
         {/* Stats grid for mobile, row for desktop */}
         <div className="grid grid-cols-3 sm:flex sm:flex-wrap justify-center items-stretch gap-4 md:gap-3 lg:gap-4">
           {/* Telegram Channel - now with QR code */}
-          <a 
+          {/* <a 
             href={telegramChannelLink}
             target="_blank"
             rel="noopener noreferrer"
@@ -49,7 +49,7 @@ const StatsAnalytics = () => {
               />
             </div>
             <div className="bg-blue-600 text-white px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-lg text-[8px] md:text-[10px] lg:text-xs ">Click to join</div>
-          </a>
+          </a> */}
 
           {/* Registered Users */}
           {/* <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 flex flex-col items-center p-2 md:p-3 lg:p-5 border border-indigo-200 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 min-w-[90px] md:min-w-[130px] lg:min-w-[160px] overflow-hidden relative">
