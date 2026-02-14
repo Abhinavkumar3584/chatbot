@@ -46,6 +46,17 @@ os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
 os.environ.setdefault("FASTEMBED_CACHE_PATH", "/tmp/fastembed_cache")
 
+# Debug mode control (set DEBUG_MODE=1 in .env to enable verbose logging)
+DEBUG_MODE = os.getenv('DEBUG_MODE', '0').lower() in {'1', 'true', 'yes'}
+
+# Cache configuration to prevent memory leaks
+MAX_CACHE_SIZE = int(os.getenv('MAX_CACHE_SIZE', '100'))  # Maximum number of cached items
+CACHE_CLEANUP_INTERVAL = int(os.getenv('CACHE_CLEANUP_INTERVAL', '300'))  # Clean expired entries every 5 minutes
+
+# Rate limiting configuration (adjust based on your Heroku plan)
+RATE_LIMIT_MAX_REQUESTS = int(os.getenv('RATE_LIMIT_MAX_REQUESTS', '20'))  # Max requests per window
+RATE_LIMIT_WINDOW_SECONDS = int(os.getenv('RATE_LIMIT_WINDOW_SECONDS', '60'))  # Time window in seconds
+
 # Optional dotenv - for local development only
 try:
     from dotenv import load_dotenv
@@ -55,9 +66,23 @@ except ImportError:
 
 app = Flask(__name__)
 
+# Request size limit to prevent memory issues (1MB)
+app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024
+
 # Production-ready CORS configuration
 # Get allowed origins from environment variable or use defaults
-ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost:3001,http://localhost:3002').split(',')
+ALLOWED_ORIGINS_RAW = os.getenv('ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost:3001,http://localhost:3002')
+ALLOWED_ORIGINS = ALLOWED_ORIGINS_RAW.split(',')
+
+# Validate ALLOWED_ORIGINS in production
+if os.getenv('FLASK_ENV') == 'production':
+    if not os.getenv('ALLOWED_ORIGINS'):
+        raise RuntimeError('ALLOWED_ORIGINS environment variable must be set in production')
+    # Validate all origins use HTTPS in production
+    for origin in ALLOWED_ORIGINS:
+        origin = origin.strip()
+        if origin and not origin.startswith('https://'):
+            raise RuntimeError(f'Production origin must use HTTPS: {origin}')
 
 # Add production frontend URL if in production
 if os.getenv('FLASK_ENV') == 'production':
@@ -99,9 +124,33 @@ _init_lock = threading.Lock()
 # Simple in-memory cache for expensive read-only operations
 _cache_store = {}
 _cache_lock = threading.Lock()
+_last_cleanup = time.time()
+
+def _cleanup_cache():
+    """Remove expired entries to prevent memory leaks."""
+    global _last_cleanup
+    now = time.time()
+    if now - _last_cleanup < CACHE_CLEANUP_INTERVAL:
+        return
+    
+    with _cache_lock:
+        expired_keys = [k for k, (_, exp) in _cache_store.items() if exp and now > exp]
+        for k in expired_keys:
+            _cache_store.pop(k, None)
+        _last_cleanup = now
+        
+        # Enforce max cache size using LRU (remove oldest if over limit)
+        if len(_cache_store) > MAX_CACHE_SIZE:
+            # Simple LRU: remove 20% of oldest entries
+            items_with_time = [(k, v[1] or 0) for k, v in _cache_store.items()]
+            items_with_time.sort(key=lambda x: x[1])
+            to_remove = items_with_time[:int(MAX_CACHE_SIZE * 0.2)]
+            for k, _ in to_remove:
+                _cache_store.pop(k, None)
 
 def _get_cached_value(key):
     now = time.time()
+    _cleanup_cache()  # Periodic cleanup
     with _cache_lock:
         entry = _cache_store.get(key)
         if not entry:
@@ -125,8 +174,17 @@ def _get_index_stats_cached(index, cache_key, ttl_seconds=60):
     _set_cached_value(cache_key, stats, ttl_seconds)
     return stats
 
-def rate_limit(max_requests=10, window_seconds=60):
-    """Simple rate limiting decorator"""
+def rate_limit(max_requests=None, window_seconds=None):
+    """Simple rate limiting decorator
+    
+    Args:
+        max_requests: Maximum requests allowed (defaults to RATE_LIMIT_MAX_REQUESTS env)
+        window_seconds: Time window in seconds (defaults to RATE_LIMIT_WINDOW_SECONDS env)
+    """
+    if max_requests is None:
+        max_requests = RATE_LIMIT_MAX_REQUESTS
+    if window_seconds is None:
+        window_seconds = RATE_LIMIT_WINDOW_SECONDS
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -158,10 +216,12 @@ def rate_limit(max_requests=10, window_seconds=60):
 
 @app.after_request
 def after_request(response):
-    """Add CORS headers to all responses"""
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    """Add security headers to all responses"""
+    # Note: CORS is handled by Flask-CORS, not here
+    # Adding wildcard here would override Flask-CORS security settings
+    response.headers.add('X-Content-Type-Options', 'nosniff')
+    response.headers.add('X-Frame-Options', 'DENY')
+    response.headers.add('X-XSS-Protection', '1; mode=block')
     return response
 
 @app.errorhandler(404)
@@ -200,19 +260,19 @@ def load_api_keys():
     if not openai_api_key:
         if is_production:
             app.logger.warning("⚠️ OPENAI_API_KEY not found. Primary LLM routing will be unavailable.")
-        else:
+        elif DEBUG_MODE:
             print("\n⚠️ OPENAI_API_KEY not found. Primary LLM routing will be unavailable.\n")
 
     if not groq_api_key:
         if is_production:
             app.logger.warning("⚠️ GROQ_API_KEY not found. Groq fallback will be unavailable.")
-        else:
+        elif DEBUG_MODE:
             print("\n⚠️ GROQ_API_KEY not found. Groq fallback will be unavailable.\n")
     
     if not pine_api_key:
         if is_production:
             app.logger.error("❌ CRITICAL: PINECONE_API_KEY not found in environment variables!")
-        else:
+        elif DEBUG_MODE:
             print("\n❌ CRITICAL: PINECONE_API_KEY not found in environment variables!")
             print("   Please create a .env file with your API keys or set them in your environment.")
             print("   Example: PINECONE_API_KEY=your_key_here\n")
@@ -238,7 +298,9 @@ if torch is not None:
 def create_sentence_transformer(model_name: str, device: str = "cpu"):
     """Create SentenceTransformer with backward-compatible kwargs."""
     if SentenceTransformer is None:
-        raise RuntimeError("sentence-transformers is not installed")
+        error_msg = "sentence-transformers is not installed. Install with: pip install sentence-transformers"
+        app.logger.error(error_msg)
+        raise RuntimeError(error_msg)
     kwargs: Dict[str, Any] = {"device": device}
     try:
         sig = inspect.signature(SentenceTransformer.__init__)
@@ -262,14 +324,17 @@ def create_embedding_model():
             if os.getenv('FLASK_ENV') == 'production':
                 app.logger.warning(f"⚠️  Local embedding model failed, trying fallbacks: {e}")
             else:
-                print(f"⚠️  Local embedding model failed, trying fallbacks: {e}")
+                if DEBUG_MODE:
+                    app.logger.warning(f"⚠️  Local embedding model failed, trying fallbacks: {e}")
 
     use_hf = os.getenv("USE_HF_EMBEDDINGS", "0").lower() in {"1", "true", "yes"}
     if use_hf:
         hf_token = os.getenv("HF_API_KEY")
         hf_model = os.getenv("HF_EMBEDDING_MODEL", local_model)
         if not hf_token:
-            raise RuntimeError("HF_API_KEY is required when USE_HF_EMBEDDINGS=1")
+            error_msg = "HF_API_KEY is required when USE_HF_EMBEDDINGS=1"
+            app.logger.error(error_msg)
+            raise RuntimeError(error_msg)
         return HFEmbeddingClient(hf_token, hf_model), "huggingface"
 
     use_fastembed = os.getenv("USE_FASTEMBED", "1").lower() in {"1", "true", "yes"}
@@ -284,7 +349,7 @@ def create_embedding_model():
             if os.getenv('FLASK_ENV') == 'production':
                 app.logger.warning(f"⚠️  Fastembed failed, falling back: {e}")
             else:
-                print(f"⚠️  Fastembed failed, falling back: {e}")
+                app.logger.warning(f"⚠️  Fastembed failed, falling back: {e}")
     return create_sentence_transformer("BAAI/bge-base-en-v1.5", device=embedding_device), "sentence-transformers"
 
 
@@ -316,7 +381,7 @@ def create_mcq_embedding_model():
             if os.getenv('FLASK_ENV') == 'production':
                 app.logger.warning(f"⚠️  Fastembed MCQ model failed, falling back: {e}")
             else:
-                print(f"⚠️  Fastembed MCQ model failed, falling back: {e}")
+                app.logger.warning(f"⚠️  Fastembed MCQ model failed, falling back: {e}")
 
     if provider == "local":
         try:
@@ -325,7 +390,7 @@ def create_mcq_embedding_model():
             if os.getenv('FLASK_ENV') == 'production':
                 app.logger.warning(f"⚠️  Local MCQ embedding model failed, trying fallbacks: {e}")
             else:
-                print(f"⚠️  Local MCQ embedding model failed, trying fallbacks: {e}")
+                app.logger.warning(f"⚠️  Local MCQ embedding model failed, trying fallbacks: {e}")
 
     return create_sentence_transformer("BAAI/bge-small-en-v1.5", device=embedding_device), "sentence-transformers-mcq"
 
@@ -977,6 +1042,7 @@ def generate_with_model_routing(query: str, context: str, answer_profile: dict, 
                 max_tokens=max_tokens,
                 temperature=llm_temperature,
                 top_p=llm_top_p,
+                timeout=int(os.getenv('OPENAI_TIMEOUT_SECONDS', '20')),
             )
             content = (response.choices[0].message.content or "").strip()
             if content:
@@ -1032,7 +1098,7 @@ def initialize_search_system():
                 
                 # Initialize Pinecone for MCQ - use same BGE-base model for consistency and quality
                 pc_mcq = Pinecone(api_key=pine_api_key)
-                mcq_index_name = 'pyq-bge-768'  # New 768-dim index with BGE-base embeddings
+                mcq_index_name = os.getenv('MCQ_INDEX_NAME', 'pyq-bge-768')
                 mcq_index = pc_mcq.Index(mcq_index_name)
                 # Use same model as RAG for unified architecture (BGE-base, 768-dim)
                 mcq_model = rag_model
@@ -1365,15 +1431,27 @@ def search():
     if not data:
         return jsonify({"error": "No JSON data provided"}), 400
     
-    query = data.get("query", "")
-    n_results = data.get("n_results", int(os.getenv("DEFAULT_N_RESULTS", "5")))
+    # Input validation
+    query = str(data.get("query", "")).strip()
+    if not query:
+        return jsonify({"error": "Query cannot be empty"}), 400
+    if len(query) > 1000:
+        return jsonify({"error": "Query too long (max 1000 characters)"}), 400
+    
+    try:
+        n_results = int(data.get("n_results", int(os.getenv("DEFAULT_N_RESULTS", "5"))))
+        if n_results < 1 or n_results > 20:
+            n_results = 5
+    except (ValueError, TypeError):
+        n_results = 5
     
     # Handle namespace - frontend sometimes sends dict instead of string
     namespace_raw = data.get("namespace", "")
     if isinstance(namespace_raw, dict):
         # Frontend sent dict, extract subject field or default to empty string
         namespace = ""
-        print(f"WARNING: Frontend sent dict for namespace: {namespace_raw}, using empty string")
+        if DEBUG_MODE:
+            print(f"WARNING: Frontend sent dict for namespace: {namespace_raw}, using empty string")
     else:
         namespace = namespace_raw if isinstance(namespace_raw, str) else ""
     
@@ -1388,16 +1466,6 @@ def search():
     llm_top_p = float(answer_settings.get("top_p", os.getenv("DEFAULT_ANSWER_TOP_P", "0.9")))
     # Enforce profile-specific token limits regardless of client overrides
     llm_max_tokens = answer_profile["max_tokens"]
-    
-    # Input validation
-    if not query.strip():
-        return jsonify({"error": "Query cannot be empty"}), 400
-    
-    if len(query) > 1000:
-        return jsonify({"error": "Query too long (max 1000 characters)"}), 400
-    
-    if not query:
-        return jsonify({"error": "Query cannot be empty"}), 400
     
     try:
         # Check for greetings or casual chat first
@@ -1429,7 +1497,8 @@ def search():
 
         # RAG search for contextual answer (only if Pinecone is available)
         if pinecone_available:
-            print(f"DEBUG: Searching with namespace='{namespace}', class_filter='{resolved_class_filter}', n_chunks={n_results}")
+            if DEBUG_MODE:
+                print(f"DEBUG: Searching with namespace='{namespace}', class_filter='{resolved_class_filter}', n_chunks={n_results}")
             context, sources = search_rag_with_class_filter(
                 pinecone_index=search_components['rag_index'],
                 query_embedding=rag_query_embedding,
@@ -1445,16 +1514,18 @@ def search():
             return jsonify({"error": "Request timeout"}), 408
         
         # Debug logging for context quality
-        print(f"DEBUG: Retrieved {len(sources)} sources for query: '{query[:50]}...'")
-        print(f"DEBUG: Context length: {len(context)} characters")
-        if sources:
-            print(f"DEBUG: Best match score: {sources[0]['score']}")
-            print(f"DEBUG: First source metadata: {sources[0].get('subject', 'N/A')}, {sources[0].get('class', 'N/A')}, {sources[0].get('chapter_name', 'N/A')}")
+        if DEBUG_MODE:
+            print(f"DEBUG: Retrieved {len(sources)} sources for query: '{query[:50]}...'")
+            print(f"DEBUG: Context length: {len(context)} characters")
+            if sources:
+                print(f"DEBUG: Best match score: {sources[0]['score']}")
+                print(f"DEBUG: First source metadata: {sources[0].get('subject', 'N/A')}, {sources[0].get('class', 'N/A')}, {sources[0].get('chapter_name', 'N/A')}")
         
         # Enhance context if it's too short or has low relevance scores
         if len(context.strip()) < 100 or (sources and sources[0]['score'] < 0.3):
             # Try searching with relaxed parameters
-            print("DEBUG: Context appears limited, trying broader search...")
+            if DEBUG_MODE:
+                print("DEBUG: Context appears limited, trying broader search...")
             try:
                 broader_context, broader_sources = search_rag_with_class_filter(
                     pinecone_index=search_components['rag_index'],
@@ -1466,9 +1537,12 @@ def search():
                 if len(broader_context) > len(context):
                     context = broader_context
                     sources = broader_sources
-                    print(f"DEBUG: Using broader context with {len(broader_sources)} sources")
+                    if DEBUG_MODE:
+                        print(f"DEBUG: Using broader context with {len(broader_sources)} sources")
             except Exception as e:
-                print(f"DEBUG: Broader search failed: {e}")
+                if DEBUG_MODE:
+                    print(f"DEBUG: Broader search failed: {e}")
+                app.logger.warning(f"Broader search failed: {e}")
         
         compact_context = trim_context_from_sources(sources, max_chars=answer_profile['context_chars'])
         
@@ -1517,7 +1591,8 @@ def search():
             # If we have good metadata, enhance the query
             if enhanced_terms:
                 mcq_query = f"{query} {' '.join(enhanced_terms[:2])}"  # Combine original + top 2 metadata terms
-                print(f"DEBUG MCQ: Enhanced query from '{query}' to '{mcq_query}' based on source metadata")
+                if DEBUG_MODE:
+                    print(f"DEBUG MCQ: Enhanced query from '{query}' to '{mcq_query}' based on source metadata")
             
         if pinecone_available and 'mcq_index' in search_components and 'mcq_model' in search_components:
             mcq_results = query_mcq(
@@ -1559,7 +1634,7 @@ def search():
         return jsonify(response_payload), 200
         
     except Exception as e:
-        print(f"Error in search: {str(e)}")
+        app.logger.error(f"Error in search endpoint: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -1593,7 +1668,7 @@ def get_total_questions():
         }), 200
         
     except Exception as e:
-        print(f"Error getting total questions: {str(e)}")
+        app.logger.error(f"Error getting total questions: {str(e)}")
         return jsonify({
             "error": f"Failed to get total questions: {str(e)}",
             "total_questions": 0
@@ -1671,7 +1746,7 @@ def get_stats():
         }), 200
         
     except Exception as e:
-        print(f"Error getting stats: {str(e)}")
+        app.logger.error(f"Error getting stats: {str(e)}")
         return jsonify({
             "error": f"Failed to get stats: {str(e)}",
             "total_questions": 0,
@@ -1729,7 +1804,7 @@ def get_questions():
                             import json
                             full_question_data = json.loads(metadata['full_json_str'])
                         except (json.JSONDecodeError, Exception) as e:
-                            print(f"⚠️ Error parsing full_json_str: {e}")
+                            app.logger.warning(f"⚠️ Error parsing full_json_str: {e}")
                             full_question_data = {}
                     
                     # Extract required fields - prioritize full_json_str, fallback to metadata
@@ -1809,7 +1884,7 @@ def get_questions():
                         break
                         
             except Exception as e:
-                print(f"⚠️ Error querying namespace {namespace}: {str(e)}")
+                app.logger.warning(f"⚠️ Error querying namespace {namespace}: {str(e)}")
                 continue
         
         # Limit to requested number
@@ -1826,7 +1901,7 @@ def get_questions():
         }), 200
         
     except Exception as e:
-        print(f"Error getting questions: {str(e)}")
+        app.logger.error(f"Error getting questions: {str(e)}")
         return jsonify({
             "error": f"Failed to get questions: {str(e)}",
             "questions": [],
@@ -1891,7 +1966,7 @@ def get_filter_options():
                         unique_subjects.add(subject.strip())
                         
             except Exception as e:
-                print(f"⚠️ Error querying namespace {namespace} for filters: {str(e)}")
+                app.logger.warning(f"⚠️ Error querying namespace {namespace} for filters: {str(e)}")
                 continue
         
         # Convert to sorted lists for consistent ordering
@@ -1907,7 +1982,7 @@ def get_filter_options():
         }), 200
         
     except Exception as e:
-        print(f"Error getting filter options: {str(e)}")
+        app.logger.error(f"Error getting filter options: {str(e)}")
         return jsonify({
             "error": f"Failed to get filter options: {str(e)}",
             "exams": [],
@@ -2021,7 +2096,7 @@ def get_books():
         }), 200
         
     except Exception as e:
-        print(f"Error getting books: {str(e)}")
+        app.logger.error(f"Error getting books: {str(e)}")
         return jsonify({
             "error": f"Failed to get books: {str(e)}",
             "books": [],
@@ -2136,7 +2211,7 @@ def get_inserted_pyqs():
                             total_questions += sub_exam_questions
                         
                 except Exception as e:
-                    print(f"⚠️ Error extracting details from namespace {namespace}: {str(e)}")
+                    app.logger.warning(f"⚠️ Error extracting details from namespace {namespace}: {str(e)}")
                     # Fallback to basic info
                     pyq_data = {
                         "title": f"{namespace}",
@@ -2162,7 +2237,7 @@ def get_inserted_pyqs():
         }), 200
         
     except Exception as e:
-        print(f"Error getting inserted PYQs: {str(e)}")
+        app.logger.error(f"Error getting inserted PYQs: {str(e)}")
         return jsonify({
             "error": f"Failed to get inserted PYQs: {str(e)}",
             "inserted_pyqs": [],
@@ -2196,7 +2271,7 @@ def search_all_namespaces(pinecone_index, model, query: str, n_chunks: int = 2, 
                         match['namespace'] = namespace
                     all_results.extend(results['matches'])
             except Exception as e:
-                print(f"⚠️ Error searching namespace: {str(e)}")
+                app.logger.warning(f"⚠️ Error searching namespace: {str(e)}")
 
     # Sort by relevance score and take top results
     all_results.sort(key=lambda x: x['score'], reverse=True)
@@ -2281,7 +2356,7 @@ def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=
                         match['namespace'] = namespace
                         all_results.append(match)
                 except Exception as e:
-                    print(f"⚠️ Error searching namespace: {str(e)}")
+                    app.logger.warning(f"⚠️ Error searching namespace: {str(e)}")
                     continue
         
         # Sort all results by score
@@ -2306,7 +2381,7 @@ def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=
                     import json
                     full_question_data = json.loads(metadata['full_json_str'])
                 except (json.JSONDecodeError, Exception) as e:
-                    print(f"⚠️ Error parsing full_json_str: {e}")
+                    app.logger.warning(f"⚠️ Error parsing full_json_str: {e}")
                     # Fallback to individual metadata fields
                     full_question_data = {}
             
@@ -2386,7 +2461,7 @@ def query_mcq(mcq_index, mcq_model, query_text, similarity_threshold=0.2, top_k=
         
         return formatted_mcqs
     except Exception as e:
-        print(f"Error querying MCQs: {str(e)}")
+        app.logger.error(f"Error querying MCQs: {str(e)}")
         return []
 
 # Dashboard tracking storage (in production, use a proper database)
@@ -2433,7 +2508,7 @@ def get_dashboard_stats():
             'timestamp': time.time()
         }), 200
     except Exception as e:
-        print(f"Error getting dashboard stats: {str(e)}")
+        app.logger.error(f"Error getting dashboard stats: {str(e)}")
         return jsonify({
             'error': f'Failed to get dashboard stats: {str(e)}',
             'totalChats': 0,
@@ -2463,7 +2538,7 @@ def get_subject_stats():
             'timestamp': time.time()
         }), 200
     except Exception as e:
-        print(f"Error getting subject stats: {str(e)}")
+        app.logger.error(f"Error getting subject stats: {str(e)}")
         return jsonify({
             'subjects': [],
             'error': str(e)
@@ -2478,7 +2553,7 @@ def get_achievements():
             'timestamp': time.time()
         }), 200
     except Exception as e:
-        print(f"Error getting achievements: {str(e)}")
+        app.logger.error(f"Error getting achievements: {str(e)}")
         return jsonify({
             'achievements': [],
             'error': str(e)
@@ -2507,7 +2582,7 @@ def get_learning_goals():
             'timestamp': time.time()
         }), 200
     except Exception as e:
-        print(f"Error getting learning goals: {str(e)}")
+        app.logger.error(f"Error getting learning goals: {str(e)}")
         return jsonify({
             'goals': [],
             'error': str(e)
@@ -2524,7 +2599,7 @@ def get_recent_activity():
             'timestamp': time.time()
         }), 200
     except Exception as e:
-        print(f"Error getting recent activity: {str(e)}")
+        app.logger.error(f"Error getting recent activity: {str(e)}")
         return jsonify({
             'activities': [],
             'error': str(e)
@@ -2594,7 +2669,7 @@ def track_user_interaction():
         }), 200
         
     except Exception as e:
-        print(f"Error tracking interaction: {str(e)}")
+        app.logger.error(f"Error tracking interaction: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)
@@ -2619,7 +2694,7 @@ def update_user_stats():
         }), 200
         
     except Exception as e:
-        print(f"Error updating stats: {str(e)}")
+        app.logger.error(f"Error updating stats: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)
@@ -2680,7 +2755,7 @@ def check_achievements():
             user_stats['achievements'] = user_stats['achievements'][-20:]
             
     except Exception as e:
-        print(f"Error checking achievements: {str(e)}")
+        app.logger.error(f"Error checking achievements: {str(e)}")
 
 # ============================================
 # PYQ Practice API Endpoints
@@ -2817,7 +2892,7 @@ def search_pyq_questions():
                     all_questions.append(question_obj)
                     
             except Exception as e:
-                print(f"Error querying namespace {namespace}: {str(e)}")
+                app.logger.warning(f"Error querying namespace {namespace}: {str(e)}")
                 continue
         
         # Sort by score and limit
@@ -2831,7 +2906,7 @@ def search_pyq_questions():
         }), 200
         
     except Exception as e:
-        print(f"Error searching PYQ questions: {str(e)}")
+        app.logger.error(f"Error searching PYQ questions: {str(e)}")
         return jsonify({
             'error': str(e),
             'questions': [],
@@ -2904,7 +2979,7 @@ def get_pyq_filters():
                         subjects_set.add(subject)
                         
             except Exception as e:
-                print(f"Error sampling namespace {namespace}: {str(e)}")
+                app.logger.error(f"Error sampling namespace {namespace}: {str(e)}")
                 continue
         
         return jsonify({
@@ -2915,7 +2990,7 @@ def get_pyq_filters():
         }), 200
         
     except Exception as e:
-        print(f"Error getting PYQ filters: {str(e)}")
+        app.logger.error(f"Error getting PYQ filters: {str(e)}")
         return jsonify({
             'error': str(e),
             'exams': [],
@@ -2970,7 +3045,7 @@ def get_random_pyq_questions():
             return response, status
             
     except Exception as e:
-        print(f"Error getting random PYQ questions: {str(e)}")
+        app.logger.error(f"Error getting random PYQ questions: {str(e)}")
         return jsonify({
             'error': str(e),
             'questions': []
