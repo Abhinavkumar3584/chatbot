@@ -622,51 +622,65 @@ CLASS_OPTIONS = [
 ANSWER_LENGTH_PROFILES = {
     "very_short": {
         "label": "Very Short",
-        "max_tokens": 120,
-        "context_chars": 2200,
-        "min_words": 12,
-        "max_words": 40,
+        "max_tokens": 250,
+        "context_chars": 3800,
+        "min_words": 50,
+        "max_words": 95,
         "instruction": (
-            "Output 2-3 bullets only. Max 35 words total. "
-            "No intro, no conclusion, no extra explanation."
+            "Provide a concise, focused answer in 3-5 clear bullet points. "
+            "Each bullet should be one complete sentence. "
+            "60-90 words total. Be direct and factual. "
+            "No introductory phrases, no filler words."
         ),
-        "format_hint": "2-3 bullets, 1 line each"
+        "format_hint": "3-5 bullets, direct facts"
     },
     "short": {
         "label": "Short",
-        "max_tokens": 220,
-        "context_chars": 3600,
-        "min_words": 45,
-        "max_words": 90,
+        "max_tokens": 450,
+        "context_chars": 6500,
+        "min_words": 110,
+        "max_words": 170,
         "instruction": (
-            "Output 3-5 bullets with brief context. 60-90 words. "
-            "Stay concise."
+            "Start with 1-2 sentence overview, then provide 4-6 detailed bullet points. "
+            "Each bullet should explain a key aspect clearly. "
+            "120-160 words total. Include relevant context but stay focused. "
+            "Use clear, specific language."
         ),
-        "format_hint": "3-5 bullets"
+        "format_hint": "Brief intro + 4-6 bullets"
     },
     "normal": {
         "label": "Normal",
-        "max_tokens": 420,
-        "context_chars": 6400,
-        "min_words": 120,
-        "max_words": 180,
+        "max_tokens": 750,
+        "context_chars": 9500,
+        "min_words": 220,
+        "max_words": 310,
         "instruction": (
-            "Balanced explanation. Start with 1 short paragraph, then 3-5 bullets. "
-            "120-180 words total."
+            "Provide a well-structured explanation: "
+            "1) Start with a clear 2-3 sentence introduction defining the topic. "
+            "2) Present 5-7 detailed bullet points covering main aspects. "
+            "3) Include a brief concluding sentence if needed. "
+            "240-300 words total. Balance depth with clarity. "
+            "Use examples where helpful."
         ),
-        "format_hint": "1 paragraph + bullets"
+        "format_hint": "Intro paragraph + detailed bullets + optional conclusion"
     },
     "explanatory": {
-        "label": "Explanatory",
-        "max_tokens": 900,
-        "context_chars": 9800,
-        "min_words": 220,
-        "max_words": 360,
+        "label": "Explanatory (Comprehensive)",
+        "max_tokens": 1600,
+        "context_chars": 14000,
+        "min_words": 480,
+        "max_words": 720,
         "instruction": (
-            "Detailed explanation with sections: Explanation, Steps, Example (if possible). "
-            "250-350 words total."
+            "Provide a comprehensive, thorough explanation in 500-700 words. "
+            "Start with a clear 3-4 sentence introduction defining the topic and its importance. "
+            "Then explain all major aspects in 10-15 detailed bullet points, covering mechanisms, components, history, or processes as relevant. "
+            "Naturally weave in concrete examples, real-world applications, or case studies where they help understanding. "
+            "Include specific details like dates, names, locations, or statistics when available from context. "
+            "Use analogies or comparisons when they make complex ideas clearer. "
+            "Conclude with 2-3 sentences summarizing the key takeaways or significance. "
+            "Make the explanation educational, engaging, and easy to understand."
         ),
-        "format_hint": "Sectioned explanation"
+        "format_hint": "Comprehensive explanation with intro, detailed points, examples woven naturally, and conclusion"
     },
 }
 
@@ -921,8 +935,16 @@ def is_greeting_or_casual(query: str) -> tuple[bool, str]:
             "Try asking me: *\"Explain democracy\"* or *\"PYQ on Indian Constitution\"*"
         )
     
-    # 4. Check thank you messages
-    if any(pattern in query_lower for pattern in thank_patterns):
+    # 4. Check thank you messages (strict phrase/word match to avoid false positives like "polity" -> "ty")
+    def _matches_phrase_or_word(pattern: str) -> bool:
+        p = pattern.strip().lower()
+        if not p:
+            return False
+        if " " in p:
+            return p in query_lower
+        return re.search(rf"\b{re.escape(p)}\b", query_lower) is not None
+
+    if any(_matches_phrase_or_word(pattern) for pattern in thank_patterns):
         return True, (
             "You're welcome! 😊\n\n"
             "Happy to help! Feel free to ask me more questions anytime.\n"
@@ -1635,7 +1657,17 @@ def search():
         
     except Exception as e:
         app.logger.error(f"Error in search endpoint: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        # Return user-friendly error message
+        return jsonify({
+            "error": "Sorry, I couldn't process your request. Could you please rephrase your question?",
+            "suggestions": [
+                "Tell me about the Ganga river",
+                "Explain photosynthesis",
+                "What is democracy?",
+                "Describe the water cycle"
+            ],
+            "technical_error": str(e) if DEBUG_MODE else None
+        }), 500
 
 
 @app.route('/api/class-options', methods=['GET'])

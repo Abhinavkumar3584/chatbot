@@ -68,7 +68,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 bg-white text-gray-900 placeholder-gray-400 caret-gray-900 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Your display name"
             />
           </div>
@@ -79,7 +79,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
               type="text"
               value={photoURL}
               onChange={(e) => setPhotoURL(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 bg-white text-gray-900 placeholder-gray-400 caret-gray-900 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="https://example.com/avatar.jpg"
             />
           </div>

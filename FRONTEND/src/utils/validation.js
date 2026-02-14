@@ -47,9 +47,9 @@ export const validateDisplayName = (name) => {
 
 // Validate search query
 export const validateSearchQuery = (query) => {
-  if (!query) return { isValid: false, message: 'Search query is required' };
-  if (query.length < 3) return { isValid: false, message: 'Search query must be at least 3 characters' };
-  if (query.length > 1000) return { isValid: false, message: 'Search query is too long' };
+  if (!query) return { isValid: false, message: 'Please ask a question', suggestions: ['Tell me about Ganga river', 'What is photosynthesis?', 'Explain Newton\'s laws'] };
+  if (query.length < 2) return { isValid: false, message: 'Please ask a complete question', suggestions: ['Tell me about Ganga river', 'Explain democracy', 'What is mitosis?'] };
+  if (query.length > 1000) return { isValid: false, message: 'Question is too long (max 1000 characters)' };
   
   return { isValid: true, message: '' };
 };

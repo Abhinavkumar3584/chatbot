@@ -17,6 +17,7 @@ import {
   TrendingDown,
   Flame,
   AlertCircle,
+  User,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -53,6 +54,32 @@ const Dashboard = () => {
     weakAreas: false,
     progressTrends: false,
   });
+
+  // Refresh dashboard data on mount
+  useEffect(() => {
+    refreshDashboardData();
+  }, []);
+
+  // Listen for dashboard refresh events (e.g., when chat history is cleared)
+  useEffect(() => {
+    const handleRefreshEvent = () => {
+      console.log('Dashboard refresh event received');
+      refreshDashboardData();
+    };
+
+    const handleChatDeleted = () => {
+      console.log('Chat deleted - refreshing dashboard');
+      refreshDashboardData();
+    };
+
+    window.addEventListener('refreshDashboard', handleRefreshEvent);
+    window.addEventListener('chatDeleted', handleChatDeleted);
+    
+    return () => {
+      window.removeEventListener('refreshDashboard', handleRefreshEvent);
+      window.removeEventListener('chatDeleted', handleChatDeleted);
+    };
+  }, [refreshDashboardData]);
 
   // Fetch quiz statistics
   useEffect(() => {
@@ -148,53 +175,15 @@ const Dashboard = () => {
       </div>
     );
   }
-  // Default subject-wise data if not available from backend
-  const defaultSubjectData = [
-    { name: "Geography", questions: 0, color: "#06B6D4" },
-    { name: "Polity", questions: 0, color: "#8B5CF6" },
-    { name: "History", questions: 0, color: "#10B981" },
-    { name: "Economics", questions: 0, color: "#F59E0B" },
-    { name: "Science", questions: 0, color: "#EF4444" },
-    { name: "Others", questions: 0, color: "#6B7280" },
-  ];
 
-  // Use backend data or fallback to defaults
-  const subjectWiseQuestions =
-    subjectStats.length > 0 ? subjectStats : defaultSubjectData;
+  // Use only actual backend data - no defaults
+  const subjectWiseQuestions = subjectStats || [];
 
-  const defaultAchievements = [
-    {
-      id: 1,
-      title: "Getting Started!",
-      description: "Welcome to your learning journey",
-      icon: "👋",
-      date: "Today",
-    },
-    {
-      id: 2,
-      title: "Explorer",
-      description: "Ready to explore knowledge",
-      icon: "�",
-      date: "Today",
-    },
-  ];
+  // Use only actual achievements - no defaults
+  const displayAchievements = achievements || [];
 
-  const displayAchievements =
-    achievements.length > 0 ? achievements : defaultAchievements;
-
-  const defaultGoals = [
-    { id: 1, title: "Daily Questions", current: 0, target: 10, type: "daily" },
-    { id: 2, title: "Weekly Sessions", current: 0, target: 7, type: "weekly" },
-    {
-      id: 3,
-      title: "Subject Coverage",
-      current: 0,
-      target: 5,
-      type: "subjects",
-    },
-  ];
-
-  const displayGoals = learningGoals.length > 0 ? learningGoals : defaultGoals
+  // Use only actual goals - no defaults
+  const displayGoals = learningGoals || []
 
   // Toggle section expansion
   const toggleSection = (section) => {
@@ -772,6 +761,35 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Login Modal Overlay */}
+      {!currentUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 text-center animate-fadeIn">
+            <div className="mb-6">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <User className="w-10 h-10 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Login Required</h2>
+              <p className="text-gray-600">
+                Please log in to track and view your performance metrics
+              </p>
+            </div>
+            <div className="space-y-3">
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('openAuthModal', { detail: { mode: 'login' } }))}
+                className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Go to Login
+              </button>
+              <p className="text-sm text-gray-500">
+                Track your quiz scores, study streaks, and subject progress
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

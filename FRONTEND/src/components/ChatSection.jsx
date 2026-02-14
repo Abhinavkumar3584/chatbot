@@ -139,12 +139,13 @@ const createMarkdownComponents = (isUserMessage) => ({
       component="ul"
       sx={{
         listStyleType: 'disc',
-        listStylePosition: 'outside',
-        pl: 2.5,
+        listStylePosition: 'inside',
+        pl: 0,
+        ml: 1.5,
         mb: isUserMessage ? 0.35 : 0.16,
         mt: 0.12,
-        '& ul': { listStyleType: 'circle', mt: 0.25 },
-        '& ol': { listStyleType: 'decimal', mt: 0.25 }
+        '& ul': { listStyleType: 'circle', mt: 0.25, ml: 2 },
+        '& ol': { listStyleType: 'decimal', mt: 0.25, ml: 2 }
       }}
       {...props}
     />
@@ -154,12 +155,13 @@ const createMarkdownComponents = (isUserMessage) => ({
       component="ol"
       sx={{
         listStyleType: 'decimal',
-        listStylePosition: 'outside',
-        pl: 2.5,
+        listStylePosition: 'inside',
+        pl: 0,
+        ml: 1.5,
         mb: isUserMessage ? 0.35 : 0.16,
         mt: 0.12,
-        '& ul': { listStyleType: 'disc', mt: 0.25 },
-        '& ol': { listStyleType: 'lower-alpha', mt: 0.25 }
+        '& ul': { listStyleType: 'disc', mt: 0.25, ml: 2 },
+        '& ol': { listStyleType: 'lower-alpha', mt: 0.25, ml: 2 }
       }}
       {...props}
     />
@@ -797,11 +799,19 @@ const ChatSection = () => {
     // Validate query before processing
     const validation = validateSearchQuery(query)
     if (!validation.isValid) {
-      // Show error message to user
+      // Show error message with suggestions to user
+      let errorContent = `⚠️ ${validation.message}`
+      if (validation.suggestions && validation.suggestions.length > 0) {
+        errorContent += '\n\n**Try asking:**\n'
+        validation.suggestions.forEach(suggestion => {
+          errorContent += `• ${suggestion}\n`
+        })
+      }
+      
       const errorMessage = {
         id: Date.now(),
         type: 'bot',
-        content: `⚠️ ${validation.message}`,
+        content: errorContent,
         error: true,
         isLoading: false,
         timestamp: new Date()
@@ -832,9 +842,10 @@ const ChatSection = () => {
     // Create chat lazily only when first message is sent
     if (currentUser && !activeChatId) {
       try {
-        activeChatId = await createNewChat('New Chat')
+        const initialTitle = buildConciseTitle(query)
+        activeChatId = await createNewChat(initialTitle)
         setCurrentChatId(activeChatId)
-        setCurrentChatTitle('New Chat')
+        setCurrentChatTitle(initialTitle)
         window.dispatchEvent(new CustomEvent('refreshChatList'))
       } catch (error) {
         console.error('❌ Failed to create chat on first message:', error)
@@ -861,14 +872,12 @@ const ChatSection = () => {
       }
     }
 
-    // Update search history asynchronously to avoid state update during render
-    setTimeout(() => {
-      try {
-        addToSearchHistory(query)
-      } catch (error) {
-        console.error('❌ Failed to update search history:', error)
-      }
-    }, 0)
+    // Update search history after user message is added
+    try {
+      addToSearchHistory(query)
+    } catch (error) {
+      console.error('❌ Failed to update search history:', error)
+    }
 
     // Create initial bot message with loading state
     const tempBotMessage = {
@@ -931,43 +940,47 @@ const ChatSection = () => {
         isLoading: false,
         timestamp: new Date()
       }
-      
+
+      let updatedMessages = []
       setMessages(prev => {
-        const newMessages = prev.map(msg => 
+        updatedMessages = prev.map(msg =>
           msg.id === tempBotMessage.id ? botMessage : msg
         )
-        if (currentUser && activeChatId) {
-          setTimeout(async () => {
-            try {
-              await saveMessage(activeChatId, botMessage)
-              await updateChatMessageCount(activeChatId, 1)
+        return updatedMessages
+      })
 
-              if (isPlaceholderTitle(currentChatTitle)) {
-                const baseTitle = buildConciseTitle(botMessage.content)
-                let uniqueTitle = baseTitle
-                try {
-                  const existingChats = await getChatHistory()
-                  const existingTitles = (existingChats || [])
-                    .filter(chat => chat.id !== activeChatId)
-                    .map(chat => chat.title || '')
-                  uniqueTitle = ensureUniqueTitle(baseTitle, existingTitles)
-                } catch (error) {
-                  console.error('❌ Failed to load chat titles for uniqueness:', error)
-                }
-                await updateChatTitle(activeChatId, uniqueTitle)
-                setCurrentChatTitle(uniqueTitle)
+      if (currentUser && activeChatId) {
+        setTimeout(async () => {
+          try {
+            await saveMessage(activeChatId, botMessage)
+            await updateChatMessageCount(activeChatId, 1)
+
+            if (isPlaceholderTitle(currentChatTitle)) {
+              const baseTitle = buildConciseTitle(botMessage.content)
+              let uniqueTitle = baseTitle
+              try {
+                const existingChats = await getChatHistory()
+                const existingTitles = (existingChats || [])
+                  .filter(chat => chat.id !== activeChatId)
+                  .map(chat => chat.title || '')
+                uniqueTitle = ensureUniqueTitle(baseTitle, existingTitles)
+              } catch (error) {
+                console.error('❌ Failed to load chat titles for uniqueness:', error)
+              }
+              await updateChatTitle(activeChatId, uniqueTitle)
+              setCurrentChatTitle(uniqueTitle)
+              if (uniqueTitle !== currentChatTitle) {
                 window.dispatchEvent(new CustomEvent('refreshChatList'))
               }
-            } catch (error) {
-              console.error('❌ Failed to save bot message:', error)
             }
-          }, 100)
-        } else {
-          const titleSource = botMessage.content
-          handleGuestChatSave(newMessages, titleSource)
-        }
-        return newMessages
-      })
+          } catch (error) {
+            console.error('❌ Failed to save bot message:', error)
+          }
+        }, 100)
+      } else {
+        const titleSource = botMessage.content
+        handleGuestChatSave(updatedMessages, titleSource)
+      }
       
       if (response.mcq_results && response.mcq_results.length > 0) {
         setTimeout(() => {
@@ -980,11 +993,31 @@ const ChatSection = () => {
         }, 100)
       }
     } catch (error) {
+      console.error('API Error:', error)
+      
+      // Build friendly error message with suggestions
+      let errorContent = "Sorry, I couldn't process your request. Could you please rephrase your question?"
+      
+      // Check if error response has suggestions
+      if (error.response?.data?.suggestions) {
+        errorContent += '\n\n**Try asking:**\n'
+        error.response.data.suggestions.forEach(suggestion => {
+          errorContent += `• ${suggestion}\n`
+        })
+      } else {
+        // Default suggestions
+        errorContent += '\n\n**Try asking:**\n'
+        errorContent += '• Tell me about the Ganga river\n'
+        errorContent += '• Explain photosynthesis\n'
+        errorContent += '• What is democracy?\n'
+        errorContent += '• Describe the water cycle'
+      }
+      
       // Update the temporary bot message with error
       const errorMessage = {
         id: tempBotMessage.id,
         type: 'bot',
-        content: `Sorry, I encountered an error: ${error.message}. Please try again.`,
+        content: errorContent,
         error: true,
         isLoading: false,
         timestamp: new Date()

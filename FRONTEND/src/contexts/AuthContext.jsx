@@ -80,6 +80,95 @@ function writeLocalStarredPyqs(items) {
   }
 }
 
+function isPermissionDeniedError(error) {
+  return error?.code === 'permission-denied' || error?.message?.includes('Missing or insufficient permissions');
+}
+
+function isIndexRequiredError(error) {
+  return error?.code === 'failed-precondition' || error?.message?.includes('The query requires an index');
+}
+
+function normalizeSubjectName(subject) {
+  const raw = String(
+    typeof subject === 'string'
+      ? subject
+      : (subject?.name || subject?.subject || '')
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ');
+
+  if (!raw || raw === 'all' || raw === 'all subjects') return 'Others';
+
+  // Strong priority guards for known overlaps
+  if (raw.includes('political science') || raw.includes('indian polity') || raw.includes('public administration')) {
+    return 'Polity';
+  }
+
+  const has = (key) => raw.includes(key);
+
+  const scores = {
+    Geography: 0,
+    Polity: 0,
+    History: 0,
+    Economics: 0,
+    Science: 0,
+  };
+
+  const buckets = {
+    Geography: ['geography', 'geo', 'latitude', 'longitude', 'map', 'climate', 'monsoon', 'soil', 'resources'],
+    Polity: ['polity', 'politics', 'political', 'constitution', 'constitutional', 'civics', 'governance', 'parliament', 'judiciary', 'legislature', 'rights'],
+    History: ['history', 'ancient', 'medieval', 'modern', 'freedom struggle', 'revolt', 'civilization'],
+    Economics: ['economics', 'economy', 'economic', 'gdp', 'inflation', 'fiscal', 'monetary', 'budget', 'banking', 'poverty', 'unemployment'],
+    Science: ['science', 'physics', 'chemistry', 'biology', 'botany', 'zoology'],
+  };
+
+  Object.entries(buckets).forEach(([name, keys]) => {
+    keys.forEach((key) => {
+      if (has(key)) scores[name] += 1;
+    });
+  });
+
+  // Prevent "political science" / "economic science" from being pulled into generic Science
+  if (scores.Polity > 0 || scores.Economics > 0) {
+    scores.Science = Math.max(0, scores.Science - 1);
+  }
+
+  const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
+  if (best && best[1] > 0) return best[0];
+
+  return 'Others';
+}
+
+function getDefaultSubjectStats() {
+  return [
+    { name: 'Geography', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#06B6D4' },
+    { name: 'Polity', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#8B5CF6' },
+    { name: 'History', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#10B981' },
+    { name: 'Economics', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#F59E0B' },
+    { name: 'Science', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#EF4444' },
+    { name: 'Others', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#6B7280' }
+  ];
+}
+
+function sanitizeSubjectStats(subjects = []) {
+  const template = getDefaultSubjectStats();
+  const byName = new Map(template.map((item) => [item.name, { ...item }]));
+
+  (Array.isArray(subjects) ? subjects : []).forEach((entry) => {
+    const canonical = normalizeSubjectName(entry?.name || entry?.subject || 'Others');
+    const existing = byName.get(canonical) || byName.get('Others');
+    if (!existing) return;
+
+    existing.questions += Number(entry?.questions || entry?.questionCount || 0) || 0;
+    existing.mcqAttempted += Number(entry?.mcqAttempted || entry?.attempted || 0) || 0;
+    existing.mcqCorrect += Number(entry?.mcqCorrect || entry?.correct || 0) || 0;
+  });
+
+  return template.map((item) => byName.get(item.name) || item);
+}
+
 export function useAuth() {
   return useContext(AuthContext);
 }
@@ -391,8 +480,26 @@ export function AuthProvider({ children }) {
         });
       });
 
-      console.log('✅ getChatMessages: Found', messages.length, 'messages for chatId:', chatId)
-      return messages;
+      const dedupedMessages = [];
+      for (const message of messages) {
+        const last = dedupedMessages[dedupedMessages.length - 1];
+        const sameType = last?.type === message?.type;
+        const sameContent = String(last?.content || '').trim() === String(message?.content || '').trim();
+        const lastTime = new Date(last?.timestamp || 0).getTime();
+        const currentTime = new Date(message?.timestamp || 0).getTime();
+        const isCloseInTime = Math.abs(currentTime - lastTime) <= 10_000;
+
+        if (sameType && sameContent && isCloseInTime) {
+          continue;
+        }
+        dedupedMessages.push(message);
+      }
+
+      if (dedupedMessages.length !== messages.length) {
+        console.log('🧹 getChatMessages: Deduped', messages.length - dedupedMessages.length, 'duplicate messages for chatId:', chatId)
+      }
+      console.log('✅ getChatMessages: Found', dedupedMessages.length, 'messages for chatId:', chatId)
+      return dedupedMessages;
     } catch (error) {
       console.error('❌ getChatMessages error:', error);
       return [];
@@ -467,17 +574,13 @@ export function AuthProvider({ children }) {
       const subjectStatsDoc = await getDoc(subjectStatsRef);
       
       if (subjectStatsDoc.exists()) {
-        return subjectStatsDoc.data().subjects || [];
+        const normalized = sanitizeSubjectStats(subjectStatsDoc.data().subjects || []);
+        // Self-heal older schema silently
+        await saveSubjectStats(normalized);
+        return normalized;
       } else {
         // Initialize default subject stats if none exist
-        const defaultSubjectStats = [
-          { name: 'Geography', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#06B6D4' },
-          { name: 'Polity', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#8B5CF6' },
-          { name: 'History', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#10B981' },
-          { name: 'Economics', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#F59E0B' },
-          { name: 'Science', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#EF4444' },
-          { name: 'Others', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#6B7280' }
-        ];
+        const defaultSubjectStats = getDefaultSubjectStats();
         await saveSubjectStats(defaultSubjectStats);
         return defaultSubjectStats;
       }
@@ -543,14 +646,7 @@ export function AuthProvider({ children }) {
     if (!currentUser) return;
 
     try {
-      const normalizedSubject = (() => {
-        if (typeof subject === 'string') return subject;
-        if (subject && typeof subject === 'object') {
-          if (typeof subject.name === 'string') return subject.name;
-          if (typeof subject.subject === 'string') return subject.subject;
-        }
-        return 'Others';
-      })();
+      const normalizedSubject = normalizeSubjectName(subject);
 
       const normalizedSubjectLower = String(normalizedSubject || 'Others').toLowerCase();
 
@@ -559,7 +655,7 @@ export function AuthProvider({ children }) {
       
       // Find the subject in the stats
       const subjectIndex = currentSubjectStats.findIndex(s => 
-        String(s.name || '').toLowerCase() === normalizedSubjectLower
+        String(s.name || s.subject || '').toLowerCase() === normalizedSubjectLower
       );
       
       let targetSubject = null;
@@ -567,7 +663,7 @@ export function AuthProvider({ children }) {
         targetSubject = currentSubjectStats[subjectIndex];
       } else {
         // If subject not found, add to "Others"
-        const othersIndex = currentSubjectStats.findIndex(s => s.name === 'Others');
+        const othersIndex = currentSubjectStats.findIndex(s => String(s.name || s.subject || '') === 'Others');
         if (othersIndex !== -1) {
           targetSubject = currentSubjectStats[othersIndex];
         }
@@ -577,9 +673,13 @@ export function AuthProvider({ children }) {
         // Update the specific subject stats
         const updatedSubjectStats = [...currentSubjectStats];
         const updateIndex = subjectIndex !== -1 ? subjectIndex : 
-          currentSubjectStats.findIndex(s => s.name === 'Others');
+          currentSubjectStats.findIndex(s => String(s.name || s.subject || '') === 'Others');
         
         if (updateIndex !== -1) {
+          updatedSubjectStats[updateIndex].questions = Number(updatedSubjectStats[updateIndex].questions || 0);
+          updatedSubjectStats[updateIndex].mcqAttempted = Number(updatedSubjectStats[updateIndex].mcqAttempted || 0);
+          updatedSubjectStats[updateIndex].mcqCorrect = Number(updatedSubjectStats[updateIndex].mcqCorrect || 0);
+
           switch (interactionType) {
             case 'question':
               updatedSubjectStats[updateIndex].questions += 1;
@@ -885,6 +985,46 @@ export function AuthProvider({ children }) {
 
       return quizzes;
     } catch (error) {
+      if (isPermissionDeniedError(error)) {
+        console.warn('⚠️ Quiz history permission denied. Returning empty history.');
+        return [];
+      }
+
+      if (isIndexRequiredError(error)) {
+        console.warn('⚠️ Quiz history index missing. Using fallback query without orderBy.');
+        try {
+          const fallbackQ = query(
+            collection(db, 'quizResults'),
+            where('userId', '==', currentUser.uid),
+            limit(Math.max(limitCount, 20))
+          );
+
+          const fallbackSnapshot = await getDocs(fallbackQ);
+          const fallbackQuizzes = [];
+
+          fallbackSnapshot.forEach((item) => {
+            const data = item.data();
+            fallbackQuizzes.push({
+              id: item.id,
+              ...data,
+              completedAt: data.completedAt?.toDate?.(),
+              createdAt: data.createdAt?.toDate?.(),
+            });
+          });
+
+          fallbackQuizzes.sort((a, b) => {
+            const aTime = new Date(a.completedAt || a.createdAt || 0).getTime();
+            const bTime = new Date(b.completedAt || b.createdAt || 0).getTime();
+            return bTime - aTime;
+          });
+
+          return fallbackQuizzes.slice(0, limitCount);
+        } catch (fallbackError) {
+          console.error('❌ Quiz history fallback failed:', fallbackError);
+          return [];
+        }
+      }
+
       console.error('❌ Error getting quiz history:', error);
       return [];
     }
@@ -908,6 +1048,16 @@ export function AuthProvider({ children }) {
         lastQuizDate: userData.lastQuizDate?.toDate()
       };
     } catch (error) {
+      if (isPermissionDeniedError(error)) {
+        console.warn('⚠️ Quiz statistics permission denied. Returning empty stats.');
+        return {
+          totalQuizzes: 0,
+          totalQuizQuestions: 0,
+          totalCorrectAnswers: 0,
+          averageScore: 0,
+          lastQuizDate: null
+        };
+      }
       console.error('❌ Error getting quiz statistics:', error);
       return null;
     }
@@ -980,43 +1130,14 @@ export function AuthProvider({ children }) {
 
       // Then delete the chat document
       await deleteDoc(doc(db, 'chats', chatId));
+      
+      // Trigger dashboard refresh
+      window.dispatchEvent(new Event('refreshDashboard'));
+      console.log('Dashboard refresh triggered after chat deletion');
     } catch (error) {
       console.error('Error deleting chat:', error);
       throw error;
     }
-  // Update user's auth profile and Firestore user document
-  async function updateProfileDetails({ displayName, photoURL }) {
-    if (!currentUser) return null;
-
-    try {
-      // Update Firebase Auth profile
-      await updateProfile(auth.currentUser, {
-        displayName: displayName || auth.currentUser.displayName,
-        photoURL: photoURL || auth.currentUser.photoURL,
-      });
-
-      // Update Firestore users document (merge to preserve other fields)
-      const userRef = doc(db, "users", currentUser.uid);
-      await setDoc(
-        userRef,
-        {
-          displayName: displayName || auth.currentUser.displayName,
-          photoURL: photoURL || auth.currentUser.photoURL,
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
-
-      // Refresh local currentUser state
-      setCurrentUser(auth.currentUser);
-
-      return true;
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      throw error;
-    }
-  }
-
   }
 
   // Update message count for chat

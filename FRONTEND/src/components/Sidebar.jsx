@@ -33,14 +33,14 @@ const Sidebar = () => {
   const [chatError, setChatError] = useState('')
 
   // Load chat history
-  const loadChatHistory = useCallback(async () => {
+  const loadChatHistory = useCallback(async ({ silent = false } = {}) => {
     if (!currentUser) {
       console.log('❌ No currentUser, skipping chat history load')
       return
     }
     
     console.log('📂 Loading chat history for user:', currentUser.uid)
-    setIsLoadingChats(true)
+    if (!silent) setIsLoadingChats(true)
     setChatError('')
     try {
       const chats = await getChatHistory()
@@ -50,7 +50,7 @@ const Sidebar = () => {
       console.error('❌ Failed to load chat history:', error)
       setChatError('Failed to load chat history')
     } finally {
-      setIsLoadingChats(false)
+      if (!silent) setIsLoadingChats(false)
     }
   }, [currentUser, getChatHistory])
 
@@ -290,7 +290,7 @@ const Sidebar = () => {
   useEffect(() => {
     const handleRefreshChatList = () => {
       if (currentUser) {
-        loadChatHistory()
+        loadChatHistory({ silent: true })
       }
     }
 

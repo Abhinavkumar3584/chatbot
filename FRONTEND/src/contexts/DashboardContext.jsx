@@ -48,6 +48,103 @@ export const DashboardProvider = ({ children }) => {
 
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  const getDefaultSubjects = () => ([
+    { name: 'Geography', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#06B6D4' },
+    { name: 'Polity', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#8B5CF6' },
+    { name: 'History', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#10B981' },
+    { name: 'Economics', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#F59E0B' },
+    { name: 'Science', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#EF4444' },
+    { name: 'Others', questions: 0, mcqAttempted: 0, mcqCorrect: 0, color: '#6B7280' }
+  ]);
+
+  const normalizeSubjectName = (subject) => {
+    const raw = String(subject || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ');
+    if (!raw || raw === 'all' || raw === 'all subjects') return 'Others';
+
+    if (raw.includes('political science') || raw.includes('indian polity') || raw.includes('public administration')) {
+      return 'Polity';
+    }
+
+    const has = (key) => raw.includes(key);
+    const scores = {
+      Geography: 0,
+      Polity: 0,
+      History: 0,
+      Economics: 0,
+      Science: 0,
+    };
+
+    const buckets = {
+      Geography: ['geography', 'geo', 'latitude', 'longitude', 'map', 'climate', 'monsoon', 'soil', 'resources'],
+      Polity: ['polity', 'politics', 'political', 'constitution', 'constitutional', 'civics', 'governance', 'parliament', 'judiciary', 'legislature', 'rights'],
+      History: ['history', 'ancient', 'medieval', 'modern', 'freedom struggle', 'revolt', 'civilization'],
+      Economics: ['economics', 'economy', 'economic', 'gdp', 'inflation', 'fiscal', 'monetary', 'budget', 'banking', 'poverty', 'unemployment'],
+      Science: ['science', 'physics', 'chemistry', 'biology', 'botany', 'zoology'],
+    };
+
+    Object.entries(buckets).forEach(([name, keys]) => {
+      keys.forEach((key) => {
+        if (has(key)) scores[name] += 1;
+      });
+    });
+
+    if (scores.Polity > 0 || scores.Economics > 0) {
+      scores.Science = Math.max(0, scores.Science - 1);
+    }
+
+    const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
+    if (best && best[1] > 0) return best[0];
+
+    return 'Others';
+  };
+
+  const deriveSubjectStatsFromActivity = (activity = []) => {
+    const base = getDefaultSubjects();
+    const indexByName = Object.fromEntries(base.map((item, index) => [item.name, index]));
+
+    (Array.isArray(activity) ? activity : []).forEach((entry) => {
+      const type = entry?.type;
+      const subject = normalizeSubjectName(entry?.subject);
+      const idx = indexByName[subject] ?? indexByName.Others;
+      if (idx == null) return;
+
+      if (type === 'question') base[idx].questions += 1;
+      if (type === 'mcq_attempt' || type === 'mcq_correct' || type === 'mcq_wrong') base[idx].mcqAttempted += 1;
+      if (type === 'mcq_correct') base[idx].mcqCorrect += 1;
+    });
+
+    return base;
+  };
+
+  const mergeSubjectStats = (stored = [], derived = []) => {
+    const template = getDefaultSubjects();
+    const out = template.map((t) => ({ ...t }));
+    const byName = Object.fromEntries(out.map((item, index) => [item.name, index]));
+
+    const apply = (arr) => {
+      (Array.isArray(arr) ? arr : []).forEach((item) => {
+        const name = normalizeSubjectName(item?.name || item?.subject);
+        const idx = byName[name] ?? byName.Others;
+        if (idx == null) return;
+        out[idx].questions = Math.max(out[idx].questions, Number(item?.questions || 0) || 0);
+        out[idx].mcqAttempted = Math.max(out[idx].mcqAttempted, Number(item?.mcqAttempted || 0) || 0);
+        out[idx].mcqCorrect = Math.max(out[idx].mcqCorrect, Number(item?.mcqCorrect || 0) || 0);
+      });
+    };
+
+    apply(stored);
+    apply(derived);
+    return out;
+  };
+
+  const isPermissionDeniedError = (err) => (
+    err?.code === 'permission-denied' || err?.message?.includes('Missing or insufficient permissions')
+  );
+
   // Load dashboard data
   const loadDashboardData = async () => {
     if (!currentUser) {
@@ -87,9 +184,12 @@ export const DashboardProvider = ({ children }) => {
         stats.mcqAccuracy = Math.round((stats.mcqCorrect / stats.totalMcqAttempted) * 100);
       }
 
+      const derivedSubjectStats = deriveSubjectStatsFromActivity(firebaseActivity || []);
+      const resolvedSubjectStats = mergeSubjectStats(firebaseSubjectStats || [], derivedSubjectStats);
+
       setDashboardData({
         stats,
-        subjectStats: firebaseSubjectStats || [],
+        subjectStats: resolvedSubjectStats,
         achievements: firebaseAchievements || [],
         learningGoals: firebaseLearningGoals || [],
         recentActivity: firebaseActivity || [],
@@ -99,6 +199,26 @@ export const DashboardProvider = ({ children }) => {
 
       console.log('✅ Dashboard data loaded from Firebase');
     } catch (error) {
+      if (isPermissionDeniedError(error)) {
+        console.warn('⚠️ Dashboard permission denied. Falling back to empty dynamic state.');
+        setDashboardData({
+          stats: {
+            totalChats: 0,
+            totalQuestions: 0,
+            totalMcqAttempted: 0,
+            mcqCorrect: 0,
+            mcqWrong: 0,
+            mcqAccuracy: 0
+          },
+          subjectStats: [],
+          achievements: [],
+          learningGoals: [],
+          recentActivity: [],
+          loading: false,
+          error: null
+        });
+        return;
+      }
       console.error('❌ Error loading dashboard data:', error);
       setDashboardData(prev => ({
         ...prev,
@@ -126,9 +246,21 @@ export const DashboardProvider = ({ children }) => {
         }
         return 'Others';
       })();
-      
-      // Track subject-specific interaction (this also tracks general interaction)
-      await trackSubjectInteraction(subject, type, data);
+
+      const shouldUpdateSubjectStats = ['question', 'mcq_attempt', 'mcq_correct', 'mcq_wrong'].includes(type);
+
+      // Track subject-specific counters only for subject-relevant events
+      if (shouldUpdateSubjectStats) {
+        // trackSubjectInteraction also records general interaction internally
+        await trackSubjectInteraction(subject, type, data);
+      } else {
+        // For non-subject events (e.g., search/chat), only log interaction activity
+        await trackUserInteraction({
+          type,
+          subject,
+          ...data
+        });
+      }
 
       // Update global stats based on interaction type
       const currentStats = dashboardData.stats;
