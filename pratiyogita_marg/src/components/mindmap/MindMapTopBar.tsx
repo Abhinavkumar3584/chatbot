@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,7 +22,7 @@ import {
   BookOpen,
   Eye
 } from 'lucide-react';
-import { getAllMindMaps } from '@/utils/mindmapStorage';
+import { getAllMindMaps, syncMindMapsFromFirebaseToLocal } from '@/utils/mindmapStorage';
 import { useToast } from '@/hooks/use-toast';
 import { AutoSaveSettings } from './AutoSaveSettings';
 import { AutoSaveConfig } from '@/utils/mindmapAutoSave';
@@ -60,7 +60,16 @@ export const MindMapTopBar = ({
   const [autoSaveDialogOpen, setAutoSaveDialogOpen] = useState(false);
   const { toast } = useToast();
   
-  const existingMaps = getAllMindMaps();
+  const [existingMaps, setExistingMaps] = useState<string[]>([]);
+
+  useEffect(() => {
+    const refreshMindMaps = async () => {
+      await syncMindMapsFromFirebaseToLocal();
+      setExistingMaps(getAllMindMaps());
+    };
+
+    void refreshMindMaps();
+  }, [currentMindMap]);
 
   const handleCreateClick = () => {
     createNewMindMap();
@@ -68,7 +77,7 @@ export const MindMapTopBar = ({
 
   return (
     <>
-      <div className="bg-white shadow-sm border-b p-2 flex items-center gap-2">
+      <div className="bg-white shadow-sm border-b p-2 2xl:p-2.5 flex items-center gap-2">
         <Button 
           variant="outline" 
           size="sm" 
@@ -201,11 +210,11 @@ export const MindMapTopBar = ({
         </Button>        
         <div className="ml-auto flex items-center gap-2">
           {autoSaveConfig.enabled && (
-            <div className="text-xs px-2 py-1 bg-blue-100 rounded-full">
+            <div className="text-xs 2xl:text-sm px-2 py-1 bg-blue-100 rounded-full">
               Auto-save: {Math.floor(autoSaveConfig.interval / 1000)}s
             </div>
           )}
-          <div className="text-sm font-medium">
+          <div className="text-sm 2xl:text-base font-medium">
             {currentMindMap ? `Current: ${currentMindMap}` : 'Unsaved mind map'}
           </div>
         </div>

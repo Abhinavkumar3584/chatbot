@@ -6,7 +6,7 @@ import AuthModal from '@/components/AuthModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { Search, BookOpen, Map, ArrowLeft, LogIn, LogOut, UserPlus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getAllMindMaps } from '@/utils/mindmapStorage';
+import { getAllMindMaps, syncMindMapsFromFirebaseToLocal } from '@/utils/mindmapStorage';
 import { EXAM_CATEGORIES, ExamCategory } from '@/components/mindmap/types';
 
 interface MindMapItem {
@@ -63,7 +63,8 @@ const ExamCatalog = () => {
   };
 
   useEffect(() => {
-    const loadMindMaps = () => {
+    const loadMindMaps = async () => {
+      await syncMindMapsFromFirebaseToLocal();
       const savedMaps = getAllMindMaps();
       let allMindmaps: Record<string, any> = {};
       try {
@@ -87,7 +88,7 @@ const ExamCatalog = () => {
       setMindMaps(mapData);
     };
 
-    loadMindMaps();
+    void loadMindMaps();
   }, []);
 
   // Get sub-exams for selected category (combine predefined + saved mindmaps)
@@ -134,7 +135,7 @@ const ExamCatalog = () => {
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
               <Link to="/" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
@@ -144,17 +145,17 @@ const ExamCatalog = () => {
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                   <Map className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-lg font-bold">ParikshaMarg</span>
+                <span className="text-lg 2xl:text-xl font-bold">ParikshaMarg</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {!currentUser ? (
                 <>
-                  <Button variant="outline" className="gap-2" onClick={() => handleAuthClick('login')}>
+                  <Button variant="outline" className="gap-2 2xl:text-base 2xl:px-5" onClick={() => handleAuthClick('login')}>
                     <LogIn className="h-4 w-4" />
                     Login
                   </Button>
-                  <Button variant="outline" className="gap-2" onClick={() => handleAuthClick('signup')}>
+                  <Button variant="outline" className="gap-2 2xl:text-base 2xl:px-5" onClick={() => handleAuthClick('signup')}>
                     <UserPlus className="h-4 w-4" />
                     Sign Up
                   </Button>
@@ -164,14 +165,14 @@ const ExamCatalog = () => {
                   <div className="hidden md:flex items-center px-3 py-2 rounded-lg border bg-white text-sm font-medium text-gray-700">
                     {currentUser.displayName || currentUser.email}
                   </div>
-                  <Button variant="outline" className="gap-2" onClick={handleLogout}>
+                  <Button variant="outline" className="gap-2 2xl:text-base 2xl:px-5" onClick={handleLogout}>
                     <LogOut className="h-4 w-4" />
                     Logout
                   </Button>
                 </>
               )}
               <Link to="/editor">
-                <Button className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                <Button className="gap-2 2xl:text-base 2xl:px-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                   <BookOpen className="h-4 w-4" />
                   Create New Map
                 </Button>
@@ -187,9 +188,9 @@ const ExamCatalog = () => {
         initialMode={authMode}
       />
 
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto p-6 2xl:p-8">
         {/* Title */}
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Explore Exams</h1>
+        <h1 className="text-3xl 2xl:text-4xl font-bold text-gray-900 mb-6">Explore Exams</h1>
 
         {/* Search Bar */}
         <div className="relative mb-6">
@@ -203,14 +204,14 @@ const ExamCatalog = () => {
         </div>
 
         {/* Two Panel Layout */}
-        <div className="flex gap-6 bg-white rounded-lg border min-h-[600px]">
+        <div className="flex gap-6 2xl:gap-8 bg-white rounded-lg border min-h-[600px] 2xl:min-h-[680px]">
           {/* Left Panel - Categories */}
-          <div className="w-80 border-r overflow-y-auto">
+          <div className="w-80 2xl:w-96 border-r overflow-y-auto">
             {filteredCategories.map((category, index) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`w-full text-left px-4 py-3 border-l-4 transition-colors ${
+                className={`w-full text-left px-4 2xl:px-5 py-3 2xl:py-3.5 2xl:text-[1.05rem] border-l-4 transition-colors ${
                   selectedCategory === category
                     ? 'bg-blue-50 border-l-blue-600 text-blue-700 font-medium'
                     : 'border-l-transparent hover:bg-gray-50 text-gray-700'
@@ -224,14 +225,14 @@ const ExamCatalog = () => {
           </div>
 
           {/* Right Panel - Sub Exams */}
-          <div className="flex-1 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">
+          <div className="flex-1 p-6 2xl:p-8">
+            <h2 className="text-xl 2xl:text-2xl font-bold text-gray-900 mb-6">
               {selectedCategory.split(' ').map((word, i) => 
                 i === 0 ? word.charAt(0) + word.slice(1).toLowerCase() : word.toLowerCase()
               ).join(' ')}
             </h2>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 2xl:gap-5">
               {getSubExams().map((exam) => {
                 const hasSavedMap = mindMaps.some(m => 
                   m.subExamName === exam || m.name === exam
@@ -241,7 +242,7 @@ const ExamCatalog = () => {
                   <button
                     key={exam}
                     onClick={() => handleExamClick(exam)}
-                    className={`px-4 py-3 border rounded-lg text-left text-sm font-medium transition-all hover:shadow-md ${
+                    className={`px-4 2xl:px-5 py-3 2xl:py-3.5 border rounded-lg text-left text-sm 2xl:text-base font-medium transition-all hover:shadow-md ${
                       hasSavedMap
                         ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
                         : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'

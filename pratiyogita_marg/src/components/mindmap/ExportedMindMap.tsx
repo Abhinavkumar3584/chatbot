@@ -35,7 +35,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { getAllMindMaps } from '@/utils/mindmapStorage';
+import { getAllMindMaps, syncMindMapsFromFirebaseToLocal } from '@/utils/mindmapStorage';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { WORKSPACE_WIDTH, WORKSPACE_HEIGHT } from './WorkspaceBoundary';
@@ -74,7 +74,16 @@ export const ExportedMindMap = ({ predefinedMindMap, containerHeight = "100vh" }
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const mindMaps = getAllMindMaps();
+  const [mindMaps, setMindMaps] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadMindMaps = async () => {
+      await syncMindMapsFromFirebaseToLocal();
+      setMindMaps(getAllMindMaps());
+    };
+
+    void loadMindMaps();
+  }, []);
 
   // Default header data
   const defaultHeaderData: MindMapHeaderData = {

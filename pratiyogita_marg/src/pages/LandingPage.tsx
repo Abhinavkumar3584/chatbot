@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -149,6 +149,21 @@ const LandingPage = () => {
   const { currentUser, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const yogyaUrl = import.meta.env.VITE_PRATIYOGITA_YOGYA_URL || 'https://parikshayogya.vercel.app';
+  const gyanUrl = import.meta.env.VITE_PRATIYOGITA_GYAN_URL || 'https://www.pratiyogitagyan.com';
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const auth = params.get('auth');
+    if (auth === 'login' || auth === 'signup') {
+      setAuthMode(auth);
+      setShowAuthModal(true);
+      params.delete('auth');
+      const next = params.toString();
+      const nextUrl = `${window.location.pathname}${next ? `?${next}` : ''}`;
+      window.history.replaceState({}, '', nextUrl);
+    }
+  }, []);
 
   const handleAuthClick = (mode: 'login' | 'signup') => {
     setAuthMode(mode);
@@ -167,22 +182,33 @@ const LandingPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white text-base">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <Map className="h-6 w-6 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-xl 2xl:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 ParikshaMarg
               </span>
             </div>
             <nav className="flex items-center gap-3">
+              <a href={yogyaUrl} target="_self" rel="noreferrer">
+                <Button variant="outline" className="gap-2 text-base 2xl:text-lg px-5 2xl:px-6 py-2">
+                  Pratiyogita Yogya
+                </Button>
+              </a>
+              <a href={gyanUrl} target="_self" rel="noreferrer">
+                <Button variant="outline" className="gap-2 text-base 2xl:text-lg px-5 2xl:px-6 py-2">
+                  Pratiyogita Gyan
+                </Button>
+              </a>
+
               {!currentUser ? (
                 <>
                   <Button
                     variant="outline"
-                    className="gap-2 text-base px-5 py-2"
+                    className="gap-2 text-base 2xl:text-lg px-5 2xl:px-6 py-2"
                     onClick={() => handleAuthClick('login')}
                   >
                     <LogIn className="h-5 w-5" />
@@ -190,7 +216,7 @@ const LandingPage = () => {
                   </Button>
                   <Button
                     variant="outline"
-                    className="gap-2 text-base px-5 py-2"
+                    className="gap-2 text-base 2xl:text-lg px-5 2xl:px-6 py-2"
                     onClick={() => handleAuthClick('signup')}
                   >
                     <UserPlus className="h-5 w-5" />
@@ -204,7 +230,7 @@ const LandingPage = () => {
                   </div>
                   <Button
                     variant="outline"
-                    className="gap-2 text-base px-5 py-2"
+                    className="gap-2 text-base 2xl:text-lg px-5 2xl:px-6 py-2"
                     onClick={handleLogout}
                   >
                     <LogOut className="h-5 w-5" />
@@ -212,18 +238,6 @@ const LandingPage = () => {
                   </Button>
                 </>
               )}
-              <Link to="/editor">
-                <Button variant="outline" className="gap-2 text-base px-5 py-2">
-                  <Map className="h-5 w-5" />
-                  Make Mind Map
-                </Button>
-              </Link>
-              <Link to="/explore">
-                <Button className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-base px-5 py-2">
-                  <Compass className="h-5 w-5" />
-                  Explore Mind Maps
-                </Button>
-              </Link>
             </nav>
           </div>
         </div>
@@ -237,8 +251,8 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="py-20 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
+        <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto text-center">
+          <h1 className="text-5xl md:text-6xl 2xl:text-7xl font-bold mb-6">
             Helping{' '}
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               STUDENTS
@@ -246,11 +260,19 @@ const LandingPage = () => {
             <br />
             to get their dream job
           </h1>
-          <p className="text-2xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-2xl 2xl:text-[1.75rem] text-gray-600 mb-8 max-w-2xl 2xl:max-w-3xl mx-auto">
             Your complete roadmap to competitive exam success with structured syllabus, 
             progress tracking, and expert guidance.
           </p>
           <div className="flex justify-center gap-4 mb-12">
+            {currentUser ? (
+              <Link to="/editor">
+                <Button size="lg" variant="outline" className="gap-2 text-lg px-8">
+                  <Map className="h-5 w-5" />
+                  Make Mind Map
+                </Button>
+              </Link>
+            ) : null}
             <Link to="/explore">
               <Button size="lg" className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8">
                 <Compass className="h-5 w-5" />
@@ -261,21 +283,21 @@ const LandingPage = () => {
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            <div className="bg-white rounded-xl p-6 shadow-sm border">
-              <div className="text-3xl font-bold text-blue-600">Weekly</div>
-              <div className="text-lg text-gray-600">New Exams</div>
+            <div className="bg-white rounded-xl p-6 2xl:p-7 shadow-sm border">
+              <div className="text-3xl 2xl:text-4xl font-bold text-blue-600">Weekly</div>
+              <div className="text-lg 2xl:text-xl text-gray-600">New Exams</div>
             </div>
-            <div className="bg-white rounded-xl p-6 shadow-sm border">
-              <div className="text-3xl font-bold text-purple-600">50+</div>
-              <div className="text-lg text-gray-600">Exam Roadmaps</div>
+            <div className="bg-white rounded-xl p-6 2xl:p-7 shadow-sm border">
+              <div className="text-3xl 2xl:text-4xl font-bold text-purple-600">50+</div>
+              <div className="text-lg 2xl:text-xl text-gray-600">Exam Roadmaps</div>
             </div>
-            <div className="bg-white rounded-xl p-6 shadow-sm border">
-              <div className="text-3xl font-bold text-green-600">Latest</div>
-              <div className="text-lg text-gray-600">Syllabus Updates</div>
+            <div className="bg-white rounded-xl p-6 2xl:p-7 shadow-sm border">
+              <div className="text-3xl 2xl:text-4xl font-bold text-green-600">Latest</div>
+              <div className="text-lg 2xl:text-xl text-gray-600">Syllabus Updates</div>
             </div>
-            <div className="bg-white rounded-xl p-6 shadow-sm border">
-              <div className="text-3xl font-bold text-orange-600">Experts</div>
-              <div className="text-lg text-gray-600">Toppers & Teachers</div>
+            <div className="bg-white rounded-xl p-6 2xl:p-7 shadow-sm border">
+              <div className="text-3xl 2xl:text-4xl font-bold text-orange-600">Experts</div>
+              <div className="text-lg 2xl:text-xl text-gray-600">Toppers & Teachers</div>
             </div>
           </div>
         </div>
@@ -283,7 +305,7 @@ const LandingPage = () => {
 
       {/* Supported Exams - Marquee */}
       <section className="py-12 bg-gray-50 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 mb-8">
+        <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 mb-8">
           <h2 className="text-3xl font-bold text-center text-gray-800">SUPPORTED EXAMS</h2>
         </div>
         <div className="relative">
@@ -292,7 +314,7 @@ const LandingPage = () => {
             {[...examLogos, ...examLogos].map((exam, index) => (
               <div
                 key={`row1-${index}`}
-                className="mx-3 px-6 py-3 bg-white rounded-full border shadow-sm text-base font-medium text-gray-700 hover:shadow-md transition-shadow"
+                className="mx-3 px-6 2xl:px-7 py-3 2xl:py-3.5 bg-white rounded-full border shadow-sm text-base 2xl:text-lg font-medium text-gray-700 hover:shadow-md transition-shadow"
               >
                 {exam}
               </div>
@@ -303,7 +325,7 @@ const LandingPage = () => {
             {[...examLogos.slice().reverse(), ...examLogos.slice().reverse()].map((exam, index) => (
               <div
                 key={`row2-${index}`}
-                className="mx-3 px-6 py-3 bg-white rounded-full border shadow-sm text-base font-medium text-gray-700 hover:shadow-md transition-shadow"
+                className="mx-3 px-6 2xl:px-7 py-3 2xl:py-3.5 bg-white rounded-full border shadow-sm text-base 2xl:text-lg font-medium text-gray-700 hover:shadow-md transition-shadow"
               >
                 {exam}
               </div>
@@ -314,21 +336,21 @@ const LandingPage = () => {
 
       {/* Features Section */}
       <section className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-lg font-semibold text-blue-600 uppercase tracking-wide mb-2">FEATURES</h2>
-            <h3 className="text-4xl font-bold text-gray-900">
+            <h3 className="text-4xl 2xl:text-5xl font-bold text-gray-900">
               Start Your Exam Journey with the Best Roadmap!
             </h3>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <Card key={index} className={`${feature.color} border-2 hover:shadow-lg transition-shadow`}>
-                <CardContent className="p-6">
+                <CardContent className="p-6 2xl:p-7">
                   <div className={`${feature.iconColor} mb-4`}>{feature.icon}</div>
-                  <h4 className="text-xl font-bold mb-3">{feature.title}</h4>
-                  <p className="text-base text-gray-600 mb-4">{feature.description}</p>
-                  <div className="flex items-center gap-2 text-base font-semibold">
+                  <h4 className="text-xl 2xl:text-2xl font-bold mb-3">{feature.title}</h4>
+                  <p className="text-base 2xl:text-lg text-gray-600 mb-4">{feature.description}</p>
+                  <div className="flex items-center gap-2 text-base 2xl:text-lg font-semibold">
                     <Target className="h-5 w-5 text-blue-600" />
                     <span className="text-blue-600">{feature.highlight}</span>
                   </div>

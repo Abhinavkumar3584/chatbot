@@ -63,12 +63,12 @@
    - Scales naturally up toward Full HD (1920x1080)
    - No layout redesign, only typography baseline scaling */
 html {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 @media (min-width: 1366px) {
   html {
-    font-size: clamp(16px, calc(16px + ((100vw - 1366px) / 554) * 2), 18px);
+    font-size: clamp(14px, calc(14px + ((100vw - 1366px) / 554) * 2), 16px);
   }
 }
 
