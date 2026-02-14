@@ -266,12 +266,12 @@ const LandingPage = () => {
           </p>
           <div className="flex justify-center gap-4 mb-12">
             {currentUser ? (
-              <Link to="/editor">
+              <a href="/editor" target="_blank" rel="noopener noreferrer">
                 <Button size="lg" variant="outline" className="gap-2 text-lg px-8">
                   <Map className="h-5 w-5" />
                   Make Mind Map
                 </Button>
-              </Link>
+              </a>
             ) : null}
             <Link to="/explore">
               <Button size="lg" className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8">

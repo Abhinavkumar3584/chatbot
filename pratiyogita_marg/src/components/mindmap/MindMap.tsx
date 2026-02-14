@@ -92,6 +92,8 @@ const workspaceBoundaryNode = {
 };
 
 export const MindMap = () => {
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const reactFlowInstanceRef = useRef<any>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([workspaceBoundaryNode, ...initialNodes]);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [currentMindMap, setCurrentMindMap] = useState<string>('');
@@ -263,6 +265,37 @@ export const MindMap = () => {
     setMindMapToDelete(null);
   };
 
+  const handleAddNode = useCallback((type: string) => {
+    addNode(type as any, {
+      position: {
+        x: WORKSPACE_X + WORKSPACE_WIDTH / 2 - 120,
+        y: WORKSPACE_Y + WORKSPACE_HEIGHT / 2 - 120,
+      },
+    });
+  }, [addNode]);
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+
+    const type = event.dataTransfer.getData('application/reactflow');
+    if (!type || !reactFlowInstanceRef.current || !reactFlowWrapper.current) {
+      return;
+    }
+
+    const rect = reactFlowWrapper.current.getBoundingClientRect();
+    const position = reactFlowInstanceRef.current.screenToFlowPosition({
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    });
+
+    addNode(type as any, { position });
+  }, [addNode]);
+
   // Handle node click to show node settings
   const onNodeClick = (_: React.MouseEvent, node: any) => {
     setSelectedNode(node.id);
@@ -299,7 +332,7 @@ export const MindMap = () => {
         )}
         {sidebarVisible && (
           <ComponentsSidebar 
-            onAddNode={addNode} 
+            onAddNode={handleAddNode} 
             onToggleSidebar={handleToggleSidebar}
           />
         )}
@@ -327,7 +360,7 @@ export const MindMap = () => {
             onToggleCollapse={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
           />
           
-          <div className="flex-1 overflow-hidden">
+          <div ref={reactFlowWrapper} className="flex-1 overflow-hidden">
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -336,6 +369,11 @@ export const MindMap = () => {
               onConnect={onConnect}
               onEdgeClick={onEdgeClick}
               onNodeClick={onNodeClick}
+              onInit={(instance) => {
+                reactFlowInstanceRef.current = instance;
+              }}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
               nodeTypes={nodeTypes}
               fitView
               nodeExtent={[[WORKSPACE_X, WORKSPACE_Y], [WORKSPACE_X + WORKSPACE_WIDTH, WORKSPACE_Y + WORKSPACE_HEIGHT]]}

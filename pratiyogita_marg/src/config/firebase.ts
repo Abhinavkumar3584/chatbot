@@ -3,7 +3,6 @@ import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import {
   getFirestore,
   connectFirestoreEmulator,
-  enableIndexedDbPersistence,
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -24,14 +23,6 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-
-enableIndexedDbPersistence(db).catch((err: any) => {
-  if (err.code === 'failed-precondition') {
-    console.warn('⚠️ Firestore persistence failed: Multiple tabs open');
-  } else if (err.code === 'unimplemented') {
-    console.warn('⚠️ Firestore persistence not available in this browser');
-  }
-});
 
 if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
   connectAuthEmulator(auth, 'http://localhost:9099');

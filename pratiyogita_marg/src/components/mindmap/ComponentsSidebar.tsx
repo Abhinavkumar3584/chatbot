@@ -38,6 +38,11 @@ export const ComponentsSidebar = ({
   onAddNode,
   onToggleSidebar,
 }: ComponentsSidebarProps) => {
+  const onDragStart = (event: React.DragEvent<HTMLButtonElement>, nodeType: string) => {
+    event.dataTransfer.setData('application/reactflow', nodeType);
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
   return (
     <Sidebar variant="floating" className="w-64">
       <SidebarHeader className="border-b">
@@ -64,6 +69,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'title')}
               onClick={() => onAddNode("title")}
             >
               <Heading1 className="h-4 w-4" />
@@ -72,6 +79,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'topic')}
               onClick={() => onAddNode("topic")}
             >
               <CircleDot className="h-4 w-4" />
@@ -80,6 +89,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'subtopic')}
               onClick={() => onAddNode("subtopic")}
             >
               <Layers className="h-4 w-4" />
@@ -88,6 +99,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'paragraph')}
               onClick={() => onAddNode("paragraph")}
             >
               <AlignLeft className="h-4 w-4" />
@@ -96,6 +109,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'section')}
               onClick={() => onAddNode("section")}
             >
               <SquareIcon className="h-4 w-4" />
@@ -110,6 +125,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'circle')}
               onClick={() => onAddNode("circle")}
             >
               <Circle className="h-4 w-4" />
@@ -118,6 +135,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'rectangle')}
               onClick={() => onAddNode("rectangle")}
             >
               <SquareIcon className="h-4 w-4 rotate-90" />
@@ -126,6 +145,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'square')}
               onClick={() => onAddNode("square")}
             >
               <Square className="h-4 w-4" />
@@ -134,6 +155,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'triangle')}
               onClick={() => onAddNode("triangle")}
             >
               <Triangle className="h-4 w-4" />
@@ -148,6 +171,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'checklist')}
               onClick={() => onAddNode("checklist")}
             >
               <ListTodo className="h-4 w-4" />
@@ -156,6 +181,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'timeline')}
               onClick={() => onAddNode("timeline")}
             >
               <Timer className="h-4 w-4" />
@@ -164,6 +191,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'resource')}
               onClick={() => onAddNode("resource")}
             >
               <FileText className="h-4 w-4" />
@@ -172,6 +201,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'note')}
               onClick={() => onAddNode("note")}
             >
               <StickyNote className="h-4 w-4" />
@@ -180,6 +211,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'concept')}
               onClick={() => onAddNode("concept")}
             >
               <Lightbulb className="h-4 w-4" />
@@ -194,6 +227,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'flashcard')}
               onClick={() => onAddNode("flashcard")}
             >
               <Library className="h-4 w-4" />
@@ -202,6 +237,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'quiz')}
               onClick={() => onAddNode("quiz")}
             >
               <FlaskConical className="h-4 w-4" />
@@ -210,6 +247,8 @@ export const ComponentsSidebar = ({
             <Button
               variant="ghost"
               className="w-full justify-start gap-2"
+              draggable
+              onDragStart={(event) => onDragStart(event, 'mindmap')}
               onClick={() => onAddNode("mindmap")}
             >
               <BrainCircuit className="h-4 w-4" />

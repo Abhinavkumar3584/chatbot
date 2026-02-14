@@ -1,6 +1,7 @@
 
 import { BaseNodeData } from './types';
 import { v4 as uuidv4 } from 'uuid';
+import { WORKSPACE_HEIGHT, WORKSPACE_WIDTH, WORKSPACE_X, WORKSPACE_Y } from './WorkspaceBoundary';
 
 export const addNode = (
   setNodes: React.Dispatch<React.SetStateAction<any[]>>,
@@ -29,8 +30,8 @@ export const addNode = (
       ...additionalData
     },
     position: additionalData.position || {
-      x: Math.random() * 500,
-      y: Math.random() * 500,
+      x: WORKSPACE_X + WORKSPACE_WIDTH / 2 - 120,
+      y: WORKSPACE_Y + WORKSPACE_HEIGHT / 2 - 120,
     },
   };
 

@@ -6,7 +6,6 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  signInWithPopup,
   signInWithRedirect,
   signOut,
   updateProfile,
@@ -105,45 +104,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function loginWithGoogle() {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-
-    try {
-      const result = await signInWithPopup(auth, provider);
-      await ensureUserDocument(result.user, 'google');
-      await updateAuthSyncState(result.user.uid, true);
-      return result;
-    } catch (popupError: any) {
-      if (
-        popupError?.code === 'auth/popup-blocked' ||
-        popupError?.code === 'auth/cancelled-popup-request' ||
-        popupError?.message?.includes('popup')
-      ) {
-        await signInWithRedirect(auth, provider);
-        return null;
-      }
-      throw popupError;
-    }
+    await signInWithRedirect(auth, provider);
+    return null;
   }
 
   async function loginWithGithub() {
     const provider = new GithubAuthProvider();
     provider.setCustomParameters({ allow_signup: 'true' });
-
-    try {
-      const result = await signInWithPopup(auth, provider);
-      await ensureUserDocument(result.user, 'github');
-      await updateAuthSyncState(result.user.uid, true);
-      return result;
-    } catch (popupError: any) {
-      if (
-        popupError?.code === 'auth/popup-blocked' ||
-        popupError?.code === 'auth/cancelled-popup-request' ||
-        popupError?.message?.includes('popup')
-      ) {
-        await signInWithRedirect(auth, provider);
-        return null;
-      }
-      throw popupError;
-    }
+    await signInWithRedirect(auth, provider);
+    return null;
   }
 
   async function logout() {
