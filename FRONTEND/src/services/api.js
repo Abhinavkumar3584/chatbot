@@ -2,17 +2,33 @@
  * API Service for communicating with the Flask backend
  */
 
-// Use environment variable or fallback to proxy in dev, or production URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
-  ? `${import.meta.env.VITE_API_BASE_URL}/api`
-  : import.meta.env.DEV 
-    ? '/api' 
-    : 'http://localhost:5000/api';
+// Production-safe API URL configuration
+const getApiBaseUrl = () => {
+  // In production, VITE_API_BASE_URL is REQUIRED
+  if (import.meta.env.PROD && !import.meta.env.VITE_API_BASE_URL) {
+    throw new Error(
+      'VITE_API_BASE_URL must be set in production environment. ' +
+      'Please configure this in your Vercel deployment settings.'
+    );
+  }
+
+  // Development: use proxy
+  if (import.meta.env.DEV) {
+    return '/api';
+  }
+
+  // Production: use configured URL
+  return `${import.meta.env.VITE_API_BASE_URL}/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 class ApiService {
   constructor() {
     this.baseUrl = API_BASE_URL;
-    console.log(`🔗 API Service initialized with base URL: ${this.baseUrl}`);
+    if (import.meta.env.DEV) {
+      console.log(`🔗 API Service initialized with base URL: ${this.baseUrl}`);
+    }
   }
 
   /**

@@ -1,10 +1,13 @@
 /**
- * Logging utility for the application
+ * Production-safe logging utility
+ * Disables verbose console logging in production for better performance
+ * and security
  */
 
 class Logger {
   constructor() {
     this.isDevelopment = import.meta.env.MODE === 'development';
+    this.isProd = import.meta.env.PROD;
     this.logLevel = import.meta.env.VITE_LOG_LEVEL || 'info';
   }
 
@@ -21,13 +24,13 @@ class Logger {
       url: window.location.href
     };
 
-    // Console logging
+    // Console logging only in development
     if (this.isDevelopment) {
       console[level](message, data);
     }
 
-    // Send to analytics service in production
-    if (!this.isDevelopment && this.shouldSendToAnalytics(level)) {
+    // Send to analytics service in production (for errors only)
+    if (this.isProd && this.shouldSendToAnalytics(level)) {
       this.sendToAnalytics(logEntry);
     }
   }
@@ -61,6 +64,10 @@ class Logger {
 
   error(message, data) {
     this.log('error', message, data);
+    // Always log critical errors to console even in production
+    if (this.isProd) {
+      console.error(message, data);
+    }
   }
 
   warn(message, data) {
@@ -73,6 +80,13 @@ class Logger {
 
   debug(message, data) {
     this.log('debug', message, data);
+  }
+
+  // Critical errors always logged even in production
+  criticalError(message, error) {
+    console.error(message, error);
+    this.error(message, { error: error.message, stack: error.stack });
+    // TODO: Send to error tracking service (Sentry, etc.)
   }
 
   // Track user interactions

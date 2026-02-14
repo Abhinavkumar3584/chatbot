@@ -15,36 +15,39 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || undefined
 };
 
-// Check for configuration
-if (firebaseConfig.apiKey === "your-api-key" && import.meta.env.PROD) {
-  console.warn('⚠️ Firebase configuration not set for production. Please set environment variables.');
+// Validate Firebase configuration in production
+if (import.meta.env.PROD) {
+  const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'appId'];
+  const missingKeys = requiredKeys.filter(key => 
+    !firebaseConfig[key] || firebaseConfig[key].startsWith('your-')
+  );
+  
+  if (missingKeys.length > 0) {
+    const errorMsg = `Firebase configuration incomplete. Missing: ${missingKeys.join(', ')}. ` +
+      'Please set VITE_FIREBASE_* environment variables in Vercel settings.';
+    console.error('❌', errorMsg);
+    throw new Error(errorMsg);
+  }
 }
 
 // Initialize Firebase
 let app;
+let auth;
+let db;
+
 try {
   app = initializeApp(firebaseConfig);
-  console.log('✅ Firebase initialized successfully');
+  auth = getAuth(app);
+  db = getFirestore(app);
+  
+  if (import.meta.env.DEV) {
+    console.log('✅ Firebase initialized successfully');
+  }
 } catch (error) {
   console.error('❌ Firebase initialization error:', error);
-  throw error;
+  // Re-throw with more context
+  throw new Error(`Firebase initialization failed: ${error.message}`);
 }
-
-// Initialize Firebase Authentication and get a reference to the service
-export const auth = getAuth(app);
-
-// Initialize Cloud Firestore and get a reference to the service
-export const db = getFirestore(app);
-
-// Enable persistence for offline support
-import { enableIndexedDbPersistence } from 'firebase/firestore';
-enableIndexedDbPersistence(db).catch((err) => {
-  if (err.code === 'failed-precondition') {
-    console.warn('⚠️ Firestore persistence failed: Multiple tabs open');
-  } else if (err.code === 'unimplemented') {
-    console.warn('⚠️ Firestore persistence not available in this browser');
-  }
-});
 
 // Connect to emulators in development (optional)
 if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
@@ -53,4 +56,19 @@ if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true'
   console.log('🔧 Connected to Firebase emulators');
 }
 
+// Enable persistence for offline support
+import { enableIndexedDbPersistence } from 'firebase/firestore';
+enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code === 'failed-precondition') {
+    if (import.meta.env.DEV) {
+      console.warn('⚠️ Firestore persistence failed: Multiple tabs open');
+    }
+  } else if (err.code === 'unimplemented') {
+    if (import.meta.env.DEV) {
+      console.warn('⚠️ Firestore persistence not available in this browser');
+    }
+  }
+});
+
+export { auth, db };
 export default app;

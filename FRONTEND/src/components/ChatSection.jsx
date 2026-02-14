@@ -14,6 +14,7 @@ import apiService from '../services/api'
 import SearchProgressIndicator from './SearchProgressIndicator'
 import EmbeddedSearchBar from './EmbeddedSearchBar'
 import { SEARCH_SETTINGS } from '../config/searchSettings'
+import { validateSearchQuery } from '../utils/validation'
 
 const EMPTY_EXPANDED_SOURCES = new Set()
 const PENDING_CHAT_LOAD_STORAGE_KEY = 'pendingChatToLoad'
@@ -793,7 +794,22 @@ const ChatSection = () => {
 
   // Handle sending messages - can be called from EmbeddedSearchBar
   const sendMessage = useCallback(async (query, searchOptions = {}) => {
-    if (!query.trim()) return
+    // Validate query before processing
+    const validation = validateSearchQuery(query)
+    if (!validation.isValid) {
+      // Show error message to user
+      const errorMessage = {
+        id: Date.now(),
+        type: 'bot',
+        content: `⚠️ ${validation.message}`,
+        error: true,
+        isLoading: false,
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, errorMessage])
+      return
+    }
+    
     if (isLoading) return
     setIsLoading(true)
 
