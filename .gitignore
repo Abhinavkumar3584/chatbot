@@ -18,6 +18,11 @@ downloads/
 eggs/
 .eggs/
 lib/
+!pratiyogita_yogya/src/lib/
+!pratiyogita_yogya/src/lib/utils.js
+!pratiyogita_yogya/src/lib/utils.ts
+!pratiyogita_marg/src/lib/
+!pratiyogita_marg/src/lib/utils.ts
 lib64/
 parts/
 sdist/
