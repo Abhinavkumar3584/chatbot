@@ -19,7 +19,7 @@ html, body {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
   /* Prevent white gaps on short pages / overscroll */
-  background-color: #1f2937; /* tailwind gray-800 */
+  background-color: #ffffff;
 }
 
 html::-webkit-scrollbar,
