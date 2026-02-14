@@ -8,6 +8,7 @@ import { Search, BookOpen, Map, ArrowLeft, LogIn, LogOut, UserPlus } from 'lucid
 import { Link, useNavigate } from 'react-router-dom';
 import { getAllMindMaps, syncMindMapsFromFirebaseToLocal } from '@/utils/mindmapStorage';
 import { EXAM_CATEGORIES, ExamCategory } from '@/components/mindmap/types';
+import { seedSscCglRoadmap, sscCglRoadmapReactFlow } from '@/data/roadmaps/sscCglRoadmap';
 
 interface MindMapItem {
   name: string;
@@ -49,6 +50,30 @@ const ExamCatalog = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
+  const refreshMindMapsFromLocal = () => {
+    const savedMaps = getAllMindMaps();
+    let allMindmaps: Record<string, any> = {};
+    try {
+      const raw = localStorage.getItem('mindmaps');
+      if (raw) allMindmaps = JSON.parse(raw);
+    } catch (error) {
+      console.error('Error parsing mindmaps storage:', error);
+    }
+    const mapData: MindMapItem[] = savedMaps.map(name => {
+      const entry = allMindmaps[name];
+      if (entry) {
+        return {
+          name,
+          examCategory: entry.examCategory,
+          subExamName: entry.subExamName,
+          createdAt: entry.createdAt || new Date().toISOString()
+        };
+      }
+      return { name };
+    });
+    setMindMaps(mapData);
+  };
+
   const handleAuthClick = (mode: 'login' | 'signup') => {
     setAuthMode(mode);
     setShowAuthModal(true);
@@ -65,31 +90,17 @@ const ExamCatalog = () => {
   useEffect(() => {
     const loadMindMaps = async () => {
       await syncMindMapsFromFirebaseToLocal();
-      const savedMaps = getAllMindMaps();
-      let allMindmaps: Record<string, any> = {};
-      try {
-        const raw = localStorage.getItem('mindmaps');
-        if (raw) allMindmaps = JSON.parse(raw);
-      } catch (error) {
-        console.error('Error parsing mindmaps storage:', error);
-      }
-      const mapData: MindMapItem[] = savedMaps.map(name => {
-        const entry = allMindmaps[name];
-        if (entry) {
-          return {
-            name,
-            examCategory: entry.examCategory,
-            subExamName: entry.subExamName,
-            createdAt: entry.createdAt || new Date().toISOString()
-          };
-        }
-        return { name };
-      });
-      setMindMaps(mapData);
+      refreshMindMapsFromLocal();
     };
 
     void loadMindMaps();
   }, []);
+
+  const handleOpenGeneratedSscRoadmap = () => {
+    seedSscCglRoadmap();
+    refreshMindMapsFromLocal();
+    navigate(`/view?map=${encodeURIComponent(sscCglRoadmapReactFlow.name)}`);
+  };
 
   // Get sub-exams for selected category (combine predefined + saved mindmaps)
   const getSubExams = () => {
@@ -190,7 +201,16 @@ const ExamCatalog = () => {
 
       <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto p-6 2xl:p-8">
         {/* Title */}
-        <h1 className="text-3xl 2xl:text-4xl font-bold text-gray-900 mb-6">Explore Exams</h1>
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h1 className="text-3xl 2xl:text-4xl font-bold text-gray-900">Explore Exams</h1>
+          <Button
+            onClick={handleOpenGeneratedSscRoadmap}
+            className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          >
+            <Map className="h-4 w-4" />
+            Open Generated SSC CGL Roadmap
+          </Button>
+        </div>
 
         {/* Search Bar */}
         <div className="relative mb-6">

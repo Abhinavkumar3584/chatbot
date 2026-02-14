@@ -125,9 +125,6 @@ export const ExportedMindMap = ({ predefinedMindMap, containerHeight = "100vh" }
       console.log('Number of edges:', data.edges?.length || 0);
       console.log('Edges data:', JSON.stringify(data.edges, null, 2));
       
-      // Alert for debugging
-      alert(`Mind map loaded!\nNodes: ${data.nodes?.length || 0}\nConnections (edges): ${data.edges?.length || 0}`);
-      
       setMindMapData(data);
       
       toast({
@@ -268,9 +265,11 @@ export const ExportedMindMap = ({ predefinedMindMap, containerHeight = "100vh" }
               })}
               nodeTypes={nodeTypes}
               onNodeClick={handleNodeClick}
-              defaultViewport={{ x: 50, y: 20, zoom: 1 }}
-              minZoom={0.5}
-              maxZoom={2}
+              defaultViewport={{ x: 50, y: 50, zoom: 0.95 }}
+              fitView
+              fitViewOptions={{ padding: 0.15, minZoom: 0.85, maxZoom: 1.1 }}
+              minZoom={0.3}
+              maxZoom={2.5}
               nodesDraggable={false}
               nodesConnectable={false}
               elementsSelectable={true}
@@ -293,6 +292,7 @@ export const ExportedMindMap = ({ predefinedMindMap, containerHeight = "100vh" }
                 background: 'white'
               }}
             >
+              <Controls showInteractive={false} />
             </ReactFlow>
           </div>
         </div>
