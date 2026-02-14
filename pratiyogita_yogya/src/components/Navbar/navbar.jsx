@@ -46,6 +46,18 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   const getRedirectUrlWithLoginHint = (baseUrl) => {
     try {
       const url = new URL(baseUrl, window.location.origin);
@@ -146,112 +158,69 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
-        <div
-          className={`md:hidden bg-white border-t absolute left-4 right-4 shadow-md rounded-b-lg overflow-hidden transition-all duration-300 ease-in-out ${
-            isOpen
-              ? "max-h-[500px] opacity-100"
-              : "max-h-0 opacity-0 pointer-events-none"
-          }`}
-        >
-          <div className="py-2 animate-fadeIn">
-            <a
-              href="/"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
-            >
-              Home
-            </a>
-            <a
-              href="/about"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
-            >
-              About Us
-            </a>
-            <a
-              href={getRedirectUrlWithLoginHint(PRATIYOGITA_GYAN_URL)}
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
-            >
-              Pratiyogita Gyan
-            </a>
-            <a
-              href={getRedirectUrlWithLoginHint(PRATIYOGITA_MARG_URL)}
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
-            >
-              Pratiyogita Marg
-            </a>
+        {/* Mobile Menu Drawer */}
+        {isOpen && (
+          <>
+            <div
+              onClick={() => {
+                setIsOpen(false);
+                setIsDropdownOpen(false);
+              }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
+            />
 
-            {/* Features Dropdown in Mobile with Improved Animation */}
-            <div className="px-4 py-1">
+            <div className="fixed top-[52px] sm:top-[60px] right-0 bottom-0 w-[82vw] max-w-[320px] bg-white border-l border-gray-200 shadow-2xl z-50 md:hidden p-3 overflow-y-auto flex flex-col">
               <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-full text-center py-2 flex items-center justify-center text-gray-700 hover:text-blue-500 focus:outline-none"
+                onClick={() => {
+                  setIsOpen(false);
+                  setIsDropdownOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 mb-2"
               >
-                Features
-                <ChevronDown
-                  className={`ml-1 w-4 h-4 transition-transform duration-300 ${
-                    isDropdownOpen ? "rotate-180" : "rotate-0"
-                  }`}
-                />
+                ← Back
               </button>
-              <div
-                className={`mt-1 bg-gray-50 rounded-lg overflow-hidden transition-all duration-300 ease-in-out ${
-                  isDropdownOpen
-                    ? "max-h-[200px] opacity-100"
-                    : "max-h-0 opacity-0"
-                }`}
-              >
-                <a
-                  href="/"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
+
+              <div className="space-y-1">
+                <a href="/" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">Home</a>
+                <a href={getRedirectUrlWithLoginHint(PRATIYOGITA_GYAN_URL)} onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">Pratiyogita Gyan</a>
+                <a href={getRedirectUrlWithLoginHint(PRATIYOGITA_MARG_URL)} onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">Pratiyogita Marg</a>
+                <a href="/about" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">About Us</a>
+              </div>
+
+              <div className="px-1 py-1 mt-2" ref={dropdownRef}>
+
+                <div
+                  className={`mt-1 bg-gray-50 rounded-lg overflow-hidden transition-all duration-300 ease-in-out ${
+                    isDropdownOpen ? "max-h-[220px] opacity-100" : "max-h-0 opacity-0"
+                  }`}
                 >
-                  Pratiyogita YOGYA
-                </a>
-                <a
-                  href={getRedirectUrlWithLoginHint(PRATIYOGITA_MARG_URL)}
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
-                >
-                  Pratiyogita MARG
-                </a>
-                <a
-                  href={getRedirectUrlWithLoginHint(PRATIYOGITA_GYAN_URL)}
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center"
-                >
-                  Pratiyogita GYAN
-                </a>
+                  <a href="/" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center">Pratiyogita YOGYA</a>
+                  <a href={getRedirectUrlWithLoginHint(PRATIYOGITA_MARG_URL)} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center">Pratiyogita MARG</a>
+                  <a href={getRedirectUrlWithLoginHint(PRATIYOGITA_GYAN_URL)} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center">Pratiyogita GYAN</a>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 mt-auto pt-3">
+                {!currentUser ? (
+                  <>
+                    <Link to="/login" onClick={() => setIsOpen(false)} className="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md text-center">Log In</Link>
+                    <div className="pt-2">
+                      <Link to="/signup" onClick={() => setIsOpen(false)} className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center">Try for Free</Link>
+                    </div>
+                  </>
+                ) : (
+                  <button
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="w-full bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-black transition-colors disabled:opacity-60"
+                  >
+                    {isLoggingOut ? "Logging out..." : "Logout"}
+                  </button>
+                )}
               </div>
             </div>
-
-            {!currentUser ? (
-              <>
-                <Link
-                  to="/login"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center mt-1"
-                >
-                  Log In
-                </Link>
-
-                <div className="px-4 py-2">
-                  <Link
-                    to="/signup"
-                    className="block w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center"
-                  >
-                    Try for Free
-                  </Link>
-                </div>
-              </>
-            ) : (
-              <div className="px-4 py-2">
-                <button
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className="w-full bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-black transition-colors disabled:opacity-60"
-                >
-                  {isLoggingOut ? "Logging out..." : "Logout"}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+          </>
+        )}
       </nav>
     </div>
   );
