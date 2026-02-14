@@ -510,6 +510,10 @@ function CheckEligibilityPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     
+    // State for exam filters
+    const [examFilter, setExamFilter] = useState('');
+    const [examCategory, setExamCategory] = useState('ALL');
+    
     // State for search mode toggle
     const [searchMode, setSearchMode] = useState('exam'); // 'exam' or 'eligibility'
     
@@ -583,6 +587,33 @@ function CheckEligibilityPage() {
     // Ref for scrolling to results
     const resultsRef = useRef(null);
 
+    // State for date picker (separate day, month, year)
+    const [dateDay, setDateDay] = useState("");
+    const [dateMonth, setDateMonth] = useState("");
+    const [dateYear, setDateYear] = useState("");
+
+    // Generate options for date picker
+    const dayOptions = Array.from({ length: 31 }, (_, i) => ({ value: String(i + 1).padStart(2, '0'), label: String(i + 1) }));
+    const monthOptions = [
+        { value: '01', label: 'January' },
+        { value: '02', label: 'February' },
+        { value: '03', label: 'March' },
+        { value: '04', label: 'April' },
+        { value: '05', label: 'May' },
+        { value: '06', label: 'June' },
+        { value: '07', label: 'July' },
+        { value: '08', label: 'August' },
+        { value: '09', label: 'September' },
+        { value: '10', label: 'October' },
+        { value: '11', label: 'November' },
+        { value: '12', label: 'December' },
+    ];
+    const currentYear = new Date().getFullYear();
+    const birthYearOptions = Array.from({ length: 100 }, (_, i) => ({
+        value: String(currentYear - 15 - i),
+        label: String(currentYear - 15 - i)
+    }));
+
     // ============================================
     // LOCK PAGE SCROLL (only for this route)
     // ============================================
@@ -616,6 +647,39 @@ function CheckEligibilityPage() {
 
         loadExamOptions();
     }, []);
+
+    // Filter exam options based on search and category
+    const filteredExamOptions = examOptions.filter(option => {
+        // Filter by search text
+        const matchesSearch = option.label.toLowerCase().includes(examFilter.toLowerCase());
+        
+        // Filter by category
+        let matchesCategory = true;
+        if (examCategory !== 'ALL') {
+            // Extract category from exam name (e.g., SSC, UPSC, Railway, etc.)
+            const examLabel = option.label.toUpperCase();
+            matchesCategory = examLabel.includes(examCategory.toUpperCase());
+        }
+        
+        return matchesSearch && matchesCategory;
+    });
+
+    // Extract unique categories from exam options
+    const examCategories = ['ALL', ...Array.from(new Set(
+        examOptions.map(option => {
+            const label = option.label.toUpperCase();
+            if (label.includes('SSC')) return 'SSC';
+            if (label.includes('UPSC') || label.includes('CIVIL')) return 'UPSC';
+            if (label.includes('RAILWAY') || label.includes('RRB')) return 'RAILWAY';
+            if (label.includes('BANKING') || label.includes('BANK')) return 'BANKING';
+            if (label.includes('DEFENCE') || label.includes('NDA') || label.includes('CDS')) return 'DEFENCE';
+            if (label.includes('STATE') || label.includes('PSC')) return 'STATE PSC';
+            if (label.includes('GATE') || label.includes('ENGINEERING')) return 'ENGINEERING';
+            if (label.includes('POLICE')) return 'POLICE';
+            if (label.includes('TEACHING') || label.includes('TET')) return 'TEACHING';
+            return 'OTHER';
+        })
+    )).filter(Boolean)];
 
     useEffect(() => {
         const loadEducationData = async () => {
@@ -759,6 +823,135 @@ function CheckEligibilityPage() {
             }
         }
     };
+
+    // Handle date component changes
+    const handleDateChange = (part) => (event) => {
+        const value = event.target.value;
+        if (part === 'day') setDateDay(value);
+        if (part === 'month') setDateMonth(value);
+        if (part === 'year') setDateYear(value);
+        
+        // Update formData if all parts are filled
+        const day = part === 'day' ? value : dateDay;
+        const month = part === 'month' ? value : dateMonth;
+        const year = part === 'year' ? value : dateYear;
+        
+        if (day && month && year) {
+            const dateString = `${year}-${month}-${day}`;
+            setFormData(prev => ({ ...prev, date_of_birth: dateString }));
+        } else {
+            setFormData(prev => ({ ...prev, date_of_birth: '' }));
+        }
+        setShowResults(false);
+    };
+
+    // ============================================
+    // MOCK DATA FILL FUNCTION
+    // ⚠️ EDIT THIS SECTION TO CUSTOMIZE MOCK DATA
+    // ============================================
+    const fillMockData = () => {
+        // ========== DATE OF BIRTH ==========
+        // Format: DD, MM, YYYY
+        setDateDay('15');
+        setDateMonth('06');
+        setDateYear('2000');
+        
+        // ========== PERSONAL INFORMATION ==========
+        // You can change any of these values
+        setFormData(prev => ({
+            ...prev,
+            date_of_birth: '2000-06-15',
+            gender: 'MALE',                    // Options: MALE, FEMALE, TRANSGENDER
+            marital_status: 'UNMARRIED',       // Options: UNMARRIED, MARRIED, SEPARATED, DIVORCED, DIVORCEE, WIDOW, WIDOWER
+            nationality: 'INDIAN',             // Options: INDIAN, CITIZEN OF NEPAL, etc.
+            caste_category: 'GEN',             // Options: GEN, SC, ST, OBC, EWS
+            pwd_status: 'NO',                  // Options: YES, NO
+            domicile: 'DELHI',                 // Any Indian state
+            highest_education_qualification: 'GRADUATION',  // Options: GRADUATION, POST GRADUATION, 12TH, 10TH, etc.
+            eligibility_education_course: 'BTech',  // Must match dropdown values (BTech, not B.TECH)
+            eligibility_education_course_subject: 'Computer Science & Engineering',  // Must match dropdown
+            eligibility_course_year: 'PASSED',
+            eligibility_marks: '75',
+            ncc_wing: 'NONE',                  // Options: NONE, ARMY, NAVY, AIR FORCE
+            ncc_certificate: 'NONE',           // Options: NONE, A, B, C
+            ncc_certificate_grade: 'NONE',     // Options: NONE, A, B, C
+        }));
+        
+        setIsDomicileDisabled(false);
+        const newMaritalOptions = getMaritalStatusOptionsForGender('MALE');
+        setMaritalStatusOptions(newMaritalOptions);
+        
+        // ========== EDUCATION TABLE SETUP ==========
+        const graduationLevel = 'GRADUATION';
+        
+        // Set visible education levels based on highest qualification
+        const levelIndex = EDUCATION_HIERARCHY.findIndex(h => h.key === graduationLevel);
+        if (levelIndex !== -1) {
+            const visibleLevels = EDUCATION_HIERARCHY.slice(levelIndex);
+            setVisibleEducationLevels(visibleLevels);
+            
+            // ========== EDUCATION TABLE DATA ==========
+            // ⚠️ CUSTOMIZE YOUR EDUCATION DETAILS HERE
+            const mockEducationData = {};
+            
+            // Fill each visible level with mock data
+            visibleLevels.forEach(lvl => {
+                if (lvl.key === 'GRADUATION') {
+                    mockEducationData[lvl.key] = {
+                        course: 'BTech',                           // MUST match exact case from dropdown
+                        subject: 'Computer Science & Engineering', // MUST match exact case from dropdown
+                        haveStudied: 'YES',                        // YES or NO
+                        completionStatus: 'PASSED',                // PASSED, APPEARING, 1ST YEAR, 2ND YEAR, etc.
+                        marks: '75',                               // Percentage (0-100)
+                        completedYear: '2023',                     // Year of completion
+                        activeBacklogs: '0'                        // Number of active backlogs
+                    };
+                } else if (lvl.key === '(12TH)HIGHER SECONDARY') {
+                    mockEducationData[lvl.key] = {
+                        course: 'Science',                         // MUST match exact case: Science, Commerce, Arts
+                        subject: 'Physics, Chemistry, Mathematics (PCM)', // MUST match exact format
+                        haveStudied: 'YES',
+                        completionStatus: 'PASSED',
+                        marks: '85',
+                        completedYear: '2018',
+                        activeBacklogs: '0'
+                    };
+                } else if (lvl.key === '(10TH)SECONDARY') {
+                    mockEducationData[lvl.key] = {
+                        course: '(10TH) SECONDARY',                // Standard 10th course
+                        subject: 'Science, Mathematics, Social Science, Languages',
+                        haveStudied: 'YES',
+                        completionStatus: 'PASSED',
+                        marks: '80',
+                        completedYear: '2016',
+                        activeBacklogs: '0'
+                    };
+                } else {
+                    // Initialize other levels with empty data
+                    mockEducationData[lvl.key] = {
+                        course: '',
+                        subject: '',
+                        haveStudied: '',
+                        completionStatus: '',
+                        marks: '',
+                        completedYear: '',
+                        activeBacklogs: ''
+                    };
+                }
+            });
+            
+            setEducationTableData(mockEducationData);
+            
+            // Set course and subject options for the main qualification level
+            const courses = getCoursesForLevel(graduationLevel);
+            setCourseOptions(courses);
+            const subjects = getSubjectsForCourse('BTech', graduationLevel);
+            setSubjectOptions(subjects);
+        }
+    };
+    // ============================================
+    // END OF MOCK DATA SECTION
+    // ============================================
     
     const handleEducationLevelChange = (event) => {
         const level = event.target.value;
@@ -1824,7 +2017,44 @@ function CheckEligibilityPage() {
                                     
                                     {/* Target Exam Dropdown - Only show in Exam Basis mode */}
                                     {searchMode === 'exam' && (
-                                        <div className="flex-1 w-full">
+                                        <div className="flex-1 w-full space-y-2">
+                                            {/* Filter Controls */}
+                                            <div className="flex gap-2 flex-wrap">
+                                                <TextField
+                                                    size="small"
+                                                    placeholder="🔍 Search exams..."
+                                                    value={examFilter}
+                                                    onChange={(e) => setExamFilter(e.target.value)}
+                                                    sx={{ 
+                                                        flex: 1, 
+                                                        minWidth: '200px',
+                                                        '& .MuiInputBase-root': {
+                                                            fontSize: '0.8rem',
+                                                        }
+                                                    }}
+                                                />
+                                                <TextField
+                                                    select
+                                                    size="small"
+                                                    label="Category"
+                                                    value={examCategory}
+                                                    onChange={(e) => setExamCategory(e.target.value)}
+                                                    sx={{ 
+                                                        minWidth: '140px',
+                                                        '& .MuiInputBase-root': {
+                                                            fontSize: '0.8rem',
+                                                        }
+                                                    }}
+                                                >
+                                                    {examCategories.map((cat) => (
+                                                        <MenuItem key={cat} value={cat}>
+                                                            {cat}
+                                                        </MenuItem>
+                                                    ))}
+                                                </TextField>
+                                            </div>
+                                            
+                                            {/* Exam Dropdown */}
                                             <TextField
                                                 select
                                                 fullWidth
@@ -1832,14 +2062,14 @@ function CheckEligibilityPage() {
                                                 required
                                                 value={selectedExam}
                                                 onChange={handleExamChange}
-                                                helperText="Select your target exam"
+                                                helperText={`${filteredExamOptions.length} exam(s) found`}
                                                 size="small"
                                                 disabled={loading}
                                             >
                                                 <MenuItem value="">
                                                     <em>Select an exam</em>
                                                 </MenuItem>
-                                                {examOptions.map((option) => (
+                                                {filteredExamOptions.map((option) => (
                                                     <MenuItem key={option.value} value={option.value}>
                                                         {option.label}
                                                         {option.hasDivisions && (
@@ -1901,21 +2131,80 @@ function CheckEligibilityPage() {
                             {/* Section 2: Personal Information */}
                             {(examData || searchMode === 'eligibility') && (
                                 <div className="rounded-lg p-3 mb-3 border border-gray-200">
-                                    <h2 className="text-sm font-semibold text-gray-800 mb-3 text-left">
-                                        Personal Information
-                                    </h2>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                                        <TextField
-                                            fullWidth
-                                            label="Date of Birth"
-                                            type="date"
-                                            required
-                                            value={formData.date_of_birth}
-                                            onChange={handleChange("date_of_birth")}
-                                            InputLabelProps={{ shrink: true }}
-                                            helperText="Enter your date of birth"
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h2 className="text-sm font-semibold text-gray-800 text-left">
+                                            Personal Information
+                                        </h2>
+                                        <Button
+                                            variant="outlined"
                                             size="small"
-                                        />
+                                            onClick={fillMockData}
+                                            sx={{ 
+                                                fontSize: '0.7rem', 
+                                                padding: '2px 8px',
+                                                borderColor: '#10b981',
+                                                color: '#10b981',
+                                                '&:hover': {
+                                                    borderColor: '#059669',
+                                                    backgroundColor: '#f0fdf4',
+                                                }
+                                            }}
+                                        >
+                                            🧪 Fill Mock Data
+                                        </Button>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                                        {/* Date of Birth - Now with separate dropdowns */}
+                                        <div className="flex gap-1" style={{ gridColumn: 'span 1' }}>
+                                            <TextField
+                                                select
+                                                label="Day"
+                                                required
+                                                value={dateDay}
+                                                onChange={handleDateChange('day')}
+                                                size="small"
+                                                sx={{ flex: 1 }}
+                                            >
+                                                <MenuItem value="">Day</MenuItem>
+                                                {dayOptions.map((option) => (
+                                                    <MenuItem key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                            <TextField
+                                                select
+                                                label="Month"
+                                                required
+                                                value={dateMonth}
+                                                onChange={handleDateChange('month')}
+                                                size="small"
+                                                sx={{ flex: 1.5 }}
+                                            >
+                                                <MenuItem value="">Month</MenuItem>
+                                                {monthOptions.map((option) => (
+                                                    <MenuItem key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                            <TextField
+                                                select
+                                                label="Year"
+                                                required
+                                                value={dateYear}
+                                                onChange={handleDateChange('year')}
+                                                size="small"
+                                                sx={{ flex: 1 }}
+                                            >
+                                                <MenuItem value="">Year</MenuItem>
+                                                {birthYearOptions.map((option) => (
+                                                    <MenuItem key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        </div>
 
                                         <TextField
                                             select
