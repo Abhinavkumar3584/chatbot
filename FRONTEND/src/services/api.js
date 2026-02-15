@@ -484,6 +484,24 @@ class ApiService {
       };
     }
   }
+
+  /**
+   * Generate AI explanation for a PYQ question
+   */
+  async generatePyqExplanation(payload = {}) {
+    try {
+      return await this.request('/pyq/explain', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    } catch (error) {
+      console.error('Failed to generate PYQ explanation:', error);
+      return {
+        explanation: payload?.existing_explanation || '',
+        error: error.message
+      };
+    }
+  }
 }
 
 // Export a singleton instance

@@ -72,6 +72,9 @@ const PYQPractice = () => {
   // revealedAnswers now represents whether the question has been answered (checked)
   const [revealedAnswers, setRevealedAnswers] = useState({})
   const [expandedExplanations, setExpandedExplanations] = useState({})
+  const [aiExplanations, setAiExplanations] = useState({})
+  const [loadingExplanations, setLoadingExplanations] = useState({})
+  const [explanationErrors, setExplanationErrors] = useState({})
   const [starredQuestionsMap, setStarredQuestionsMap] = useState({})
   const [showStarredOnly, setShowStarredOnly] = useState(false)
 
@@ -287,6 +290,9 @@ const PYQPractice = () => {
         setUserAnswers({})
         setRevealedAnswers({})
         setExpandedExplanations({})
+        setAiExplanations({})
+        setLoadingExplanations({})
+        setExplanationErrors({})
         setCurrentPage(1)
       }
     } catch (error) {
@@ -317,6 +323,11 @@ const PYQPractice = () => {
     if (question) {
       const questionSubject = question.subject || question.metadata?.subject || 'Others'
       const isCorrect = optionIndex === question.correct_answer
+
+      if (!isCorrect) {
+        void requestAiExplanation(questionId, question)
+      }
+
       if (isCorrect) {
         trackInteraction('mcq_correct', {
           questionId: questionId,
@@ -338,12 +349,79 @@ const PYQPractice = () => {
   }
   
 
+  const getCorrectAnswerText = (question) => {
+    if (!question) return ''
+
+    const options = Array.isArray(question.options) ? question.options : []
+    if (typeof question.correct_answer === 'number' && question.correct_answer >= 0 && question.correct_answer < options.length) {
+      return String(options[question.correct_answer] || '').trim()
+    }
+
+    const optionMap = { A: 0, B: 1, C: 2, D: 3, a: 0, b: 1, c: 2, d: 3 }
+    const idx = optionMap[question.correct_option]
+    if (idx !== undefined && idx < options.length) {
+      return String(options[idx] || '').trim()
+    }
+
+    return String(question.correct_answer_text || '').trim()
+  }
+
+  const requestAiExplanation = async (questionId, question) => {
+    if (aiExplanations[questionId] || loadingExplanations[questionId]) return
+
+    setLoadingExplanations(prev => ({ ...prev, [questionId]: true }))
+    setExplanationErrors(prev => {
+      const next = { ...prev }
+      delete next[questionId]
+      return next
+    })
+
+    try {
+      const response = await apiService.generatePyqExplanation({
+        question: question.question,
+        options: question.options || [],
+        correct_answer: question.correct_answer,
+        correct_option: question.correct_option,
+        correct_answer_text: getCorrectAnswerText(question),
+        subject: question.subject || question.metadata?.subject || '',
+        exam_name: question.exam_name || question.metadata?.exam_name || question.metadata?.exam || '',
+        existing_explanation: question.explanation || ''
+      })
+
+      const explanation = (response?.explanation || '').trim() || (question.explanation || '').trim()
+      if (explanation) {
+        setAiExplanations(prev => ({ ...prev, [questionId]: explanation }))
+      } else {
+        setExplanationErrors(prev => ({ ...prev, [questionId]: 'Unable to generate explanation right now.' }))
+      }
+    } catch (error) {
+      console.error('Failed to generate explanation:', error)
+      const fallback = (question.explanation || '').trim()
+      if (fallback) {
+        setAiExplanations(prev => ({ ...prev, [questionId]: fallback }))
+      } else {
+        setExplanationErrors(prev => ({ ...prev, [questionId]: 'Unable to generate explanation right now.' }))
+      }
+    } finally {
+      setLoadingExplanations(prev => {
+        const next = { ...prev }
+        delete next[questionId]
+        return next
+      })
+    }
+  }
+
   // Handle explanation toggle
-  const toggleExplanation = (questionId) => {
+  const toggleExplanation = (questionId, question) => {
+    const willOpen = !expandedExplanations[questionId]
     setExpandedExplanations(prev => ({
       ...prev,
-      [questionId]: !prev[questionId]
+      [questionId]: willOpen
     }))
+
+    if (willOpen) {
+      void requestAiExplanation(questionId, question)
+    }
   }
 
   const toggleStarredQuestion = async (question, questionIndex = 0) => {
@@ -752,7 +830,7 @@ const PYQPractice = () => {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                toggleExplanation(questionId);
+                                toggleExplanation(questionId, question);
                               }}
                               className="text-xs flex items-center space-x-1 transition-all duration-200 px-2 py-1 rounded flex-shrink-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50 cursor-pointer"
                             >
@@ -765,14 +843,23 @@ const PYQPractice = () => {
                         </div>
                         
                         {/* Explanation Dropdown */}
-                        {expandedExplanations[questionId] && question.explanation && (
+                        {expandedExplanations[questionId] && (
                           <div className="mt-3 pt-3 border-t border-gray-200 animate-in slide-in-from-top-1 duration-200">
                             <div className="text-xs text-gray-700">
                               <div className="flex items-center mb-2">
                                 <p className="font-semibold text-blue-600">Explanation</p>
                               </div>
                               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border-l-4 border-blue-400 shadow-sm">
-                                <p className="leading-relaxed text-gray-800">{question.explanation}</p>
+                                {loadingExplanations[questionId] ? (
+                                  <div className="flex items-center gap-2 text-gray-700">
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                    <p className="leading-relaxed">Generating AI explanation...</p>
+                                  </div>
+                                ) : explanationErrors[questionId] ? (
+                                  <p className="leading-relaxed text-red-600">{explanationErrors[questionId]}</p>
+                                ) : (
+                                  <p className="leading-relaxed text-gray-800">{aiExplanations[questionId] || question.explanation || 'Explanation unavailable.'}</p>
+                                )}
                               </div>
                             </div>
                           </div>

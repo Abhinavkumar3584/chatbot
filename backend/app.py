@@ -3085,6 +3085,160 @@ def get_random_pyq_questions():
             'questions': []
         }), 500
 
+
+@app.route("/api/pyq/explain", methods=["POST"])
+@rate_limit(max_requests=40, window_seconds=60)
+def generate_pyq_explanation():
+    """Generate AI explanation for a PYQ using question + options + correct answer."""
+    if not system_initialized:
+        return jsonify({"error": "Search system not initialized"}), 500
+
+    try:
+        data = request.get_json(silent=True) or {}
+        question = str(data.get('question', '')).strip()
+        options = data.get('options', [])
+        correct_answer = data.get('correct_answer', None)
+        correct_option = str(data.get('correct_option', '')).strip()
+        correct_answer_text = str(data.get('correct_answer_text', '')).strip()
+        subject = str(data.get('subject', '')).strip()
+        exam_name = str(data.get('exam_name', '')).strip()
+        existing_explanation = str(data.get('existing_explanation', '')).strip()
+
+        if not question:
+            return jsonify({'error': 'Question is required'}), 400
+
+        if not isinstance(options, list):
+            options = []
+
+        option_labels = ['A', 'B', 'C', 'D']
+
+        if not correct_answer_text:
+            try:
+                if isinstance(correct_answer, int) and 0 <= correct_answer < len(options):
+                    correct_answer_text = str(options[correct_answer]).strip()
+                elif isinstance(correct_answer, str) and correct_answer.isdigit():
+                    idx = int(correct_answer)
+                    if 0 <= idx < len(options):
+                        correct_answer_text = str(options[idx]).strip()
+            except Exception:
+                correct_answer_text = ''
+
+        if not correct_answer_text and correct_option:
+            option_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'a': 0, 'b': 1, 'c': 2, 'd': 3}
+            idx = option_map.get(correct_option)
+            if idx is not None and idx < len(options):
+                correct_answer_text = str(options[idx]).strip()
+
+        if not correct_answer_text:
+            correct_answer_text = 'Not provided'
+
+        option_lines = []
+        for idx, option in enumerate(options[:4]):
+            label = option_labels[idx] if idx < len(option_labels) else f'Option {idx + 1}'
+            option_lines.append(f"{label}) {option}")
+
+        options_block = "\n".join(option_lines) if option_lines else "Options not provided"
+
+        cache_key_payload = {
+            'question': question,
+            'options': options[:4],
+            'correct_answer': correct_answer,
+            'correct_option': correct_option,
+            'correct_answer_text': correct_answer_text,
+            'subject': subject,
+            'exam_name': exam_name
+        }
+        stable_hash = hashlib.sha256(json.dumps(cache_key_payload, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
+        explanation_cache_key = f"pyqexp:{stable_hash}"
+
+        cached_explanation = _get_cached_value(explanation_cache_key)
+        if cached_explanation:
+            return jsonify({
+                'status': 'success',
+                'provider': 'cache',
+                'explanation': cached_explanation
+            }), 200
+
+        prompt = (
+            "You are an exam preparation tutor. Generate a clear and concise MCQ explanation.\n\n"
+            f"Exam: {exam_name or 'Unknown'}\n"
+            f"Subject: {subject or 'General'}\n"
+            f"Question: {question}\n"
+            f"Options:\n{options_block}\n"
+            f"Correct Answer: {correct_answer_text}\n\n"
+            "Instructions:\n"
+            "1) Explain why the correct answer is right in simple language.\n"
+            "2) Briefly mention why other options are not correct (single short line).\n"
+            "3) Keep it exam-focused and practical.\n"
+            "4) Keep response within 60-100 words.\n"
+            "5) Output plain text only."
+        )
+
+        # 1) Primary: OpenAI
+        openai_client = search_components.get('openai_client')
+        if openai_client:
+            try:
+                response = openai_client.chat.completions.create(
+                    model=search_components.get('openai_model', 'gpt-4o-mini'),
+                    messages=[
+                        {"role": "system", "content": "You are a precise educational assistant."},
+                        {"role": "user", "content": prompt},
+                    ],
+                    max_tokens=140,
+                    temperature=0.2,
+                    top_p=0.9,
+                    timeout=int(os.getenv('OPENAI_TIMEOUT_SECONDS', '20')),
+                )
+                content = (response.choices[0].message.content or '').strip()
+                if content:
+                    _set_cached_value(explanation_cache_key, content, ttl_seconds=86400)
+                    return jsonify({
+                        'status': 'success',
+                        'provider': 'openai',
+                        'explanation': content
+                    }), 200
+            except Exception as e:
+                app.logger.warning(f"OpenAI PYQ explanation failed, trying fallback: {e}")
+
+        # 2) Fallback: Groq
+        groq_client = search_components.get('client')
+        if groq_client:
+            try:
+                response = groq_client.chat.completions.create(
+                    messages=[
+                        {"role": "system", "content": "You are a precise educational assistant."},
+                        {"role": "user", "content": prompt},
+                    ],
+                    model=search_components.get('groq_model', os.getenv('GROQ_MODEL_NAME', 'llama-3.1-8b-instant')),
+                    max_tokens=140,
+                    temperature=0.2,
+                    top_p=0.9,
+                )
+                content = (response.choices[0].message.content or '').strip()
+                if content:
+                    _set_cached_value(explanation_cache_key, content, ttl_seconds=86400)
+                    return jsonify({
+                        'status': 'success',
+                        'provider': 'groq',
+                        'explanation': content
+                    }), 200
+            except Exception as e:
+                app.logger.warning(f"Groq PYQ explanation failed: {e}")
+
+        fallback_explanation = existing_explanation or (
+            f"Correct answer: {correct_answer_text}. "
+            "AI explanation is temporarily unavailable. Please try again shortly."
+        )
+        return jsonify({
+            'status': 'fallback',
+            'provider': 'none',
+            'explanation': fallback_explanation
+        }), 200
+
+    except Exception as e:
+        app.logger.error(f"Error generating PYQ explanation: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == "__main__":
     # Initialize the search system before starting the app
     initialize_search_system()

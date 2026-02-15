@@ -14,6 +14,7 @@ import {
   AlertCircle,
   LogIn,
   StopCircle,
+  RefreshCw,
 } from "lucide-react";
 import apiService from "../services/api";
 
@@ -39,6 +40,10 @@ const QuizSection = () => {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [quizStartTime, setQuizStartTime] = useState(null);
   const [availableExams, setAvailableExams] = useState([]);
+  const [expandedWrongExplanations, setExpandedWrongExplanations] = useState({});
+  const [aiWrongExplanations, setAiWrongExplanations] = useState({});
+  const [loadingWrongExplanations, setLoadingWrongExplanations] = useState({});
+  const [wrongExplanationErrors, setWrongExplanationErrors] = useState({});
 
   const normalizeExamId = (name) =>
     String(name || "")
@@ -46,6 +51,22 @@ const QuizSection = () => {
       .replace(/[^a-z0-9]+/g, "_")
       .replace(/^_+|_+$/g, "")
       .replace(/_+/g, "_");
+
+  const getQuizQuestionKey = (question, index = 0) => {
+    if (question?.id !== undefined && question?.id !== null && String(question.id).trim() !== "") {
+      return String(question.id);
+    }
+
+    const exam = question?.exam_name || selectedExam?.name || "unknown_exam";
+    const subject = question?.subject || question?.metadata?.subject || "unknown_subject";
+    const year = question?.year || question?.metadata?.year || question?.metadata?.exam_year || "unknown_year";
+    const term = question?.term || question?.metadata?.term || question?.metadata?.exam_term || "unknown_term";
+    const questionText = (question?.question || "").trim().slice(0, 80);
+
+    return [exam, subject, year, term, questionText || `fallback_${index}`]
+      .map((part) => String(part).toLowerCase().replace(/\s+/g, "_"))
+      .join("__");
+  };
 
   const getExamIcon = (examName) => {
     const value = String(examName || "").toLowerCase();
@@ -166,15 +187,38 @@ const QuizSection = () => {
 
   const handleAnswerSelect = (answerIndex) => {
     const currentQuestion = quizQuestions[currentQuestionIndex];
+    const questionKey = getQuizQuestionKey(currentQuestion, currentQuestionIndex);
     setUserAnswers((prev) => ({
       ...prev,
-      [currentQuestion.id]: answerIndex,
+      [questionKey]: answerIndex,
     }));
+
+    const isCorrect = answerIndex === currentQuestion.correct_answer;
+    if (!isCorrect) {
+      const wrongItem = {
+        questionId: questionKey,
+        question: currentQuestion.question,
+        options: currentQuestion.options,
+        userAnswer: answerIndex,
+        correctAnswer: currentQuestion.correct_answer,
+        correctOption: currentQuestion.correct_option,
+        correctAnswerText:
+          currentQuestion.correct_answer_text ||
+          (Array.isArray(currentQuestion.options) && currentQuestion.correct_answer >= 0
+            ? currentQuestion.options[currentQuestion.correct_answer]
+            : ""),
+        subject: currentQuestion.subject || currentQuestion.metadata?.subject || "General",
+        examName: currentQuestion.exam_name || selectedExam?.name,
+        explanation: currentQuestion.explanation || "",
+      };
+      void fetchWrongAnswerExplanation(questionKey, wrongItem);
+    }
   };
 
   const handleSkipQuestion = () => {
     const currentQuestion = quizQuestions[currentQuestionIndex];
-    setSkippedQuestions((prev) => new Set([...prev, currentQuestion.id]));
+    const questionKey = getQuizQuestionKey(currentQuestion, currentQuestionIndex);
+    setSkippedQuestions((prev) => new Set([...prev, questionKey]));
     handleNextQuestion();
   };
 
@@ -195,9 +239,10 @@ const QuizSection = () => {
     const wrongAnswers = [];
 
     quizQuestions.forEach((question, index) => {
-      const userAnswer = userAnswers[question.id];
+      const questionKey = getQuizQuestionKey(question, index);
+      const userAnswer = userAnswers[questionKey];
 
-      if (userAnswer === undefined || skippedQuestions.has(question.id)) {
+      if (userAnswer === undefined || skippedQuestions.has(questionKey)) {
         skipped++;
       } else if (userAnswer === question.correct_answer) {
         correct++;
@@ -205,7 +250,7 @@ const QuizSection = () => {
         // Track correct answer
         if (currentUser) {
           trackInteraction("mcq_correct", {
-            questionId: question.id,
+            questionId: questionKey,
             subject: question.subject || "General",
             exam: question.exam_name || selectedExam.name,
             selectedOption: userAnswer,
@@ -215,18 +260,23 @@ const QuizSection = () => {
       } else {
         wrong++;
         wrongAnswers.push({
+          questionId: questionKey,
           questionNumber: index + 1,
           question: question.question,
           options: question.options,
           userAnswer: userAnswer,
           correctAnswer: question.correct_answer,
+          correctOption: question.correct_option,
+          correctAnswerText: question.correct_answer_text || (Array.isArray(question.options) && question.correct_answer >= 0 ? question.options[question.correct_answer] : ''),
+          subject: question.subject || question.metadata?.subject || 'General',
+          examName: question.exam_name || selectedExam.name,
           explanation: question.explanation || "No explanation available.",
         });
 
         // Track wrong answer
         if (currentUser) {
           trackInteraction("mcq_wrong", {
-            questionId: question.id,
+            questionId: questionKey,
             subject: question.subject || "General",
             exam: question.exam_name || selectedExam.name,
             selectedOption: userAnswer,
@@ -298,6 +348,62 @@ const QuizSection = () => {
     setQuizResults(null);
     setSelectedExam(null);
     setQuizQuestions([]);
+    setExpandedWrongExplanations({});
+    setAiWrongExplanations({});
+    setLoadingWrongExplanations({});
+    setWrongExplanationErrors({});
+  };
+
+  const fetchWrongAnswerExplanation = async (key, item) => {
+    if (aiWrongExplanations[key] || loadingWrongExplanations[key]) return;
+
+    setLoadingWrongExplanations((prev) => ({ ...prev, [key]: true }));
+    setWrongExplanationErrors((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+
+    try {
+      const response = await apiService.generatePyqExplanation({
+        question: item.question,
+        options: item.options || [],
+        correct_answer: item.correctAnswer,
+        correct_option: item.correctOption,
+        correct_answer_text: item.correctAnswerText,
+        subject: item.subject,
+        exam_name: item.examName,
+        existing_explanation: item.explanation || "",
+      });
+
+      const explanation = (response?.explanation || "").trim() || (item.explanation || "").trim();
+      if (explanation) {
+        setAiWrongExplanations((prev) => ({ ...prev, [key]: explanation }));
+      } else {
+        setWrongExplanationErrors((prev) => ({ ...prev, [key]: "Unable to generate explanation right now." }));
+      }
+    } catch (error) {
+      console.error("Failed to generate wrong-answer explanation:", error);
+      if ((item.explanation || "").trim()) {
+        setAiWrongExplanations((prev) => ({ ...prev, [key]: item.explanation.trim() }));
+      } else {
+        setWrongExplanationErrors((prev) => ({ ...prev, [key]: "Unable to generate explanation right now." }));
+      }
+    } finally {
+      setLoadingWrongExplanations((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
+
+  const toggleWrongExplanation = (key, item) => {
+    const willOpen = !expandedWrongExplanations[key];
+    setExpandedWrongExplanations((prev) => ({ ...prev, [key]: willOpen }));
+    if (willOpen) {
+      void fetchWrongAnswerExplanation(key, item);
+    }
   };
 
   const formatTime = (seconds) => {
@@ -444,7 +550,9 @@ const QuizSection = () => {
                   </h2>
 
                   <div className="space-y-4">
-                    {quizResults.wrongAnswers.map((item, index) => (
+                    {quizResults.wrongAnswers.map((item, index) => {
+                      const wrongKey = String(item.questionId || `${item.questionNumber}-${index}`);
+                      return (
                       <div
                         key={index}
                         className="bg-red-50 border border-red-200 rounded-lg p-5"
@@ -486,15 +594,34 @@ const QuizSection = () => {
                           ))}
                         </div>
 
-                        {item.explanation && (
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                            <p className="text-sm text-blue-900">
-                              <strong>Explanation:</strong> {item.explanation}
-                            </p>
-                          </div>
-                        )}
+                        <div>
+                          <button
+                            onClick={() => toggleWrongExplanation(wrongKey, item)}
+                            className="text-sm text-blue-700 hover:text-blue-900 font-medium"
+                          >
+                            {expandedWrongExplanations[wrongKey] ? 'Hide Explanation' : 'Show Explanation'}
+                          </button>
+
+                          {expandedWrongExplanations[wrongKey] && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                              {loadingWrongExplanations[wrongKey] ? (
+                                <div className="flex items-center gap-2 text-blue-900">
+                                  <RefreshCw className="w-4 h-4 animate-spin" />
+                                  <p className="text-sm">Generating AI explanation...</p>
+                                </div>
+                              ) : wrongExplanationErrors[wrongKey] ? (
+                                <p className="text-sm text-red-600">{wrongExplanationErrors[wrongKey]}</p>
+                              ) : (
+                                <p className="text-sm text-blue-900">
+                                  <strong>Explanation:</strong> {aiWrongExplanations[wrongKey] || item.explanation || 'Explanation unavailable.'}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -521,7 +648,8 @@ const QuizSection = () => {
   // Quiz In Progress
   if (quizStarted && quizQuestions.length > 0) {
     const currentQuestion = quizQuestions[currentQuestionIndex];
-    const hasAnswered = userAnswers[currentQuestion.id] !== undefined;
+    const currentQuestionKey = getQuizQuestionKey(currentQuestion, currentQuestionIndex);
+    const hasAnswered = userAnswers[currentQuestionKey] !== undefined;
 
     return (
       <div
@@ -626,7 +754,7 @@ const QuizSection = () => {
                     onClick={() => handleAnswerSelect(index)}
                     disabled={hasAnswered}
                     className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                      userAnswers[currentQuestion.id] === index
+                      userAnswers[currentQuestionKey] === index
                         ? "border-blue-500 bg-blue-50"
                         : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                     } ${
@@ -638,7 +766,7 @@ const QuizSection = () => {
                     <div className="flex items-center space-x-3">
                       <span
                         className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-medium ${
-                          userAnswers[currentQuestion.id] === index
+                          userAnswers[currentQuestionKey] === index
                             ? "border-blue-500 bg-blue-500 text-white"
                             : "border-gray-300"
                         }`}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { ChevronDown, FileText, ChevronLeft, ChevronRight, Star } from 'lucide-react'
+import { ChevronDown, FileText, ChevronLeft, ChevronRight, Star, RefreshCw } from 'lucide-react'
 import { Box, Paper, Stack, Typography, IconButton, Chip, Divider, Button, Menu, MenuItem } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useLayout } from '../contexts/LayoutContext'
@@ -63,6 +63,9 @@ const PYQSection = () => {
   const [filteredQuestions, setFilteredQuestions] = useState([])
   const [userAnswers, setUserAnswers] = useState({}) // Track user selections for each question
   const [expandedExplanations, setExpandedExplanations] = useState({}) // Track expanded explanations
+  const [aiExplanations, setAiExplanations] = useState({})
+  const [loadingExplanations, setLoadingExplanations] = useState({})
+  const [explanationErrors, setExplanationErrors] = useState({})
   const [importantQuestions, setImportantQuestions] = useState(new Set()) // Track important/bookmarked questions
 
   const isExamMenuOpen = Boolean(examAnchorEl)
@@ -332,6 +335,10 @@ const PYQSection = () => {
     if (question) {
       const isCorrect = optionIndex === question.correct_answer
       const questionSubject = question.subject || question.metadata?.subject || 'Others'
+
+      if (!isCorrect) {
+        void requestAiExplanation(questionId, question)
+      }
       
       // Track MCQ attempt with correct/wrong tracking
       if (isCorrect) {
@@ -360,14 +367,84 @@ const PYQSection = () => {
   useEffect(() => {
     setUserAnswers({})
     setExpandedExplanations({})
+    setAiExplanations({})
+    setLoadingExplanations({})
+    setExplanationErrors({})
   }, [searchResults])
 
+  const getCorrectAnswerText = (question) => {
+    if (!question) return ''
+
+    const options = Array.isArray(question.options) ? question.options : []
+    if (typeof question.correct_answer === 'number' && question.correct_answer >= 0 && question.correct_answer < options.length) {
+      return String(options[question.correct_answer] || '').trim()
+    }
+
+    const optionMap = { A: 0, B: 1, C: 2, D: 3, a: 0, b: 1, c: 2, d: 3 }
+    const idx = optionMap[question.correct_option]
+    if (idx !== undefined && idx < options.length) {
+      return String(options[idx] || '').trim()
+    }
+
+    return String(question.correct_answer_text || '').trim()
+  }
+
+  const requestAiExplanation = async (questionId, question) => {
+    if (aiExplanations[questionId] || loadingExplanations[questionId]) return
+
+    setLoadingExplanations(prev => ({ ...prev, [questionId]: true }))
+    setExplanationErrors(prev => {
+      const next = { ...prev }
+      delete next[questionId]
+      return next
+    })
+
+    try {
+      const response = await apiService.generatePyqExplanation({
+        question: question.question || question.text || '',
+        options: question.options || [],
+        correct_answer: question.correct_answer,
+        correct_option: question.correct_option,
+        correct_answer_text: getCorrectAnswerText(question),
+        subject: question.subject || question.metadata?.subject || '',
+        exam_name: question.exam_name || question.metadata?.exam_name || question.metadata?.exam || '',
+        existing_explanation: question.explanation || ''
+      })
+
+      const explanation = (response?.explanation || '').trim() || (question.explanation || '').trim()
+      if (explanation) {
+        setAiExplanations(prev => ({ ...prev, [questionId]: explanation }))
+      } else {
+        setExplanationErrors(prev => ({ ...prev, [questionId]: 'Unable to generate explanation right now.' }))
+      }
+    } catch (error) {
+      console.error('Failed to generate explanation:', error)
+      const fallback = (question.explanation || '').trim()
+      if (fallback) {
+        setAiExplanations(prev => ({ ...prev, [questionId]: fallback }))
+      } else {
+        setExplanationErrors(prev => ({ ...prev, [questionId]: 'Unable to generate explanation right now.' }))
+      }
+    } finally {
+      setLoadingExplanations(prev => {
+        const next = { ...prev }
+        delete next[questionId]
+        return next
+      })
+    }
+  }
+
   // Handle explanation toggle
-  const toggleExplanation = (questionId) => {
+  const toggleExplanation = (questionId, question) => {
+    const willOpen = !expandedExplanations[questionId]
     setExpandedExplanations(prev => ({
       ...prev,
-      [questionId]: !prev[questionId]
+      [questionId]: willOpen
     }))
+
+    if (willOpen) {
+      void requestAiExplanation(questionId, question)
+    }
   }
 
   // Handle important question toggle
@@ -869,7 +946,7 @@ const PYQSection = () => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     if (hasAnswered) {
-                                      toggleExplanation(questionId);
+                                      toggleExplanation(questionId, question);
                                     }
                                   }}
                                   disabled={!hasAnswered}
@@ -887,7 +964,7 @@ const PYQSection = () => {
                                 </Button>
                               </Box>
 
-                              {expandedExplanations[questionId] && question.explanation && (
+                              {expandedExplanations[questionId] && (
                                 <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #e5e7eb' }}>
                                   <Typography variant="caption" sx={{ fontWeight: 700, color: '#2563eb', display: 'block', mb: 1 }}>
                                     Explanation
@@ -901,9 +978,22 @@ const PYQSection = () => {
                                       background: 'linear-gradient(90deg, #eff6ff 0%, #eef2ff 100%)'
                                     }}
                                   >
-                                    <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#1f2937', lineHeight: 1.6 }}>
-                                      {question.explanation}
-                                    </Typography>
+                                    {loadingExplanations[questionId] ? (
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                        <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#374151', lineHeight: 1.6 }}>
+                                          Generating AI explanation...
+                                        </Typography>
+                                      </Box>
+                                    ) : explanationErrors[questionId] ? (
+                                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#dc2626', lineHeight: 1.6 }}>
+                                        {explanationErrors[questionId]}
+                                      </Typography>
+                                    ) : (
+                                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#1f2937', lineHeight: 1.6 }}>
+                                        {aiExplanations[questionId] || question.explanation || 'Explanation unavailable.'}
+                                      </Typography>
+                                    )}
                                   </Paper>
                                 </Box>
                               )}
