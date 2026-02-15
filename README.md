@@ -1,772 +1,638 @@
-# 🎓(●'◡'●) NCERT + PYQ AI Study Assistant
+# 🎓 Pratiyogita Setu - Complete Career Preparation Ecosystem
 
 <div align="center">
 
-*An intelligent AI-powered study companion for NCERT textbooks content and Previous Year Questions (PYQs) with advanced RAG capabilities*
+*Your one-stop solution for competitive exam preparation - from checking eligibility to mastering the syllabus*
 
 ![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Python](https://img.shields.io/badge/python-3.8+-yellow.svg)
+![Python](https://img.shields.io/badge/python-3.11+-yellow.svg)
 ![React](https://img.shields.io/badge/react-18+-61DAFB.svg)
 
 </div>
 
 ---
 
-## 🌟 Overview
+## Overview
 
-Transform your exam preparation with our cutting-edge **Retrieval-Augmented Generation (RAG)** system! This comprehensive study platform combines the power of AI with extensive educational content to provide personalized learning experiences for competitive exam aspirants.
+Preparing for competitive exams in India shouldn't be complicated. You need to know which exams you're eligible for, understand what to study, and then actually study it effectively. That's exactly what this platform does - it guides you through the entire journey.
 
-### 🎯 Key Features
+We've built three integrated applications that work together:
 
-- 🤖 **Smart AI Chatbot** - Interactive Q&A with context-aware responses
-- 📚 **NCERT Integration** - Complete textbook content with intelligent search
-- 📝 **Advanced PYQ System** - Comprehensive collection with web-based insertion interface
-- 🎨 **Modern UI/UX** - Beautiful, responsive design with dark/light themes
-- 🔐 **User Authentication** - Firebase-powered secure login system
-- 📊 **Dashboard Analytics** - Track your study progress and performance
-- 🎯 **Subject-wise Search** - Filter content by specific subjects
-- 💾 **Chat History** - Save and revisit your study sessions
-- 💻 **CLI Tool** - Command-line interface for quick searches
-- 🌐 **Web PYQ Interface** - Easy data insertion and management
-- 🔄 **Automated Training** - Smart data processing with duplicate detection
+**🔍 Pratiyogita Yogya** - Check your eligibility for hundreds of competitive exams across UPSC, SSC, Banking, Railway, Defense, and more. Just enter your details and instantly see every exam you qualify for.
 
-### 🛠️ Tech Stack
+**🗺️ Pratiyogita Marg** - Get detailed preparation roadmaps for each exam. See the complete syllabus with topics marked as VVI (Very Very Important) and VI (Very Important) based on exam patterns and previous year trends.
 
-| Category | Technologies |
-|----------|-------------|
-| **Frontend** | React 18, Vite, Tailwind CSS, Lucide Icons |
-| **Backend** | Flask (Python 3.11+), Gunicorn |
-| **AI/ML** | Groq LLM (Llama 3.1), Sentence Transformers |
-| **Database** | Pinecone Vector DB, Firebase Firestore |
-| **Authentication** | Firebase Auth (Email, Google, GitHub) |
-| **Storage** | Firebase Storage, Pinecone Namespaces |
-| **Deployment** | Vercel (Frontend), Render/Railway (Backend) |
-| **PWA** | Service Workers, Offline Support |
+**📚 Pratiyogita Gyan** - Study smart with an AI-powered assistant. Get instant answers from NCERT textbooks with source citations, practice thousands of previous year questions, and track your preparation progress.
 
-### 🌐 Architecture Overview
+### How It Works
 
-**Frontend (React + Vite):**
-- Single Page Application (SPA) with React 18
-- Tailwind CSS for responsive styling
-- Context API for state management
-- Firebase SDK for authentication
-- Service Worker for offline support
+The workflow is simple and logical:
 
-**Backend (Flask):**
-- RESTful API endpoints
-- RAG (Retrieval-Augmented Generation) implementation
-- Semantic search with Sentence Transformers
-- Pinecone vector database integration
-- Groq API for LLM responses
+1. **Check Eligibility** → Use Pratiyogita Yogya to find all exams you're eligible for
+2. **Get Your Roadmap** → Use Pratiyogita Marg to see the complete preparation path with important topics highlighted
+3. **Start Studying** → Use Pratiyogita Gyan to learn with AI assistance, practice PYQs, and track progress
 
-**Data Flow:**
-1. User Query → Frontend
-2. API Request → Flask Backend
-3. Query Embedding → Sentence Transformers
-4. Vector Search → Pinecone
-5. Context + Query → Groq LLM
-6. Response → Frontend Display
+Think of it as having a career counselor, study planner, and personal tutor - all in one platform, available 24/7, and completely free.
 
----
+### What Makes This Different
 
-## 📸 Feature Showcase
+**Complete Ecosystem** - Not just a study app or just an eligibility checker. This is the complete journey from discovering opportunities to achieving them.
 
-### 🏠 Main Dashboard & Chat Interface
+**Pratiyogita Yogya - Know Your Options** 
+- Check eligibility for many competitive exams across all sectors
+- Instant results based on your education, age, and category
+- Covers UPSC, SSC, Banking, Railway, Defense, State PSC, and more
+- Division-based and non-division based exam categorization
+- No confusion, no missing opportunities
 
-![Chat Interface](SCREENSHOTS/chat%20view.png)
-**Smart Chat Interface** - Engage with our AI assistant for instant answers to your study queries. The system provides contextual responses with source citations for better understanding.
+**Pratiyogita Marg - Plan Your Path**
+- Detailed exam-wise preparation roadmaps
+- Complete syllabus breakdown for every exam
+- Topics marked as VVI (Very Very Important) and VI (Very Important)
+- Based on previous year paper analysis and exam trends
+- Visual roadmaps showing the preparation journey
+- Understand what to prioritize in your limited time
 
-![Dashboard Analytics](SCREENSHOTS/after%20login%20user%20can%20see%20his%20dashboard%20analysis.png)
-**Personal Dashboard** - Track your study progress, view analytics, and monitor your learning journey with detailed insights and performance metrics.
+**Pratiyogita Gyan - Study Effectively**
+- AI-powered chatbot with NCERT content integration
+- Every answer backed by actual textbook references - no hallucinations
+- Integrated PYQ database - ask any question, get related previous year questions
+- Thousands of questions from UPSC, SSC, Banking exams with detailed explanations
+- Personal dashboard tracking your study time and performance
+- Works on phone, tablet, and computer seamlessly
 
-### 🔐 Authentication & User Management
+**All Three Work Together** - Check which exams you can take, see what you need to study, then study it with AI assistance. Simple, logical, effective.
 
-![Firebase Authentication](SCREENSHOTS/firebase%20log%20in%20cerdentials%20and%20history%20saver%20of%20chat%20and%20also%20for%20the%20dashboard.png)
-**Secure Login System** - Firebase-powered authentication ensures your data security while maintaining chat history and dashboard progress across sessions.
-
-![Sidebar Navigation](SCREENSHOTS/sidebar.png)
-**Intuitive Navigation** - Clean sidebar design with easy access to all features, chat history management, and user settings.
-
-### 📝 PYQ (Previous Year Questions) System
-
-![PYQ Section](SCREENSHOTS/pyq%20section.png)
-**Comprehensive PYQ Collection** - Access thousands of previous year questions organized by exam types including UPSC, SSC, Banking, and more.
-
-![PYQ with Explanations](SCREENSHOTS/pyq%20section%20with%20explanatation.png)
-**Detailed Explanations** - Each question comes with comprehensive explanations to help you understand concepts thoroughly.
-
-![Important Questions](SCREENSHOTS/pyq%20section%20with%20important%20question%20marked.png)
-**Important Questions Marked** - AI identifies and highlights high-priority questions based on exam patterns and frequency.
-
-![Correct Answer](SCREENSHOTS/pyq%20correct%20answer.png)
-**Interactive Testing** - Real-time feedback on your answers with detailed explanations for correct responses.
-
-![Wrong Answer](SCREENSHOTS/pyq%20wrong%20answer.png)
-**Learning from Mistakes** - Constructive feedback on incorrect answers with hints and detailed explanations to improve understanding.
+### Technology Stack
 
 
-### 🔍 AI-Powered Search & Responses
+| Application | Technologies |
+|-------------|-------------|
+| **Pratiyogita Yogya** | React 19, Vite, Tailwind CSS 4, Firebase, html2canvas, jsPDF |
+| **Pratiyogita Marg** | React 18.3, TypeScript, Vite, shadcn/ui, XYFlow (roadmaps), Firebase |
+| **Pratiyogita Gyan** | React 18, Vite, Tailwind CSS, Firebase, Lucide Icons |
+| **Backend API** | Flask (Python 3.11+), Gunicorn |
 
-![Answer Generation](SCREENSHOTS/answer%20generation%20chunks%20and%20sources.png)
-**Source-Cited Responses** - AI provides detailed answers with proper source citations and chunked information for better comprehension.
+**Shared Infrastructure:**
+- **AI & ML**: Groq/OpenAI API, Sentence Transformers
+- **Databases**: Pinecone (Vector DB), Firebase Firestore
+- **Authentication**: Firebase Auth (Email, Google, GitHub)
+- **Storage**: Firebase Storage, Pinecone Namespaces
+- **Hosting**: Vercel (Frontends), Railway/Render (Backend)
+- **PWA Features**: Service Workers, Offline Support
 
-![Ganga River Example](SCREENSHOTS/chat%20view.png)
-**Rich Content Examples** - Comprehensive responses with detailed explanations, perfect for topics like geography, history, and current affairs.
+### How The System Works
 
-### 📚 Content Management
+**For Eligibility Checking (Pratiyogita Yogya):**
+1. You enter your education, age, category details
+2. System checks against database of many exam eligibility criteria
+3. Instantly shows all exams you qualify for
+4. Provides exam details and application links
 
-![Books Data](SCREENSHOTS/inserted%20books%20data.png)
-**NCERT Content Integration** - Complete NCERT textbook content organized and indexed for efficient retrieval and study.
+**For Roadmap Planning (Pratiyogita Marg):**
+1. Select the exam you want to prepare for
+2. System shows complete syllabus breakdown
+3. Visual roadmap displays preparation path
+4. Topics marked as VVI/VI based on importance
+5. Export roadmap as PDF for offline reference
 
-![PYQ Data](SCREENSHOTS/inserted%20pyq%20data.png)
-**Extensive Question Bank** - Comprehensive database of previous year questions from various competitive exams with proper categorization.
+**For AI-Powered Study (Pratiyogita Gyan):**
+1. You ask a question in the chat
+2. Backend converts it to semantic vector
+3. Searches through NCERT content and PYQ database using Pinecone
+4. Retrieves relevant context
+5. OpenAI generates answer using that context
+6. You get accurate response with source citations + related PYQs
 
-### ℹ️ Information & Support
-
-
-![Contact Us](SCREENSHOTS/contact%20us%20page.png)
-**Contact Support** - Easy-to-use contact form for user queries, feedback, and technical support.
-
-![What's New](SCREENSHOTS/whats%20new%20page.png)
-**Updates & Features** - Stay informed about the latest features, improvements, and platform updates.
-
-### 🗂️ Chat Management
-![Chat Management](SCREENSHOTS/sidebar%20chat%20delete%20option.png)
-**Smart Chat History** - Organize, search, and manage your chat history with options to delete old conversations and maintain your study records.
+This RAG (Retrieval-Augmented Generation) approach ensures answers are factually correct and backed by actual study material.
 
 ---
 
-## 🚀 Quick Start
+## Screenshots - Complete Career Journey
 
-### Prerequisites
-```bash
-📋 System Requirements:
-• Python 3.11+ with pip
-• Node.js 18+ and npm
-• Git for version control
-• API keys for Groq and Pinecone
-• Firebase project credentials
-• 4GB+ RAM recommended
-```
+### 1. Pratiyogita Yogya - Check Your Eligibility
 
-### ⚡ Lightning Setup
+First step in your journey: Find out which exams you're eligible for.
 
-1. **Clone the Repository**
+![Pratiyogita Yogya Home](SCREENSHOTS/pratiyogita_yogya_home.png)
+**Eligibility Checker Interface** - Enter your educational qualifications, age, and category. The system will instantly check against hundreds of competitive exams and show you every opportunity you're qualified for.
+
+![Eligibility Results - Basic](SCREENSHOTS/pratiyogita_yogya_result_eligibility_basic.png)
+**Your Eligible Exams** - Get a comprehensive list of all exams you can apply for. Each result shows exam details, eligibility criteria matched, and application information. No more missing opportunities because you didn't know you were eligible.
+
+![Exam Details - Basic](SCREENSHOTS/pratiyogita_yogya_result_exam_basic.png)
+**Detailed Exam Information** - Click on any exam to see complete details including exam pattern, syllabus overview, important dates, and official application links. Everything you need to make informed decisions.
+
+---
+
+### 2. Pratiyogita Marg - Plan Your Preparation
+
+Second step: Get a clear roadmap for the exam you choose.
+
+![Pratiyogita Marg Home](SCREENSHOTS/pratiyogita_marg_home.png)
+**Preparation Roadmap Platform** - Visual, interactive roadmaps showing the complete preparation journey. See the big picture of what you need to study, in what order, and how topics connect to each other.
+
+![Exam Lists](SCREENSHOTS/pratiyogita_marg_exam_lists.png)
+**All Available Roadmaps** - Browse roadmaps for different competitive exams. Each roadmap is crafted based on previous year analysis and expert guidance. Topics are marked as VVI (Very Very Important) or VI (Very Important) so you know where to focus your energy.
+
+---
+
+### 3. Pratiyogita Gyan - Study Smart with AI
+
+Third step: Actually study with AI assistance and practice questions.
+
+![Home Screen](SCREENSHOTS/pratiyogita_gyan_homescreen.png)
+**Welcome to AI Study Assistant** - Clean, intuitive interface that gives you access to chat, PYQ practice, quizzes, and your personal dashboard. Everything organized for efficient studying.
+
+![Dashboard Analytics](SCREENSHOTS/pratiyogita_gyan_dashboard.png)
+**Performance Dashboard** - Track your study time, question accuracy, weak topics, and overall progress. See detailed analytics broken down by subject and topic. Know exactly where you stand in your preparation.
+
+![Sidebar Navigation](SCREENSHOTS/pratiyogita_gyan_sidebar.png)
+**Smart Navigation with Chat History** - All your previous conversations saved and organized. Click on any past chat to continue where you left off. Easy access to all platform features from the sidebar.
+
+![PYQ Practice Interface](SCREENSHOTS/pratiyogita_gyan_pyq_practice.png)
+**Previous Year Questions Practice** - Thousands of real PYQ from UPSC, SSC, Banking, Railway exams. Practice mode with instant feedback and detailed explanations for every question. Learn not just the answer, but the concept behind it.
+
+![PYQ Sidebar Organization](SCREENSHOTS/pratiyogita_gyan_pyq_sidebar.png)
+**Organized Question Bank** - Questions neatly categorized by exam type, subject, year, and difficulty. Filter to find exactly what you need to practice. Track which questions you've attempted.
+
+![Quiz Section](SCREENSHOTS/pratiyogita_gyan_quiz.png)
+**Interactive Quizzes** - Test yourself with timed quizzes. Choose subjects, set time limits, and get instant scoring. See detailed explanations for every question after submission.
+
+---
+
+### Mobile Experience - Study Anywhere
+
+All three platforms work beautifully on mobile devices:
+
+<div align="center">
+<img src="SCREENSHOTS/pratiyogita_gyan_mobile_home.png" width="250" alt="Mobile Home" />
+<img src="SCREENSHOTS/pratiyogita_gyan_mobile_menubar.png" width="250" alt="Mobile Menu" />
+<img src="SCREENSHOTS/pratiyogita_gyan_mobile_sidebar.png" width="250" alt="Mobile Sidebar" />
+</div>
+
+**Mobile Navigation** - User-friendly mobile interface with smooth navigation. Access all features on your phone while commuting or traveling.
+
+<div align="center">
+<img src="SCREENSHOTS/pratiyogita_gyan_mobile_chat.png" width="250" alt="Mobile Chat" />
+<img src="SCREENSHOTS/pratiyogita_gyan_mobile_dashboard.png" width="250" alt="Mobile Dashboard" />
+<img src="SCREENSHOTS/pratiyogita_gyan_mobile_pyq.png" width="250" alt="Mobile PYQ" />
+</div>
+
+**Full-Featured Mobile Interface** - Chat with AI, view dashboard analytics, and practice PYQs - all optimized for mobile screens. Study anywhere, anytime.
+
+<div align="center">
+<img src="SCREENSHOTS/pratiyogita_gyan_mobile_quiz.png" width="250" alt="Mobile Quiz" />
+<img src="SCREENSHOTS/pratiyogita_gyan_mobile_pyq_sidebar.png" width="250" alt="Mobile PYQ Menu" />
+</div>
+
+**Mobile Quiz & PYQ Practice** - Complete quiz functionality and PYQ practice on your phone. Same powerful features, perfect mobile experience.
+
+---
+
+## Getting Started
+
+### What You'll Need
+
+Before setting up the project, make sure you have:
+
+- **Python 3.11 or higher** - Download from [python.org](https://python.org)
+- **Node.js 18 or higher** - Get it from [nodejs.org](https://nodejs.org)
+- **Git** - For cloning the repository
+- **API Keys** - You'll need free accounts for:
+  - [OpenAI](https://platform.openai.com/api-keys)/[Groq](https://groq.com) - For the AI model (Pratiyogita Gyan)
+  - [Pinecone](https://pinecone.io) - For vector database (Pratiyogita Gyan)
+  - [Firebase](https://firebase.google.com) - For authentication (all three apps)
+- **At least 4GB RAM** - For running the applications
+
+### Setup Instructions
+
+Don't worry if you're new to this - we'll walk through it step by step.
+
+1. **Get the Code**
    ```bash
    git clone https://github.com/pratiyogitasetu/chatbot.git
    cd chatbot
    ```
 
-2. **Backend Setup**
+2. **Set Up the Backend** (Required for Pratiyogita Gyan only)
+   
+   The backend handles all the AI processing and database operations for the study assistant.
+   
    ```bash
    cd backend
    
-   # Create virtual environment (recommended)
+   # Create a virtual environment (keeps dependencies isolated)
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    
-   # Install dependencies
+   # Install required packages
    pip install -r requirements.txt
+   ```
    
-   # Create .env file
-   cp .env.example .env
-   # Edit .env and add your API keys:
-   # GROQ_API_KEY=your_groq_api_key
-   # PINECONE_API_KEY=your_pinecone_api_key
+   Now create a `.env` file in the backend folder with your API keys:
+   ```env
+   GROQ_API_KEY=your_groq_api_key_here
+   PINECONE_API_KEY=your_pinecone_api_key_here
+   ALLOWED_ORIGINS=http://localhost:3002
    ```
 
-3. **Frontend Setup**
+3. **Set Up Pratiyogita Yogya** (Eligibility Checker)
+   
+   ```bash
+   cd ../pratiyogita_yogya
+   
+   # Install dependencies
+   npm install
+   ```
+   
+   Create a `.env` file in the pratiyogita_yogya folder:
+   ```env
+   VITE_FIREBASE_API_KEY=your_firebase_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your-project-id
+   VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+   VITE_FIREBASE_APP_ID=your-app-id
+   ```
+
+4. **Set Up Pratiyogita Marg** (Roadmap Planner)
+   
+   ```bash
+   cd ../pratiyogita_marg
+   
+   # Install dependencies
+   npm install
+   ```
+   
+   Create a `.env` file in the pratiyogita_marg folder (same Firebase config as above):
+   ```env
+   VITE_FIREBASE_API_KEY=your_firebase_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your-project-id
+   VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+   VITE_FIREBASE_APP_ID=your-app-id
+   ```
+
+5. **Set Up Pratiyogita Gyan** (AI Study Assistant)
+   
    ```bash
    cd ../FRONTEND
    
    # Install dependencies
    npm install
+   ```
    
-   # Create .env file
-   cp .env.example .env
-   # Edit .env and add your Firebase config:
-   # VITE_FIREBASE_API_KEY=your_firebase_key
-   # VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
-   # ... (see FRONTEND/.env.example for all variables)
+   Create a `.env` file in the FRONTEND folder:
+   ```env
+   VITE_API_BASE_URL=http://localhost:5000
+   VITE_FIREBASE_API_KEY=your_firebase_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your-project-id
+   VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+   VITE_FIREBASE_APP_ID=your-app-id
    ```
 
-4. **Launch Application**
-   ```bash
-   # Terminal 1: Start backend
-   cd backend
-   python app.py
-   # Backend will run on http://localhost:5000
+6. **Start the Applications**
    
-   # Terminal 2: Start frontend
+   You'll need separate terminal windows for each app you want to run:
+   
+   **For Pratiyogita Yogya (Eligibility):**
+   ```bash
+   cd pratiyogita_yogya
+   npm run dev
+   # Opens on http://localhost:5173 (or another port)
+   ```
+   
+   **For Pratiyogita Marg (Roadmap):**
+   ```bash
+   cd pratiyogita_marg
+   npm run dev
+   # Opens on http://localhost:5174 (or another port)
+   ```
+   
+   **For Pratiyogita Gyan (Study Assistant):**
+   
+   Terminal 1 - Backend:
+   ```bash
+   cd backend
+   source venv/bin/activate
+   python app.py
+   # Runs on http://localhost:5000
+   ```
+   
+   Terminal 2 - Frontend:
+   ```bash
    cd FRONTEND
    npm run dev
-   # Frontend will run on http://localhost:3002
+   # Opens on http://localhost:3002
    ```
 
-5. **Access Your App** 🎉
-   - 🌐 **Main App**: http://localhost:3002
-   - ⚙️ **API Docs**: http://localhost:5000/api/health
-   - 🔥 **Firebase Console**: https://console.firebase.google.com
-
----
-
-## 📁 Project Architecture
-
-```
-🏗️ NCERT + PYQ AI Study Assistant
-├── 🎨 FRONTEND/                      # React + Vite Frontend Application
-│   ├── src/
-│   │   ├── components/               # Reusable UI components
-│   │   │   ├── ChatSection.jsx       # Main chat interface with AI responses
-│   │   │   ├── AuthModal.jsx         # Firebase authentication modal
-│   │   │   ├── Dashboard.jsx         # User analytics dashboard
-│   │   │   ├── Sidebar.jsx           # Navigation sidebar with chat history
-│   │   │   ├── Navbar.jsx            # Top navigation bar
-│   │   │   ├── PYQSection.jsx        # Previous Year Questions interface
-│   │   │   ├── PYQPractice.jsx       # Interactive PYQ practice mode
-│   │   │   ├── QuizSection.jsx       # Quiz and assessment features
-│   │   │   ├── AttemptQuiz.jsx       # Quiz attempt interface
-│   │   │   ├── EligibilitySection.jsx # Exam eligibility checker (coming soon)
-│   │   │   ├── SyllabusSection.jsx   # Exam syllabus viewer (coming soon)
-│   │   │   ├── GDTopicsSection.jsx   # AI for GD topics (coming soon)
-│   │   │   ├── EditProfileModal.jsx  # User profile management
-│   │   │   ├── AboutUsModal.jsx      # About section modal
-│   │   │   ├── ContactModal.jsx      # Contact form modal
-│   │   │   ├── HelpSupportModal.jsx  # Help and support interface
-│   │   │   ├── WhatsNewModal.jsx     # Feature updates modal
-│   │   │   ├── InfoModals.jsx        # Information display modals
-│   │   │   ├── Clock.jsx             # Study timer component
-│   │   │   ├── FloatingSearchBar.jsx # Floating search interface
-│   │   │   ├── EmbeddedSearchBar.jsx # Embedded search component
-│   │   │   ├── SearchProgressIndicator.jsx # Search progress display
-│   │   │   ├── ErrorBoundary.jsx     # Error handling wrapper
-│   │   │   └── icons/                # Custom icon components
-│   │   │       ├── ChevronFirst.jsx  # Chevron icon
-│   │   │       ├── CircleHelp.jsx    # Help icon
-│   │   │       └── Network.jsx       # Network icon
-│   │   ├── contexts/                 # React context providers
-│   │   │   ├── AuthContext.jsx       # Firebase authentication state
-│   │   │   ├── ThemeContext.jsx      # Theme management (dark/light mode)
-│   │   │   ├── LayoutContext.jsx     # Layout state management
-│   │   │   ├── DashboardContext.jsx  # Dashboard data management
-│   │   │   └── SearchHistoryContext.jsx # Search history tracking
-│   │   ├── config/
-│   │   │   └── firebase.js           # Firebase configuration
-│   │   ├── services/
-│   │   │   └── api.js                # Backend API service layer
-│   │   └── utils/                    # Helper functions
-│   │       ├── logger.js             # Logging utility
-│   │       ├── performance.js        # Performance monitoring
-│   │       ├── themeHelpers.js       # Theme utility functions
-│   │       └── validation.js         # Form validation helpers
-│   ├── public/                       # Static assets & PWA files
-│   │   ├── offline.html              # Offline fallback page
-│   │   ├── sw.js                     # Service worker for PWA
-│   │   └── *.svg                     # App icons and images
-│   ├── package.json                  # NPM dependencies
-│   ├── vite.config.js                # Vite build configuration
-│   ├── tailwind.config.js            # Tailwind CSS configuration
-│   ├── vercel.json                   # Vercel deployment config
-│   ├── .env                          # Environment variables (create this)
-│   ├── .env.example                  # Environment variables template
-│   └── README.md                     # Frontend documentation
-│
-├── 🔧 backend/                       # Flask Backend API
-│   ├── app.py                        # Main Flask application
-│   ├── requirements.txt              # Python dependencies
-│   ├── Procfile                      # Deployment configuration (Railway/Render)
-│   ├── runtime.txt                   # Python version specification
-│   ├── railway.json                  # Railway deployment config
-│   ├── .env                          # Backend environment variables
-│   └── README.md                     # Backend documentation
-│
-├── 🔧 Configuration Files (Root)
-│   ├── .env                          # Root environment variables
-│   ├── .gitignore                    # Git ignore rules
-│   └── README.md                     # This comprehensive guide
-│
-└── 📝 Documentation & Guides
-    ├── FRONTEND/
-    │   ├── DEPLOY.md                 # Frontend deployment guide
-    │   ├── VERCEL_ENV_SETUP.md       # Vercel environment setup
-    │   └── GITHUB_AUTH_SETUP.md      # GitHub authentication guide
-    └── backend/
-        ├── DEPLOYMENT_GUIDE.md       # Backend deployment options
-        ├── FIXES_SUMMARY.md          # Recent fixes and improvements
-        └── render.yaml               # Render deployment configuration
-```
-
-### 📦 Key Files Explained
-
-**Frontend:**
-- `App.jsx` - Main React application component
-- `main.jsx` - Application entry point
-- `index.css` - Global styles
-- `vite.config.js` - Development server and build configuration
-- `vercel.json` - Production deployment settings
-
-**Backend:**
-- `app.py` - Flask server with RAG implementation
-- `requirements.txt` - Groq, Pinecone, Flask dependencies
-- `Procfile` - Web server startup command
-
-**Configuration:**
-- `.env` files contain API keys (Groq, Pinecone, Firebase)
-- `vercel.json` & `railway.json` for cloud deployment
-- `tailwind.config.js` for custom styling
-
----
-
-## 🎯 Core Features Deep Dive
-
-### 🤖 AI-Powered Chat Assistant
-- **RAG Architecture**: Retrieval-Augmented Generation for accurate, context-aware responses
-- **Groq LLM Integration**: Powered by Llama 3.1 70B for intelligent answers
-- **Source Citations**: Every answer includes references to original content
-- **Context Memory**: Maintains conversation context for natural dialogue
-- **Real-time Responses**: Fast streaming responses for better UX
-- **Multi-turn Conversations**: Supports follow-up questions
-
-### 📚 Study Features
-- **Interactive Chat**: Ask questions and get instant AI-powered answers
-- **PYQ Practice**: Practice with previous year questions from various exams
-- **Quiz Mode**: Test your knowledge with timed quizzes
-- **Dashboard Analytics**: Track your study progress and performance
-- **Subject Filtering**: Focus on specific subjects (Economics, Geography, History, Polity)
-- **Chat History**: Save and revisit previous study sessions (with authentication)
-
-### 🎓 Exam Preparation Tools
-- **PYQ Database**: Comprehensive collection of previous year questions
-- **Subject-wise Organization**: Questions organized by topics and subjects
-- **Detailed Explanations**: Every question includes comprehensive explanations
-- **Important Markers**: AI-highlighted important questions
-- **Performance Tracking**: Monitor your progress across different subjects
-- **Weak Area Identification**: AI identifies topics needing more attention
-
-### 🔐 User Management
-- **Firebase Authentication**: Secure email/password, Google, and GitHub sign-in
-- **User Profiles**: Personalized dashboards with study statistics
-- **Cloud Sync**: Access your data across devices
-- **Chat History**: Save and sync conversations (authenticated users)
-- **Guest Mode**: Try the app without signing up
-- **Profile Customization**: Edit profile details and preferences
-
-### 🎨 User Experience
-- **Modern UI**: Clean, intuitive interface with Tailwind CSS
-- **Responsive Design**: Perfect experience on desktop, tablet, and mobile
-- **Theme Support**: Customizable color themes for comfortable studying
-- **Dark/Light Mode**: Switch between themes based on preference
-- **PWA Support**: Install as a mobile/desktop app
-- **Offline Mode**: Basic functionality available offline
-- **Fast Performance**: Optimized with Vite for quick load times
-
-### 📊 Analytics & Tracking
-- **Study Time Tracking**: Monitor time spent on different subjects
-- **Question History**: Review previously attempted questions
-- **Performance Metrics**: Detailed analysis of your preparation
-- **Progress Visualization**: Charts showing your improvement
-- **Subject-wise Stats**: Deep dive into specific areas
-- **Streak Tracking**: Maintain consistent study habits
-
----
-
-## 🚀 Advanced Usage
-
-### 📖 Using the Chat Interface
-```
-💡 Example Queries:
-• "Explain the concept of GDP in Indian economy"
-• "What are the major rivers in India?"
-• "Tell me about the Indian Constitution"
-• "Explain photosynthesis process"
-• "What is the capital of India and its significance?"
-```
-
-### 🎯 PYQ Practice Mode
-1. Navigate to **PYQ Practice** from sidebar
-2. Select exam type (UPSC, SSC, Banking, etc.)
-3. Choose subject and year
-4. Start practicing questions
-5. Get instant feedback and explanations
-6. Track your performance
-
-### � Using the Dashboard
-- **View Statistics**: Total queries, study time, performance
-- **Analyze Progress**: Subject-wise performance charts
-- **Chat History**: Access previous conversations
-- **Profile Management**: Update your details and preferences
-
-### 🎨 Customizing Your Experience
-1. Click on **Settings** (top right)
-2. Choose your preferred theme
-3. Adjust notification preferences
-4. Customize sidebar visibility
-5. Set study goals and reminders
-
-### � Authentication Features
-- **Email/Password**: Traditional sign-up method
-- **Google Sign-In**: Quick authentication with Google account
-- **GitHub Sign-In**: Developer-friendly authentication
-- **Guest Mode**: Try features without account (limited functionality)
-
-### 📱 Progressive Web App (PWA)
-1. Visit the app in your browser
-2. Click the "Install" button (or browser menu)
-3. App will be installed on your device
-4. Access offline features and faster load times
-
----
-
-## 🛠️ For Developers
-
-### 🔧 Backend API Endpoints
-
-#### Chat & Search
-```javascript
-// Main chat endpoint
-POST /api/chat
-{
-  "query": "Your study question",
-  "conversation_history": [] // optional
-}
-
-// Response includes AI answer and sources
-```
-
-#### PYQ Operations
-```javascript
-// Search PYQ questions
-POST /api/pyq/search
-{
-  "query": "Indian rivers",
-  "exam_name": "UPSC",      // optional
-  "year": "2023",           // optional
-  "subject": "Geography"    // optional
-}
-
-// Get random PYQ questions
-GET /api/pyq/random?count=10&exam=UPSC
-```
-
-#### System & Health
-```javascript
-// Health check
-GET /api/health
-// Returns: { status, initialized, components_loaded, timestamp }
-
-// Get available books
-GET /api/books
-// Returns list of indexed NCERT content
-
-// Get inserted PYQs info
-GET /api/pyqs
-// Returns list of available PYQ exams
-```
-
-### 🏗️ Frontend Architecture
-
-**Component Structure:**
-- `App.jsx` - Main app container
-- `ChatSection.jsx` - Chat interface logic
-- `PYQSection.jsx` - PYQ practice interface
-- `Dashboard.jsx` - User analytics
-- `Sidebar.jsx` - Navigation & chat history
-
-**State Management:**
-- `AuthContext` - User authentication state
-- `ThemeContext` - UI theme preferences
-- `LayoutContext` - Sidebar & layout state
-- `DashboardContext` - Dashboard data
-- `SearchHistoryContext` - Search & chat history
-
-**API Layer:**
-- `services/api.js` - Centralized API calls
-- Axios for HTTP requests
-- Error handling & retry logic
-
-### 🧪 Testing
-
-```bash
-# Backend testing
-cd backend
-python -m pytest tests/ -v
-
-# Frontend testing
-cd FRONTEND
-npm test
-
-# Run specific test file
-npm test ChatSection.test.jsx
-
-# Coverage report
-npm test -- --coverage
-```
-
-### 📦 Building for Production
-
-**Frontend Build:**
-```bash
-cd FRONTEND
-npm run build
-# Output in FRONTEND/dist/
-
-# Preview production build
-npm run preview
-```
-
-**Backend Deployment:**
-```bash
-cd backend
-# Using gunicorn
-gunicorn app:app --bind 0.0.0.0:$PORT
-
-# Environment check
-python -c "import sys; print(sys.version)"
-```
-
-### 🔧 Environment Variables
-
-**Backend (.env):**
-```bash
-GROQ_API_KEY=your_groq_api_key
-PINECONE_API_KEY=your_pinecone_api_key
-ALLOWED_ORIGINS=https://your-frontend-url.com
-PORT=5000
-```
-
-**Frontend (.env):**
-```bash
-VITE_API_BASE_URL=https://your-backend-url.com
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your-app.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-app.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-VITE_FIREBASE_APP_ID=your-app-id
-VITE_FIREBASE_MEASUREMENT_ID=your-measurement-id
-```
-
-### 🚀 Deployment
-
-**Vercel (Frontend):**
-1. Connect your GitHub repository
-2. Set environment variables in Vercel dashboard
-3. Deploy automatically on push
-
-**Render/Railway (Backend):**
-1. Connect GitHub repository
-2. Set environment variables
-3. Configure build & start commands
-4. Deploy
-
-See `FRONTEND/VERCEL_ENV_SETUP.md` and `backend/DEPLOYMENT_GUIDE.md` for detailed instructions.
-
-### 🏗️ Architecture Details
-- **Frontend**: React 18 + Vite + Tailwind CSS
-- **Backend**: Flask + Gunicorn (Python 3.11+)
-- **AI/ML**: Groq API (Llama 3.1) + Sentence Transformers
-- **Vector DB**: Pinecone with namespace support
-- **Authentication**: Firebase Auth (Email, Google, GitHub)
-- **Deployment**: Vercel (Frontend) + Render/Railway (Backend)
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how you can help:
-
-### 🌟 Ways to Contribute
-- 🐛 **Bug Reports**: Found an issue? Let us know!
-- 💡 **Feature Requests**: Have ideas? We'd love to hear them!
-- 📝 **Content Addition**: Add more study materials or questions
-- 🔧 **Code Improvements**: Enhance existing features
-- 📚 **Documentation**: Help improve our docs
-- 🧪 **Testing**: Add test cases and improve coverage
-- 🌐 **Localization**: Help translate to other languages
-
-### 🚀 Getting Started
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Set up development environment:
-   ```bash
-   # Install dependencies
-   pip install -r requirements.txt
-   cd FRONTEND && npm install
+7. **Open Your Browser**
    
-   # Set up environment variables
-   cp .env.example .env
-   # Add your API keys to .env
-   ```
-4. Make your changes and test thoroughly
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
+   - **Pratiyogita Yogya**: http://localhost:5173 (check eligibility)
+   - **Pratiyogita Marg**: http://localhost:5174 (view roadmaps)
+   - **Pratiyogita Gyan**: http://localhost:3002 (study with AI)
 
-### 📋 Development Guidelines
-- Follow existing code style and conventions
-- Add tests for new features
-- Update documentation as needed
-- Ensure all tests pass before submitting
-- Keep commits atomic and descriptive
-- Follow semantic versioning for releases
-
-### 🧪 Code Quality Standards
-```bash
-# Python code formatting
-black . --line-length 88
-flake8 . --max-line-length 88
-
-# JavaScript/React formatting
-cd FRONTEND
-npm run lint
-npm run format
-
-# Type checking (if using TypeScript)
-npm run type-check
-```
-
-### 📝 Contributing to Content
-- **NCERT Content**: Add missing chapters or subjects
-- **PYQ Data**: Contribute questions from recent exams
-- **Explanations**: Improve question explanations and solutions
-- **Metadata**: Enhance question categorization and tagging
-
-### 🔍 Areas Needing Help
-- [ ] Mobile app development (React Native)
-- [ ] Voice search integration
-- [ ] Advanced analytics dashboard
-- [ ] Performance optimization
-- [ ] Multi-language support
-- [ ] Offline functionality
-- [ ] Advanced question difficulty rating
-- [ ] Collaborative study features
+You can run all three together or just the ones you need!
 
 ---
 
-## 📄 License
+## Project Structure
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+This is a monorepo containing four applications:
 
 ```
-MIT License - Feel free to use, modify, and distribute
-with proper attribution to the original authors.
+Pratiyogita Setu - Complete Career Preparation Ecosystem
+│
+├── pratiyogita_yogya/                # Eligibility Checker Application
+│   ├── src/
+│   │   ├── components/               # UI Components
+│   │   ├── contexts/                 # State management
+│   │   ├── eligibility/              # Eligibility check logic
+│   │   ├── Pages/                    # Page components
+│   │   └── utils/                    # Helper functions
+│   ├── examsdata/                    # Exam eligibility data
+│   │   ├── allexamnames.json
+│   │   ├── possiblefields.json
+│   │   └── *_ED/                     # Exam-specific data folders
+│   ├── scripts/                      # Data upload scripts
+│   ├── package.json
+│   └── vite.config.js
+│
+├── pratiyogita_marg/                 # Roadmap Planner Application
+│   ├── src/
+│   │   ├── components/               # UI Components (TypeScript)
+│   │   ├── contexts/                 # State management
+│   │   ├── pages/                    # Page components
+│   │   ├── data/                     # Roadmap data
+│   │   ├── hooks/                    # Custom React hooks
+│   │   └── lib/                      # Utility libraries
+│   ├── package.json
+│   ├── tsconfig.json                 # TypeScript config
+│   └── vite.config.ts
+│
+├── FRONTEND/                         # Pratiyogita Gyan - AI Study Assistant
+│   ├── src/
+│   │   ├── components/               # UI Components
+│   │   │   ├── ChatSection.jsx       # Main chat interface with AI
+│   │   │   ├── AuthModal.jsx         # Login/Signup modal
+│   │   │   ├── Dashboard.jsx         # Analytics dashboard
+│   │   │   ├── Sidebar.jsx           # Navigation & chat history
+│   │   │   ├── PYQSection.jsx        # PYQ interface
+│   │   │   ├── PYQPractice.jsx       # Interactive practice mode
+│   │   │   ├── QuizSection.jsx       # Quiz features
+│   │   │   ├── AttemptQuiz.jsx       # Quiz attempt interface
+│   │   │   └── ... (other components)
+│   │   ├── contexts/                 # State Management
+│   │   │   ├── AuthContext.jsx       # User authentication
+│   │   │   ├── ThemeContext.jsx      # Dark/Light mode
+│   │   │   └── DashboardContext.jsx  # Dashboard data
+│   │   ├── config/
+│   │   │   └── firebase.js           # Firebase setup
+│   │   ├── services/
+│   │   │   └── api.js                # Backend API calls
+│   │   └── utils/                    # Helper functions
+│   ├── public/                       # Static files
+│   │   ├── sw.js                     # Service worker (PWA)
+│   │   └── offline.html              # Offline page
+│   ├── package.json
+│   ├── vite.config.js
+│   └── tailwind.config.js
+│
+├── backend/                          # Flask API (For Pratiyogita Gyan)
+│   ├── app.py                        # Main Flask application with RAG
+│   ├── requirements.txt              # Python dependencies
+│   ├── Procfile                      # Deployment config
+│   └── .env                          # API keys (create this)
+│
+└── SCREENSHOTS/                      # Application screenshots
+    ├── pratiyogita_yogya_*.png       # Eligibility checker screenshots
+    ├── pratiyogita_marg_*.png        # Roadmap planner screenshots
+    └── pratiyogita_gyan_*.png        # Study assistant screenshots
 ```
+
 
 ---
 
-## 👥 Team & Acknowledgments
+## Features in Detail
 
-### 🏆 Core Team
-- **Lead Developer**: [Manudev](https://github.com/manudev0004)
-- **AI/ML Specialist**: Advanced RAG implementation
-- **Frontend Designer**: Modern React UI/UX
-- **Content Curator**: Educational data management
-- **DevOps Engineer**: Deployment and infrastructure
+### 1. Pratiyogita Yogya - Eligibility Checker
 
-### 🙏 Special Thanks
-- **NCERT** for providing quality educational content
-- **Open Source Community** for amazing libraries and tools
-- **Contributors** who help improve this platform
-- **Students** who provide valuable feedback and testing
-- **Educators** who validate content accuracy
-- **Beta Testers** for early feedback and bug reports
+**The Problem:** Students often miss exam opportunities because they don't know they're eligible, or waste time applying for exams they don't qualify for.
 
-### 📚 Built With Love Using
-- [React](https://reactjs.org/) - Frontend framework
-- [Flask](https://flask.palletsprojects.com/) - Backend framework
-- [Pinecone](https://www.pinecone.io/) - Vector database
-- [Groq](https://groq.com/) - AI language model
-- [Firebase](https://firebase.google.com/) - Authentication & storage
-- [Tailwind CSS](https://tailwindcss.com/) - Styling framework
-- [Vite](https://vitejs.dev/) - Build tool
-- [Sentence Transformers](https://www.sbert.net/) - Embedding models
-- [Lucide React](https://lucide.dev/) - Beautiful icons
+**The Solution:** Enter your details once, get instant results for various exams you're eligible for.
 
-### 🏅 Recognition & Achievements
-- ⭐ **Featured Project** in AI/Education category
-- 🏆 **Innovation Award** for RAG implementation
-- 📈 **Growing Community** of 1000+ users
-- 🎯 **High Performance** with 95% user satisfaction
-- 🚀 **Rapid Development** with continuous updates
+**How it works:**
+1. Fill in your educational qualifications (10th, 12th, Graduation, Post-Graduation)
+2. Enter your age and category (General/OBC/SC/ST)
+3. System checks against comprehensive database of exam criteria
+4. Get complete list of eligible exams across:
+   - UPSC (Civil Services, CDS, CAPF, etc.)
+   - SSC (CGL, CHSL, JE, Stenographer, etc.)
+   - Banking (IBPS PO, Clerk, SBI, RBI, NABARD, etc.)
+   - Railway (RRB NTPC, Group D, ALP, JE, etc.)
+   - Defense (NDA, CDS, AFCAT, Navy, Army, etc.)
+   - State PSC exams
+   - And many more...
 
-### 💡 Inspiration
-This project was inspired by the need for accessible, AI-powered education tools that can help students across India prepare for competitive exams more effectively. Our goal is to democratize quality education through technology.
+**Features:**
+- Division-based and non-division based exam categorization
+- Detailed exam information including pattern, syllabus overview, and important dates
+- Direct links to official application portals
+- Export results as PDF for future reference
+- Mobile-responsive for checking on any device
+
+**Why it matters:** No more missed opportunities. No more wasted time on exams you don't qualify for. Make informed career decisions.
 
 ---
 
-## 📞 Support & Contact
+### 2. Pratiyogita Marg - Preparation Roadmap
 
-### 🆘 Need Help?
--  **Issues**: [GitHub Issues](https://github.com/pratiyogitasetu/chatbot/issues)
-- � **Email**: support@pratiyogitasetu.com
-- 💬 **Community**: Join our discussion forums
+**The Problem:** You know which exam to take, but the syllabus is overwhelming. What to study first? Which topics are most important?
 
-### 🌐 Resources
-- � **Documentation**: See individual README files in FRONTEND/ and backend/
-- � **Deployment Guides**: 
-  - Frontend: `FRONTEND/VERCEL_ENV_SETUP.md`
-  - Backend: `backend/DEPLOYMENT_GUIDE.md`
-- � **Auth Setup**: `FRONTEND/GITHUB_AUTH_SETUP.md`
+**The Solution:** Clear visual roadmaps showing the complete preparation path with topics marked by importance.
 
-### 🔧 Technical Support
-- **Installation Issues**: Check prerequisites and follow setup guide
-- **API Key Problems**: Verify your Groq and Pinecone credentials
-- **Firebase Issues**: Ensure all Firebase config variables are set
-- **Performance Issues**: Check system requirements (4GB+ RAM)
-- **Deployment Issues**: Review deployment guides in respective folders
+**How it works:**
+1. Select the exam you're preparing for
+2. View interactive roadmap showing all topics and how they connect
+3. Topics marked as:
+   - **VVI (Very Very Important)** - Asked frequently, high weightage
+   - **VI (Very Important)** - Regular appearance in exams
+   - **Standard** - Important for complete preparation
+4. Follow the suggested study sequence
+5. Export roadmap as PDF for offline reference
 
----
+**Features:**
+- Visual, flowchart-style roadmaps (built with XYFlow)
+- Based on previous year paper analysis
+- Exam-specific preparation strategies
+- Topic interconnections showing prerequisites
+- Clear study path from basics to advanced
+- Mobile and desktop optimized viewing
 
-<div align="center">
-
-### ⭐ Star this repo if it helps your preparation! ⭐
-
-![GitHub last commit](https://img.shields.io/github/last-commit/pratiyogitasetu/chatbot)
-![GitHub repo size](https://img.shields.io/github/repo-size/pratiyogitasetu/chatbot)
-
-### 📈 Project Features
-- 🎯 **AI-Powered Chat**: Intelligent study assistant
-- 📚 **NCERT Content**: Comprehensive textbook coverage
-- 📝 **PYQ Database**: Extensive previous year questions
-- 🔍 **Smart Search**: Fast semantic search
-- ⚡ **Quick Responses**: <2 seconds average
-- 🎯 **User Friendly**: 95%+ satisfaction
-
-### 🚀 Latest Version (v2.0.0)
-- ✅ **Enhanced UI/UX** - Modern, responsive design
-- ✅ **Firebase Authentication** - Email, Google, GitHub sign-in
-- ✅ **Dashboard Analytics** - Track study progress
-- ✅ **Chat History** - Save and sync conversations
-- ✅ **PWA Support** - Install as mobile/desktop app
-- ✅ **Improved Performance** - Faster responses
-- ✅ **Better Navigation** - Intuitive sidebar design
-- ✅ **Theme Customization** - Multiple color options
-
-### 🔮 Coming Soon
-- � **AI for GD Topics** - Group discussion preparation
-- � **Eligibility Checker** - Check exam eligibility
-- 📖 **Exam Syllabus** - Comprehensive syllabus viewer
-- 📱 **Mobile App** - Native mobile experience
-- �️ **Voice Search** - Voice-based queries
-- 🌍 **Multi-language** - Support for regional languages
-
-**Made with ❤️ for students**
-
-*Happy Learning! 🎓 Transform your exam preparation today!*
+**Why it matters:** Stop feeling lost. Know exactly what to study, in what order, and what deserves most of your time. Study smart, not just hard.
 
 ---
 
-### 📄 License
+### 3. Pratiyogita Gyan - AI Study Assistant
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+**The Problem:** Traditional study methods are passive. You have questions but no one to ask. You practice questions but don't understand the concepts.
 
+**The Solution:** An AI tutor that actually knows the material, shows sources, and integrates PYQs with every answer.
+
+#### AI Chat with RAG Technology
+
+The heart of the platform is the intelligent chat system. Unlike generic AI chatbots, this system:
+
+1. Converts your question into a semantic vector (mathematical representation)
+2. Searches through thousands of NCERT pages and PYQ explanations using Pinecone
+3. Retrieves relevant content (this is the "Retrieval" part of RAG)
+4. Sends that specific content + your question to Groq's Llama 3.1 70B model
+5. AI generates answer using only the retrieved content ("Augmented Generation")
+6. You get accurate response with source citations
+
+**This means:**
+- AI can't hallucinate or make things up - it uses only your study material
+- Every answer includes source references (which NCERT chapter/page)
+- Relevant PYQs are shown with each answer
+- You can verify information yourself
+
+**What you can do:**
+- Ask any question related to NCERT content (Classes 6-12)
+- Get explanations for complex topics with examples
+- Request real-world applications of concepts
+- Have follow-up conversations where AI remembers context
+- See which textbook page the answer came from
+- Get related PYQs automatically with each answer
+
+**Example queries:**
 ```
-MIT License - Feel free to use, modify, and distribute
-with proper attribution to the original authors.
-Educational use is especially encouraged!
+"Explain the concept of GDP and how it's calculated in India"
+"What are the major rivers in India and their tributaries?"
+"Tell me about the Preamble of Indian Constitution"
+"How does photosynthesis work? Explain light and dark reactions"
+"What is the difference between climate and weather?"
 ```
 
-**© 2024 NCERT + PYQ AI Study Assistant. All rights reserved.**
+#### Integrated PYQ System
+
+This is where it gets really powerful - PYQs aren't separate, they're integrated:
+
+- Ask any question → Get AI answer → See related PYQs automatically
+- Practice mode with thousands of questions from:
+  - UPSC (Civil Services, CSAT, etc.)
+  - SSC (CGL, CHSL, etc.)
+  - Banking exams(IBPS, SBI, etc.)
+  - Railway exams
+  - State PSC exams
+
+**Each question includes:**
+- The correct answer
+- Detailed explanation of why it's correct
+- Explanation of why other options are wrong
+- Related concepts you should know
+- Difficulty level
+- Exam and year it appeared in
+
+**Practice Features:**
+- Filter by exam type, subject, year
+- Timed practice sessions
+- Instant feedback with explanations
+- Track which questions you've attempted
+- Review mistakes with detailed solutions
+
+#### Quiz Mode
+
+Test yourself with structured quizzes:
+- Choose specific subjects or topics
+- Set your own time limits
+- Get instant scoring after submission
+- See detailed explanations for every question
+- Track accuracy trends over time
+
+#### Personal Dashboard
+
+Your study analytics command center:
+- Total study time (overall and per subject)
+- Number of questions attempted and accuracy rate
+- Subject-wise performance breakdown
+- Weak topics that need more attention
+- Study streak and consistency tracking
+- Progress charts showing improvement over time
+- Day-by-day study patterns
+
+**Use this data to:**
+- Identify which subjects need more focus
+- Plan your daily/weekly study schedule
+- Track improvement over weeks and months
+- Stay motivated with streak tracking
+
+#### User Features
+
+**Authentication** - Sign in with email, Google, or GitHub. Your data syncs across all devices (phone, tablet, computer).
+
+**Chat History** - Every conversation saved if you're logged in:
+- Review topics you studied days/weeks ago
+- Find that great explanation from last week
+- Track your learning journey
+- Share notes with study partners
+
+**Progressive Web App** - Install on phone/desktop:
+- Works like a native app
+- Faster loading times
+- Offline access to basic features
+- No need to keep browser tab open
+
+**Theme Options** - Light mode, dark mode, or auto. Easy on eyes during late-night study sessions.
+
+**Responsive Design** - Same features on all devices. Study on phone during commute, continue on laptop at home.
+
+
+---
+
+
+
+### Why We Built This
+
+Growing up in India, we saw how expensive coaching classes were creating a divide between students who could afford quality exam preparation and those who couldn't. We wanted to change that.
+
+This platform is our attempt to democratize access to quality study materials and AI-powered learning assistance. Every student with internet access should be able to get the same quality of exam preparation, regardless of their economic background.
+
+If this platform helps even one student achieve their dreams, it's been worth it.
+
+---
+
+
+### Coming Soon
+
+**Voice Search** - Ask questions to Pratiyogita Gyan using your voice
+
+**Regional Languages** - Interface in Hindi, Tamil, Telugu, and more languages across all three apps
+
+**Native Mobile Apps** - Dedicated Android and iOS apps for all three platforms
+
+**Collaborative Features** - Study groups, shared notes, and peer learning
+
+**Advanced Analytics** - AI-powered weak area identification and personalized study plans
+
+**Mock Tests** - Full-length mock exams with detailed analysis
+
+---
+
+**Built with care as a complete career preparation ecosystem for Indian students**
+
+*Happy studying! May your preparation journey be smooth and your results be excellent.*
+
+---
+
+**MIT License** - See [LICENSE](LICENSE) file for details.
+
+Feel free to use, modify, and distribute with attribution. Educational use is especially encouraged.
+
+**© 2026 Pratiyogita Setu. Made with dedication for Indian students.**
 
 </div>
