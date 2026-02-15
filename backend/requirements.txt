@@ -18,8 +18,10 @@ pinecone>=5.0.0,<7.0.0
 # HTTP client (pinned for Groq compatibility)
 httpx<0.28
 
-# Embeddings (local models) - enabled for Heroku deployment
-sentence-transformers>=2.3.0,<3.0.0
+# Embeddings - HuggingFace API mode (lightweight, no PyTorch)
+# Local models disabled to fit Heroku's 500MB slug limit
+# sentence-transformers requires PyTorch (~4GB with CUDA) which exceeds Heroku limits
+# Using HF Inference API instead - same quality, zero storage cost
 
 # Utilities
 numpy>=1.24.0,<2.0.0
