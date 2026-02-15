@@ -776,6 +776,62 @@ def resolve_class_filter(selected_class, query):
     return extract_class_filter(query)
 
 
+def resolve_subject_namespace(selected_subject, explicit_namespace=""):
+    """Resolve effective namespace from ask-bar subject or explicit namespace."""
+    if explicit_namespace:
+        ns = str(explicit_namespace).strip().lower()
+        return ns if ns in EDU_NAMESPACES else ""
+
+    subject_raw = str(selected_subject or "").strip().lower()
+    if not subject_raw or subject_raw in {"all", "all subjects", "subject"}:
+        return ""
+
+    normalized = subject_raw.replace("ncert", "").strip()
+    aliases = {
+        "political science": "polity",
+        "civics": "polity",
+        "eco": "economics",
+        "economy": "economics",
+        "geo": "geography",
+    }
+    candidate = aliases.get(normalized, normalized)
+    return candidate if candidate in EDU_NAMESPACES else ""
+
+
+def filter_sources_by_score(sources, min_score):
+    """Keep only sufficiently relevant sources based on similarity score."""
+    filtered = []
+    for source in sources or []:
+        try:
+            score = float(source.get('score', 0) or 0)
+        except Exception:
+            score = 0.0
+        if score >= min_score:
+            filtered.append(source)
+    return filtered
+
+
+def prepend_disclaimer(text, disclaimer):
+    if not disclaimer:
+        return text
+    base = (text or "").strip()
+    if not base:
+        return f"⚠️ {disclaimer}"
+    return f"⚠️ {disclaimer}\n\n{base}"
+
+
+def sanitize_model_identity_text(text):
+    """Remove model/provider self-identification from user-facing answers."""
+    if not text:
+        return text
+
+    cleaned = re.sub(r"(?im)^.*\\b(chatgpt|openai)\\b.*\\n?", "", str(text)).strip()
+    cleaned = re.sub(r"(?i)\\bi\\s+am\\s+chatgpt\\b", "I am your educational assistant", cleaned)
+    cleaned = re.sub(r"(?i)\\bby\\s+openai\\b", "", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned
+
+
 def get_answer_length_profile(answer_length_mode):
     mode = str(answer_length_mode or "normal").strip().lower().replace("-", "_").replace(" ", "_")
     return ANSWER_LENGTH_PROFILES.get(mode, ANSWER_LENGTH_PROFILES["normal"]), mode if mode in ANSWER_LENGTH_PROFILES else "normal"
@@ -821,159 +877,120 @@ def trim_context_from_sources(sources, max_chars):
     return "\n\n".join(selected_blocks)
 
 
-def is_greeting_or_casual(query: str) -> tuple[bool, str]:
-    """Detect if query is a greeting or casual chat instead of educational question."""
+def is_greeting_or_casual(query: str) -> tuple[bool, str, str]:
+    """Robustly detect greeting/casual/meta queries and return (matched, response, intent_label)."""
     query_lower = query.lower().strip()
-    query_words = query_lower.split()
-    
-    # English greetings
-    english_greetings = [
-        'hi', 'hello', 'hey', 'hii', 'hiii', 'heya', 'howdy',
-        'good morning', 'good afternoon', 'good evening', 'good night',
-        'greetings', 'hola', 'yo'
-    ]
-    
-    # Hindi/Hinglish greetings
-    hindi_greetings = [
-        'namaste', 'namaskar', 'namaskaar', 'pranam', 'ram ram',
-        'jai hind', 'sat sri akal', 'salaam', 'adaab'
-    ]
-    
-    # Casual/How are you patterns (English + Hinglish)
-    casual_patterns = [
-        'how are you', 'how r u', 'how r you', 'how you doing',
-        'what\'s up', 'whatsup', 'wassup', 'sup', 'whats up',
-        'kaise ho', 'kese ho', 'kaisa hai', 'kesa hai', 'kya hal hai',
-        'sab badhiya', 'all good', 'theek ho', 'thik ho'
-    ]
-    
-    # Bot identity questions
+    tokens = re.findall(r"[a-z0-9']+", query_lower)
+    token_set = set(tokens)
+    word_count = len(tokens)
+
+    if not query_lower:
+        return False, "", "academic_query"
+
+    academic_terms = {
+        'polity', 'history', 'geography', 'economics', 'science', 'math', 'physics',
+        'chemistry', 'biology', 'constitution', 'democracy', 'photosynthesis',
+        'chapter', 'class', 'ncert', 'exam', 'pyq', 'syllabus', 'topic', 'resource'
+    }
+
+    provider_terms = {
+        'chatgpt', 'openai', 'gpt', 'gemini', 'claude', 'copilot', 'groq',
+        'llama', 'model', 'ai'
+    }
+
+    has_provider_term = any(term in token_set for term in provider_terms)
+    has_academic_term = any(term in token_set for term in academic_terms)
+
+    # ---- 1) Meta identity/provider/comparison intent (highest priority) ----
     identity_patterns = [
-        'who are you', 'what are you', 'what is your name', 'whats your name',
-        'who r u', 'what r u', 'your name', 'aap kaun ho', 'tum kaun ho',
-        'naam kya hai', 'aapka naam', 'tumhara naam', 'kon ho tum',
-        'what can you do', 'what do you do', 'kya kar sakte ho',
-        'help me', 'aap kya karte ho', 'kaise madad karoge'
+        r"\bwho\s+are\s+you\b", r"\bwhat\s+are\s+you\b",
+        r"\bwhat\s+is\s+your\s+name\b", r"\bwhats\s+your\s+name\b",
+        r"\bwhat\s+can\s+you\s+do\b", r"\bwhat\s+do\s+you\s+do\b",
+        r"\baap\s+kaun\s+ho\b", r"\btum\s+kaun\s+ho\b",
+        r"\bnaam\s+kya\s+hai\b"
     ]
-    
-    # Thank you patterns
-    thank_patterns = [
-        'thank you', 'thanks', 'thank u', 'thanku', 'thnx', 'ty',
-        'dhanyavaad', 'dhanyawad', 'shukriya', 'शुक्रिया'
+
+    comparison_patterns = [
+        r"\bdifference\b.*\b(chatgpt|openai|gpt|gemini|claude|copilot|ai)\b",
+        r"\bcompare\b.*\b(chatgpt|openai|gpt|gemini|claude|copilot|ai)\b",
+        r"\bvs\b\s*(chatgpt|openai|gpt|gemini|claude|copilot|ai)\b",
+        r"\bversus\b\s*(chatgpt|openai|gpt|gemini|claude|copilot|ai)\b",
     ]
-    
-    # Casual interjections/filler words
-    casual_interjections = [
-        'ok', 'okay', 'hmm', 'hmmm', 'ohh', 'ooh', 'aha', 'wow',
-        'nice', 'cool', 'great', 'awesome', 'accha', 'acha', 'theek hai',
-        'thik hai', 'badhiya', 'badiya', 'sahi', 'haan', 'han', 'nahi', 'na'
+
+    provider_identity_patterns = [
+        r"\bare\s+you\s+(open\s*ai|openai|chatgpt|gpt|groq|llama)\b",
+        r"\byou\s+are\s+(open\s*ai|openai|chatgpt)\b",
+        r"\bwhich\s+model\s+are\s+you\b",
+        r"\bwhat\s+model\s+are\s+you\b",
+        r"\bwhich\s+ai\s+model\b",
+        r"\bmodel\s+name\b",
     ]
-    
-    # Combined greetings (hi pratiyogita gyan, hello bhai, etc.)
-    combined_greeting_words = [
-        'pratiyogita', 'gyan', 'bhai', 'dost', 'friend', 'bot', 'chatbot'
-    ]
-    
-    # 1. Check pure greetings (short phrases)
-    if len(query_words) <= 5:
-        # Check English greetings
-        if any(query_lower == g or query_lower.startswith(g + ' ') for g in english_greetings):
+
+    if (
+        any(re.search(pattern, query_lower) for pattern in identity_patterns)
+        or any(re.search(pattern, query_lower) for pattern in provider_identity_patterns)
+        or (
+            has_provider_term
+            and any(re.search(pattern, query_lower) for pattern in comparison_patterns)
+            and ('you' in token_set or 'your' in token_set)
+        )
+    ):
+        return True, (
+            "I'm **Pratiyogita Gyan** 🎓, your NCERT-focused educational assistant.\n\n"
+            "I am designed for exam prep and textbook learning support.\n"
+            "I can help with NCERT concepts, PYQs, class-wise topics, and revision guidance.\n\n"
+            "If you want, ask: *'How are you different from general-purpose AI for exam prep?'*"
+        ), "meta_identity"
+
+    # ---- 2) Greetings / casual (conservative rules only) ----
+    greeting_phrases = {
+        'hi', 'hello', 'hey', 'hii', 'heya', 'howdy',
+        'good morning', 'good afternoon', 'good evening', 'good night',
+        'namaste', 'namaskar', 'pranam', 'ram ram', 'salaam', 'adaab'
+    }
+
+    if word_count <= 5 and not has_academic_term:
+        if query_lower in greeting_phrases or any(query_lower.startswith(f"{g} ") for g in greeting_phrases):
             return True, (
                 "Hello! 👋 I'm **Pratiyogita Gyan**, your NCERT learning assistant.\n\n"
-                "I can help you with:\n"
-                "📚 NCERT subjects and concepts\n"
-                "💡 Detailed explanations\n"
-                "📝 Previous Year Questions (PYQs)\n"
-                "🎯 Exam preparation\n\n"
+                "I can help with concepts, PYQs, and exam preparation.\n"
                 "What would you like to learn today?"
-            )
-        
-        # Check Hindi/Hinglish greetings
-        if any(g in query_lower for g in hindi_greetings):
-            return True, (
-                "Namaste! 🙏 Main **Pratiyogita Gyan** hoon, aapka NCERT learning assistant.\n\n"
-                "Main aapki help kar sakta hoon:\n"
-                "📚 NCERT subjects aur concepts mein\n"
-                "💡 Detailed explanations\n"
-                "📝 Previous Year Questions (PYQs)\n"
-                "🎯 Exam preparation\n\n"
-                "Aaj aap kya seekhna chahenge?"
-            )
-        
-        # Combined greetings (hi gran setu, hello bhai, etc.)
-        if any(word in query_words for word in english_greetings + hindi_greetings):
-            if any(word in query_words for word in combined_greeting_words):
-                return True, (
-                    "Hello! 😊 I'm **Pratiyogita Gyan**, ready to help you with your studies!\n\n"
-                    "Ask me anything about:\n"
-                    "• NCERT topics (Class 6-12)\n"
-                    "• Subject explanations\n"
-                    "• Practice questions\n"
-                    "• Exam preparation tips\n\n"
-                    "How can I assist you?"
-                )
-    
-    # 2. Check casual/how are you patterns
-    if any(pattern in query_lower for pattern in casual_patterns):
-        return True, (
-            "I'm doing great, thanks for asking! 😊\n\n"
-            "I'm **Pratiyogita Gyan**, your study companion. I'm here to help you with NCERT content, "
-            "exam preparation, and answer your educational questions.\n\n"
-            "What topic would you like to explore today?"
-        )
-    
-    # 3. Check bot identity questions
-    if any(pattern in query_lower for pattern in identity_patterns):
-        return True, (
-            "I'm **Pratiyogita Gyan** 🎓, your intelligent NCERT learning assistant!\n\n"
-            "**What I can do:**\n"
-            "✅ Answer questions from NCERT textbooks (Class 6-12)\n"
-            "✅ Explain complex concepts in simple language\n"
-            "✅ Provide Previous Year Questions (PYQs) for practice\n"
-            "✅ Help with exam preparation across subjects\n"
-            "✅ Understand both English and Hinglish queries\n\n"
-            "**Subjects I cover:**\n"
-            "History, Geography, Polity, Economics, Science, and more!\n\n"
-            "Try asking me: *\"Explain democracy\"* or *\"PYQ on Indian Constitution\"*"
-        )
-    
-    # 4. Check thank you messages (strict phrase/word match to avoid false positives like "polity" -> "ty")
-    def _matches_phrase_or_word(pattern: str) -> bool:
-        p = pattern.strip().lower()
-        if not p:
-            return False
-        if " " in p:
-            return p in query_lower
-        return re.search(rf"\b{re.escape(p)}\b", query_lower) is not None
+            ), "greeting"
 
-    if any(_matches_phrase_or_word(pattern) for pattern in thank_patterns):
+    casual_patterns = [
+        r"\bhow\s+are\s+you\b", r"\bhow\s+r\s+u\b", r"\bhow\s+you\s+doing\b",
+        r"\bwhat'?s\s+up\b", r"\bwhats\s+up\b", r"\bwassup\b", r"\bsup\b",
+        r"\bkaise\s+ho\b", r"\bkese\s+ho\b", r"\bkya\s+hal\s+hai\b"
+    ]
+    if word_count <= 8 and not has_academic_term and any(re.search(p, query_lower) for p in casual_patterns):
+        return True, (
+            "I'm doing great, thanks! 😊\n\n"
+            "Ready to help with NCERT concepts, PYQs, and exam prep.\n"
+            "Which topic should we start with?"
+        ), "casual_chat"
+
+    # ---- 3) Thank-you intent (strict token-level to avoid 'polity' -> 'ty') ----
+    thank_tokens = {'thanks', 'thnx', 'ty', 'thanku', 'shukriya', 'dhanyavaad', 'dhanyawad'}
+    thank_phrase_match = re.search(r"\bthank\s*(you|u)?\b", query_lower) is not None
+    is_short_ack = word_count <= 4 and (
+        thank_phrase_match or any(tok in token_set for tok in thank_tokens)
+    )
+
+    if is_short_ack and not has_academic_term:
         return True, (
             "You're welcome! 😊\n\n"
-            "Happy to help! Feel free to ask me more questions anytime.\n"
-            "I'm here to make your learning easier! 📚"
-        )
-    
-    # 5. Check casual interjections (very short queries)
-    if len(query_words) <= 2 and any(word in casual_interjections for word in query_words):
+            "Ask me any topic from NCERT or PYQ practice whenever you're ready."
+        ), "gratitude"
+
+    # ---- 4) Very short non-educational filler ----
+    casual_interjections = {'ok', 'okay', 'hmm', 'oh', 'wow', 'nice', 'cool', 'great', 'acha', 'accha'}
+    if word_count <= 2 and token_set.intersection(casual_interjections) and not has_academic_term:
         return True, (
             "I'm here to help you study! 📖\n\n"
-            "Ask me any educational question - I can explain NCERT topics, "
-            "provide practice questions, or help with exam preparation.\n\n"
-            "What would you like to know?"
-        )
-    
-    # 6. Check very short non-educational queries
-    if len(query.strip()) < 3 and not any(char.isdigit() for char in query):
-        return True, (
-            "I didn't quite understand that. 🤔\n\n"
-            "Please ask me an educational question! I can help with:\n"
-            "• NCERT concepts\n"
-            "• Subject explanations\n"
-            "• Previous year questions\n"
-            "• Exam preparation"
-        )
-    
-    return False, ""
+            "Ask a topic like: 'Explain federalism', 'What is polity?', or 'PYQ on Constitution'."
+        ), "casual_short"
+
+    return False, "", "academic_query"
 
 
 def build_generation_prompt(context: str, query: str, answer_profile: dict, best_match_score: float = 0.0, source_metadata: dict = None):
@@ -1036,6 +1053,7 @@ def build_generation_prompt(context: str, query: str, answer_profile: dict, best
         "Use the provided context as the primary source of truth. "
         "Be direct and concise. "
         "Never fabricate citations. "
+        "Never mention model/provider names (e.g., ChatGPT, OpenAI, Groq). "
         "Do not exceed the word limit and end with a complete sentence.\n\n"
         f"Answer style: {answer_profile['instruction']}\n"
         f"{word_target}\n"
@@ -1480,6 +1498,7 @@ def search():
         namespace = namespace_raw if isinstance(namespace_raw, str) else ""
     
     selected_class = data.get("selected_class")
+    selected_subject = data.get("subject", "all")
     answer_length = data.get("answer_length", "normal")
     mcq_threshold = data.get("mcq_threshold", float(os.getenv("DEFAULT_MCQ_THRESHOLD", "0.25")))
     mcq_limit = data.get("mcq_limit", int(os.getenv("DEFAULT_MCQ_LIMIT", "0")))
@@ -1492,9 +1511,21 @@ def search():
     llm_max_tokens = answer_profile["max_tokens"]
     
     try:
-        # Check for greetings or casual chat first
-        is_casual, casual_response = is_greeting_or_casual(query)
+        # Track routing decisions for observability
+        decision_path = []
+
+        # Check for greetings or casual/meta chat first
+        is_casual, casual_response, intent_label = is_greeting_or_casual(query)
+        decision_path.append(f"intent:{intent_label}")
         if is_casual:
+            app.logger.info(
+                "search_decision intent=%s provider=%s namespace=%s class=%s sources=%s",
+                intent_label,
+                "greeting_handler",
+                "none",
+                None,
+                0,
+            )
             return jsonify({
                 "rag_response": casual_response,
                 "sources": [],
@@ -1505,6 +1536,9 @@ def search():
                 "answer_length_mode": "normal",
                 "provider_used": "greeting_handler",
                 "is_greeting": True
+                ,"intent": intent_label,
+                "decision_path": decision_path,
+                "best_score": 0.0
             }), 200
         
         # Set a timeout for the entire operation
@@ -1518,20 +1552,94 @@ def search():
             rag_query_embedding = None
 
         resolved_class_filter = resolve_class_filter(selected_class, query)
+        effective_namespace = resolve_subject_namespace(selected_subject, namespace)
+        strict_subject_selected = bool(effective_namespace)
+        strict_class_selected = bool(resolved_class_filter)
+        decision_path.append(f"subject_ns:{effective_namespace or 'all'}")
+        decision_path.append(f"class_filter:{resolved_class_filter or 'none'}")
+        decision_path.append(f"strict_subject:{strict_subject_selected}")
+        decision_path.append(f"strict_class:{strict_class_selected}")
 
-        # RAG search for contextual answer (only if Pinecone is available)
-        if pinecone_available:
-            if DEBUG_MODE:
-                print(f"DEBUG: Searching with namespace='{namespace}', class_filter='{resolved_class_filter}', n_chunks={n_results}")
-            context, sources = search_rag_with_class_filter(
+        min_source_score = float(os.getenv("MIN_RAG_SOURCE_SCORE", "0.34"))
+        retrieval_disclaimer = None
+        fallback_reason = None
+
+        def _run_retrieval(target_namespace, target_class_filter, target_chunks):
+            if not pinecone_available:
+                return "", []
+            context_value, sources_value = search_rag_with_class_filter(
                 pinecone_index=search_components['rag_index'],
                 query_embedding=rag_query_embedding,
-                n_chunks=n_results,
-                namespace=namespace,
-                class_filter=resolved_class_filter,
+                n_chunks=target_chunks,
+                namespace=target_namespace,
+                class_filter=target_class_filter,
             )
+            filtered = filter_sources_by_score(sources_value, min_source_score)
+            return context_value, filtered
+
+        if pinecone_available:
+            retrieval_steps = []
+            if strict_subject_selected or strict_class_selected:
+                retrieval_steps.append((effective_namespace, resolved_class_filter, n_results, "strict"))
+                if strict_subject_selected:
+                    retrieval_steps.append(("", resolved_class_filter, n_results + 2, "subject_fallback"))
+                if strict_class_selected:
+                    retrieval_steps.append(("", None, n_results + 3, "class_fallback"))
+            else:
+                retrieval_steps.append((effective_namespace, resolved_class_filter, n_results, "default"))
+
+            seen_steps = set()
+            context = ""
+            sources = []
+            matched_step = None
+
+            for step_namespace, step_class, step_chunks, step_label in retrieval_steps:
+                step_key = (step_namespace, step_class, step_chunks)
+                if step_key in seen_steps:
+                    continue
+                seen_steps.add(step_key)
+
+                if DEBUG_MODE:
+                    print(
+                        f"DEBUG: Retrieval step={step_label}, namespace='{step_namespace}', "
+                        f"class_filter='{step_class}', n_chunks={step_chunks}"
+                    )
+                decision_path.append(f"retrieval_try:{step_label}")
+
+                context_try, sources_try = _run_retrieval(step_namespace, step_class, step_chunks)
+                if sources_try:
+                    context = context_try
+                    sources = sources_try
+                    matched_step = step_label
+                    decision_path.append(f"retrieval_hit:{step_label}:{len(sources_try)}")
+                    break
+
+            if matched_step in {"subject_fallback", "class_fallback"}:
+                if strict_subject_selected and strict_class_selected:
+                    fallback_reason = "selected subject and class"
+                    retrieval_disclaimer = (
+                        "I couldn't find a strong match in your selected subject/class. "
+                        "Showing the closest available results from other resources."
+                    )
+                elif strict_subject_selected:
+                    fallback_reason = "selected subject"
+                    retrieval_disclaimer = (
+                        "I couldn't find a strong match in your selected subject. "
+                        "Showing the closest available results from other subjects."
+                    )
+                elif strict_class_selected:
+                    fallback_reason = "selected class"
+                    retrieval_disclaimer = (
+                        "I couldn't find a strong match in your selected class. "
+                        "Showing the closest available results from other classes/resources."
+                    )
+            elif matched_step is None:
+                context = ""
+                sources = []
+                decision_path.append("retrieval_hit:none")
         else:
             context, sources = "", []
+            decision_path.append("retrieval_skipped:pinecone_unavailable")
         
         # Check timeout
         if time.time() - start_time > timeout_seconds:
@@ -1545,34 +1653,12 @@ def search():
                 print(f"DEBUG: Best match score: {sources[0]['score']}")
                 print(f"DEBUG: First source metadata: {sources[0].get('subject', 'N/A')}, {sources[0].get('class', 'N/A')}, {sources[0].get('chapter_name', 'N/A')}")
         
-        # Enhance context if it's too short or has low relevance scores
-        if len(context.strip()) < 100 or (sources and sources[0]['score'] < 0.3):
-            # Try searching with relaxed parameters
-            if DEBUG_MODE:
-                print("DEBUG: Context appears limited, trying broader search...")
-            try:
-                broader_context, broader_sources = search_rag_with_class_filter(
-                    pinecone_index=search_components['rag_index'],
-                    query_embedding=rag_query_embedding,
-                    n_chunks=n_results + 3,
-                    namespace="",
-                    class_filter=resolved_class_filter,
-                )
-                if len(broader_context) > len(context):
-                    context = broader_context
-                    sources = broader_sources
-                    if DEBUG_MODE:
-                        print(f"DEBUG: Using broader context with {len(broader_sources)} sources")
-            except Exception as e:
-                if DEBUG_MODE:
-                    print(f"DEBUG: Broader search failed: {e}")
-                app.logger.warning(f"Broader search failed: {e}")
-        
         compact_context = trim_context_from_sources(sources, max_chars=answer_profile['context_chars'])
         
         # Get best match score and metadata for prompt quality assessment
         best_score = sources[0]['score'] if sources else 0.0
         source_metadata = sources[0] if sources else None
+        decision_path.append(f"best_score:{round(best_score, 3)}")
 
         # Generate RAG response using provider routing
         rag_response = None
@@ -1592,6 +1678,21 @@ def search():
         if not rag_response:
             warning = route_error or "LLM unavailable"
             rag_response = build_fallback_response(context, sources, query)
+            decision_path.append("llm_fallback:context_builder")
+        else:
+            decision_path.append(f"llm_provider:{provider_used or 'unknown'}")
+
+        if not sources:
+            retrieval_disclaimer = (
+                "Your query was not found in our indexed NCERT resources. "
+                "The answer below is AI-generated guidance and may be less reliable than textbook-backed answers."
+            )
+            decision_path.append("disclaimer:no_indexed_sources")
+        elif retrieval_disclaimer:
+            decision_path.append("disclaimer:strict_filter_fallback")
+
+        rag_response = sanitize_model_identity_text(rag_response)
+        rag_response = prepend_disclaimer(rag_response, retrieval_disclaimer)
         rag_response = enforce_answer_length(rag_response, answer_profile)
         
         # MCQ search for related questions (only if Pinecone is available)
@@ -1638,6 +1739,12 @@ def search():
             "class_filter": resolved_class_filter,
             "answer_length": resolved_answer_length,
             "provider_used": provider_used,
+            "retrieval_disclaimer": retrieval_disclaimer,
+            "fallback_reason": fallback_reason,
+            "intent": intent_label,
+            "decision_path": decision_path,
+            "best_score": round(float(best_score), 3),
+            "source_count": len(sources),
             "search_settings": {
                 "n_results": n_results,
                 "mcq_threshold": mcq_threshold,
@@ -1654,6 +1761,17 @@ def search():
             warning = (warning + " | " if warning else "") + "Pinecone unavailable; returning LLM-only response"
         if warning:
             response_payload["warning"] = warning
+
+        app.logger.info(
+            "search_decision intent=%s provider=%s ns=%s class=%s best_score=%.3f sources=%s path=%s",
+            intent_label,
+            provider_used or "none",
+            effective_namespace or "all",
+            resolved_class_filter or "none",
+            float(best_score),
+            len(sources),
+            " > ".join(decision_path[:12]),
+        )
 
         return jsonify(response_payload), 200
         
