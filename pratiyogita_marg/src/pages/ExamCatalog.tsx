@@ -17,6 +17,14 @@ interface MindMapItem {
   createdAt?: string;
 }
 
+const DEFAULT_AVAILABLE_MINDMAPS: MindMapItem[] = [
+  {
+    name: sscCglRoadmapReactFlow.name,
+    examCategory: 'SSC EXAMS',
+    subExamName: 'SSC CGL'
+  }
+];
+
 // Sample sub-exams for each category (you can expand this)
 const SUB_EXAMS: Record<string, string[]> = {
   'SSC EXAMS': ['SSC GD Constable', 'SSC CGL', 'SSC CHSL', 'SSC CPO', 'SSC MTS', 'Delhi Police Constable', 'SSC Stenographer', 'SSC JE CE', 'SSC JE EE'],
@@ -93,14 +101,28 @@ const ExamCatalog = () => {
     (mapItem) => mapItem.examCategory === selectedCategory
   );
 
-  const availableMindMaps = savedMapsForCategory.filter((mapItem) => {
+  const defaultMapsForCategory = DEFAULT_AVAILABLE_MINDMAPS.filter(
+    (mapItem) => mapItem.examCategory === selectedCategory
+  );
+
+  const mergedMapsForCategory = [
+    ...savedMapsForCategory,
+    ...defaultMapsForCategory.filter((defaultMap) =>
+      !savedMapsForCategory.some((savedMap) =>
+        (savedMap.subExamName || savedMap.name).toLowerCase() ===
+        (defaultMap.subExamName || defaultMap.name).toLowerCase()
+      )
+    )
+  ];
+
+  const availableMindMaps = mergedMapsForCategory.filter((mapItem) => {
     const examLabel = mapItem.subExamName || mapItem.name;
     if (!searchTerm) return true;
     return examLabel.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const availableExamNames = new Set(
-    savedMapsForCategory.map((mapItem) => mapItem.subExamName || mapItem.name)
+    mergedMapsForCategory.map((mapItem) => mapItem.subExamName || mapItem.name)
   );
 
   const comingSoonExams = predefinedExams.filter((exam) => {
