@@ -213,11 +213,28 @@ const Sidebar = () => {
   const openExternalApp = (url, featureName) => {
     if (isMobile) closeTransientOverlays()
     if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer')
+      window.open(getRedirectUrlWithLoginHint(url), '_blank', 'noopener,noreferrer')
       return
     }
     setComingSoonFeature(featureName)
     setShowComingSoonModal(true)
+  }
+
+  const getRedirectUrlWithLoginHint = (baseUrl) => {
+    try {
+      const url = new URL(baseUrl, window.location.origin)
+      if (currentUser) {
+        url.searchParams.set('loggedIn', '1')
+        url.searchParams.set('source', 'pratiyogita_gyan')
+        const providerId = currentUser?.providerData?.[0]?.providerId
+        if (providerId) {
+          url.searchParams.set('provider', providerId)
+        }
+      }
+      return url.toString()
+    } catch {
+      return baseUrl
+    }
   }
 
   const handleEligibilityClick = () => {

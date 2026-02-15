@@ -64,6 +64,10 @@ const Navbar = () => {
       if (currentUser) {
         url.searchParams.set("loggedIn", "1");
         url.searchParams.set("source", "pratiyogita_yogya");
+        const providerId = currentUser?.providerData?.[0]?.providerId;
+        if (providerId) {
+          url.searchParams.set("provider", providerId);
+        }
       }
       return url.toString();
     } catch {
