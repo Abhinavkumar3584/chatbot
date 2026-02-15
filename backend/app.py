@@ -759,6 +759,32 @@ def enforce_answer_length(text: str, answer_profile: dict) -> str:
     return _trim_to_sentence_boundary(clipped)
 
 
+def normalize_answer_format(text: str) -> str:
+    """Normalize model output into cleaner multiline markdown bullets."""
+    if not text:
+        return text
+
+    normalized = str(text).replace("\r\n", "\n").strip()
+
+    bullet_markers = re.findall(r"(?:\*|•)\s+", normalized)
+    if len(bullet_markers) >= 2:
+        # Convert inline star/dot bullets into newline bullets.
+        normalized = re.sub(r"\s+(?:\*|•)\s+", "\n* ", normalized)
+        # Convert leading star/dot bullets to markdown star bullets.
+        normalized = re.sub(r"(?m)^\s*(?:\*|•)\s+", "* ", normalized)
+
+    # Ensure bullet section starts on a fresh line after intro text.
+    first_bullet_idx = normalized.find("* ")
+    if first_bullet_idx > 0:
+        prev_chunk = normalized[:first_bullet_idx].rstrip()
+        if prev_chunk and not prev_chunk.endswith("\n\n"):
+            normalized = prev_chunk + "\n\n" + normalized[first_bullet_idx:]
+
+    # Collapse excessive blank lines.
+    normalized = re.sub(r"\n{3,}", "\n\n", normalized)
+    return normalized.strip()
+
+
 def normalize_class_label(class_label):
     """Normalize class label to (class_num, class_display, class_normalized)."""
     if not class_label:
@@ -1113,7 +1139,7 @@ def is_greeting_or_casual(query: str) -> tuple[bool, str, str]:
     return False, "", "academic_query"
 
 
-def build_generation_prompt(context: str, query: str, answer_profile: dict, best_match_score: float = 0.0, source_metadata: dict = None):
+def build_generation_prompt(context: str, query: str, answer_profile: dict, answer_mode: str = "normal", best_match_score: float = 0.0, source_metadata: dict = None):
     """Create compact, completion-safe prompt for accurate educational answers with clarity checks."""
     
     # Detect unclear/short queries with low match quality
@@ -1168,16 +1194,58 @@ def build_generation_prompt(context: str, query: str, answer_profile: dict, best
     format_hint = answer_profile.get("format_hint", "")
     format_line = f"Format: {format_hint}." if format_hint else ""
 
+    mode_contracts = {
+        "very_short": (
+            "Output contract for very_short:\n"
+            "- No heading.\n"
+            "- Return exactly 3 bullets only.\n"
+            "- Each bullet one sentence, high signal, exam-focused.\n"
+            "- Keep total within 55-90 words."
+        ),
+        "short": (
+            "Output contract for short:\n"
+            "- Start with 1 short intro sentence.\n"
+            "- Then return exactly 4 bullets.\n"
+            "- Keep total within 110-170 words."
+        ),
+        "normal": (
+            "Output contract for normal:\n"
+            "- Start with 1 compact intro paragraph (2-3 sentences).\n"
+            "- Then return 5-7 bullets with detail and examples where relevant.\n"
+            "- End with 1 brief concluding sentence.\n"
+            "- Keep total within 220-310 words."
+        ),
+        "explanatory": (
+            "Output contract for explanatory:\n"
+            "- Start with a fuller intro paragraph (3-4 sentences).\n"
+            "- Then return 10-15 detailed bullets (concept + example/use-case).\n"
+            "- End with a 2-sentence takeaway.\n"
+            "- Keep total within 500-700 words."
+        ),
+    }
+    mode_contract = mode_contracts.get(answer_mode, mode_contracts["normal"])
+
+    formatting_rules = (
+        "Formatting rules (must follow):\n"
+        "1) Follow the output contract for the selected mode exactly.\n"
+        "2) If using bullets, each bullet must be on a new line starting with '- '.\n"
+        "4) Never write malformed headings like '*Introduction'. If headings are used, write them as bold markdown like '**Introduction**'.\n"
+        "5) Keep a blank line between sections and keep the answer readable."
+    )
+
     return (
         "You are an expert NCERT learning assistant. "
         "Use the provided context as the primary source of truth. "
-        "Be direct and concise. "
+        "Be direct and accurate. "
         "Never fabricate citations. "
         "Never mention model/provider names (e.g., ChatGPT, OpenAI, Groq). "
         "Do not exceed the word limit and end with a complete sentence.\n\n"
+        f"Selected answer mode: {answer_mode}\n"
         f"Answer style: {answer_profile['instruction']}\n"
         f"{word_target}\n"
         f"{format_line}\n\n"
+        f"{mode_contract}\n\n"
+        f"{formatting_rules}\n\n"
         f"Question:\n{query}\n\n"
         f"{context_warning}"
         f"Context:\n{context if context else 'No relevant context retrieved.'}\n\n"
@@ -1186,9 +1254,9 @@ def build_generation_prompt(context: str, query: str, answer_profile: dict, best
     
 
 
-def generate_with_model_routing(query: str, context: str, answer_profile: dict, llm_temperature: float, llm_top_p: float, llm_max_tokens: int, best_match_score: float = 0.0, source_metadata: dict = None):
+def generate_with_model_routing(query: str, context: str, answer_profile: dict, answer_mode: str = "normal", llm_temperature: float = 0.3, llm_top_p: float = 0.9, llm_max_tokens: int = 750, best_match_score: float = 0.0, source_metadata: dict = None):
     """Generate answer with provider routing: OpenAI (primary) -> Groq (fallback)."""
-    prompt = build_generation_prompt(context, query, answer_profile, best_match_score, source_metadata)
+    prompt = build_generation_prompt(context, query, answer_profile, answer_mode, best_match_score, source_metadata)
     max_tokens = min(llm_max_tokens, answer_profile['max_tokens'])
 
     # 1) Primary: OpenAI
@@ -1830,6 +1898,7 @@ def search():
             query=query,
             context=compact_context,
             answer_profile=answer_profile,
+            answer_mode=resolved_answer_length,
             llm_temperature=llm_temperature,
             llm_top_p=llm_top_p,
             llm_max_tokens=llm_max_tokens,

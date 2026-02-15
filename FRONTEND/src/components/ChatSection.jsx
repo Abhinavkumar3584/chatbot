@@ -99,14 +99,60 @@ const ensureUniqueTitle = (baseTitle, existingTitles) => {
   return candidate
 }
 
+const normalizeBotMarkdown = (rawText) => {
+  if (!rawText) return ''
+
+  let text = String(rawText).replace(/\r\n/g, '\n').trim()
+
+  // Fix malformed heading markers like '*Introduction' or '* Conclusion'.
+  text = text.replace(/(^|\n)\s*\*\s*(Introduction|Conclusion|Overview|Summary|Key Points|Key Events and Factors)\s*(?=\n|$)/gi, '$1**$2**')
+
+  // Normalize plain heading lines into markdown headings.
+  text = text.replace(/(^|\n)(Introduction|Conclusion|Overview|Summary|Key Points|Key Events and Factors)\s*:\s*(?=\n|$)/gi, '$1**$2**')
+
+  // Split patterns like 'Conclusion The ...' into heading + paragraph.
+  text = text.replace(/(^|\n)(Introduction|Conclusion|Overview|Summary)\s+([A-Z])/g, '$1**$2**\n\n$3')
+
+  // Only normalize explicit star/dot bullets; never rewrite hyphenated prose.
+  const markerMatches = text.match(/(?:\*|•)\s+/g) || []
+  if (markerMatches.length >= 2) {
+    // Convert inline bullets after sentence boundaries into proper markdown bullets.
+    text = text.replace(/([.!?:])\s+[•*]\s+/g, '$1\n\n* ')
+
+    // Convert inline bullet separators into new lines.
+    text = text.replace(/\s+[•*]\s+/g, '\n* ')
+
+    // Convert line-start bullets to standard markdown star bullets.
+    text = text.replace(/(^|\n)\s*[•*]\s+/g, '$1* ')
+
+    // Ensure first bullet starts on a fresh paragraph when needed.
+    const firstBulletIndex = text.search(/(^|\n)\*\s+/)
+    if (firstBulletIndex > 0) {
+      const before = text.slice(0, firstBulletIndex).trimEnd()
+      const after = text.slice(firstBulletIndex).trimStart()
+      text = `${before}\n\n${after}`
+    }
+  }
+
+  // Remove orphan marker-only lines that create empty bullets.
+  text = text.replace(/^\s*[-*•]\s*$/gm, '')
+
+  // Ensure heading blocks have spacing from body text.
+  text = text.replace(/(\*\*[A-Za-z][^*\n]{1,60}\*\*)(\n)(?!\n)/g, '$1\n\n')
+
+  // Normalize excessive blank lines.
+  text = text.replace(/\n{3,}/g, '\n\n')
+  return text.trim()
+}
+
 const createMarkdownComponents = (isUserMessage) => ({
   p: ({ ...props }) => (
       <Typography
         variant="body2"
         sx={{
           fontSize: CHAT_FONT_SIZES.body,
-          lineHeight: isUserMessage ? 1.48 : 1.34,
-          mb: isUserMessage ? 0.35 : 0.16,
+          lineHeight: isUserMessage ? 1.48 : 1.44,
+          mb: isUserMessage ? 0.35 : 0.26,
           color: 'inherit',
           '&:last-of-type': { mb: 0 }
         }}
@@ -139,9 +185,9 @@ const createMarkdownComponents = (isUserMessage) => ({
       component="ul"
       sx={{
         listStyleType: 'disc',
-        listStylePosition: 'inside',
-        pl: 0,
-        ml: 1.5,
+        listStylePosition: 'outside',
+        pl: 2.1,
+        ml: 0.4,
         mb: isUserMessage ? 0.35 : 0.16,
         mt: 0.12,
         '& ul': { listStyleType: 'circle', mt: 0.25, ml: 2 },
@@ -155,9 +201,9 @@ const createMarkdownComponents = (isUserMessage) => ({
       component="ol"
       sx={{
         listStyleType: 'decimal',
-        listStylePosition: 'inside',
-        pl: 0,
-        ml: 1.5,
+        listStylePosition: 'outside',
+        pl: 2.1,
+        ml: 0.4,
         mb: isUserMessage ? 0.35 : 0.16,
         mt: 0.12,
         '& ul': { listStyleType: 'disc', mt: 0.25, ml: 2 },
@@ -166,15 +212,30 @@ const createMarkdownComponents = (isUserMessage) => ({
       {...props}
     />
   ),
-  li: ({ ...props }) => (
-      <li style={{ marginBottom: isUserMessage ? '0.14rem' : '0.08rem' }}>
-        <Typography
-          component="span"
-          variant="body2"
-          sx={{ fontSize: CHAT_FONT_SIZES.body, lineHeight: isUserMessage ? 1.42 : 1.28, color: 'inherit' }}
-          {...props}
-        />
-      </li>
+  li: ({ children, ...props }) => (
+    <Box
+      component="li"
+      sx={{
+        mb: isUserMessage ? 0.14 : 0.08,
+        fontSize: CHAT_FONT_SIZES.body,
+        lineHeight: isUserMessage ? 1.42 : 1.32,
+        color: 'inherit',
+        '& > p': {
+          display: 'inline',
+          m: 0,
+        },
+        '& > p + p': {
+          display: 'block',
+          mt: 0.25,
+        },
+        '& > p:empty': {
+          display: 'none',
+        }
+      }}
+      {...props}
+    >
+      {children}
+    </Box>
   ),
   blockquote: ({ ...props }) => (
       <Box
@@ -308,7 +369,7 @@ const ChatMessageBubble = memo(({
               sx={{
                 fontSize: '0.75rem',
                 lineHeight: message.type === 'bot' ? 1.34 : 1.5,
-                whiteSpace: 'pre-wrap',
+                whiteSpace: 'normal',
                 '& h1 + p, & h2 + p, & h3 + p, & h4 + p, & h5 + p, & h6 + p': {
                   marginTop: '0.08rem'
                 },
@@ -932,10 +993,14 @@ const ChatSection = () => {
       }
       
       // Update the bot message with actual response
+      const normalizedResponse = normalizeBotMarkdown(
+        response.rag_response || 'I received your question but couldn\'t generate a proper response.'
+      )
+
       const botMessage = {
         id: tempBotMessage.id,
         type: 'bot',
-        content: response.rag_response || 'I received your question but couldn\'t generate a proper response.',
+        content: normalizedResponse,
         sources: response.sources,
         isLoading: false,
         timestamp: new Date()
