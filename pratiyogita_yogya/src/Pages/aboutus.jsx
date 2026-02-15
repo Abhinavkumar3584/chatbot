@@ -4,7 +4,7 @@ const AboutUs = () => {
   // Team Members Data with social media profiles (add or remove icons as needed per member)
   const teamMembers = [
     { 
-      role: "FOUNDER", 
+      role: "CO-FOUNDER & PRODUCT LEAD", 
       image: "./Aboutusimages/Abhi.jpg", 
       name: "Abhinav Kumar",
       socials: [
@@ -15,7 +15,7 @@ const AboutUs = () => {
       ] 
     },
     { 
-      role: "CO-FOUNDER", 
+      role: "CO-FOUNDER & TECHNICAL LEAD", 
       image: "./Aboutusimages/Manu.jpg", 
       name: "Manu Dev",
       socials: [
@@ -25,25 +25,15 @@ const AboutUs = () => {
       ] 
     },
     { 
-      role: "CTO", 
-      image: "./Aboutusimages/Abhishek.jpg",
-      name: "Abhishek Kumar", 
+      role: "DATA & OPERATIONS LEAD", 
+      image: "./Aboutusimages/Nitish.jpeg",
+      name: "Nitish Yadav", 
       socials: [
         { type: "linkedin", url: "https://linkedin.com/" },
         { type: "github", url: "https://github.com/" },
         { type: "twitter", url: "https://twitter.com/" }
       ] 
-    },
-    { 
-      role: "MARKETING", 
-      image: "./Aboutusimages/Rahul.jpg", 
-      name: "Rahul Mishra",
-      socials: [
-        { type: "linkedin", url: "https://linkedin.com/" },
-        { type: "facebook", url: "https://facebook.com/" },
-        { type: "instagram", url: "https://instagram.com/" }
-      ] 
-    },
+    }
   ];
 
   // Social media icon mapping
@@ -58,17 +48,17 @@ const AboutUs = () => {
   // Badge colors for different roles
   const getRoleBadgeStyle = (role) => {
     switch(role) {
-      case "FOUNDER":
+      case "CO-FOUNDER & PRODUCT LEAD":
         return {
           background: "linear-gradient(45deg, #FF8C00, #FF4500)",
           
         };
-      case "CO-FOUNDER":
+      case "CO-FOUNDER & TECHNICAL LEAD":
         return {
           background: "linear-gradient(45deg, #4169E1, #1E90FF)",
           
         };
-      case "CTO":
+      case "DATA & OPERATIONS LEAD":
         return {
           background: "linear-gradient(45deg, #32CD32, #008000)",
           
@@ -142,75 +132,51 @@ const AboutUs = () => {
     </div>
 
   {/* Content Wrapper */}
-  <div className="mt-8 flex flex-col items-center gap-8 relative">
-    {/* Founders Introduction - NEW */}
-    <div className="w-full p-6 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-      <p className="text-gray-700 italic leading-relaxed">
-        We, <span className="font-semibold text-blue-700">Abhinav Kumar</span> and <span className="font-semibold text-blue-700">Manu Dev</span>, welcome you to our platform <span className="font-semibold">Pratiyogita Setu</span>, which we have created to help aspirants and students to crack their targeted exams.
+  <div className="mt-2 flex flex-col items-center gap-8 relative">
+    <div className="w-full p-6 bg-blue-50 rounded-lg border-l-4 border-blue-500 text-gray-700 text-base sm:text-lg leading-relaxed">
+      <p className="mb-4 italic">
+        We are <span className="font-semibold text-blue-700">Abhinav Kumar</span>, <span className="font-semibold text-blue-700">Manu Dev</span>, and <span className="font-semibold text-blue-700">Nitish Yadav</span>, and we created <span className="font-semibold">Pratiyogita Setu</span> with a simple purpose -
+        to bring clarity, direction, and confidence to students preparing for competitive examinations.
       </p>
-      <p className="mt-3 text-gray-700 italic leading-relaxed">
-        In INDIA every year, on average, about <span className="font-semibold">10 million students and aspirants</span> prepare for more than <span className="font-semibold">3000+ competitive exams</span> for different forces, posts, groups, and departments.
-      </p>
-    </div>
-    
-    {/* Text Section - Now With Highlights */}
-    <div className="w-full text-justify text-gray-700 text-base sm:text-lg leading-relaxed">
-      <h3 className="text-xl sm:text-2xl font-semibold mb-6 text-center lg:text-left text-gray-800 relative">
-        Know Your Eligibility, Plan Strategically, and Maximize Your Chances
-        <span className="block h-1 w-16 bg-green-500 mt-3 rounded-full"></span>
-      </h3>
-      
       <p className="mb-4">
-        One of the most common challenges faced by competitive exam aspirants is lack of clarity about eligibility criteria and remaining attempts. Many students unknowingly miss their chance at an exam, while others waste time preparing for exams they don't qualify for.
+        Every year in India, millions of aspirants prepare for thousands of government and competitive exams.
+        But despite the effort they put in, many students struggle with one basic problem:
+        they don’t clearly know where they stand or what their best path forward is.
       </p>
-      
       <p className="mb-4">
-        At <strong className="text-blue-700">Pariksha Yogya</strong>, we believe that accurate information is the first step towards success. Our platform offers a comprehensive eligibility assessment tool that allows aspirants to:
+        Some miss opportunities because they are unaware of their eligibility.
+        Others spend years preparing for exams they may never qualify for.
+        And many feel lost in a system filled with scattered information and uncertainty.
       </p>
-      
-      <ul className="mb-6 pl-6">
-        <li className="flex items-start mb-3">
-          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mr-3">
-            <span className="text-green-800">✓</span>
-          </span>
-          <span>Check their eligibility for various competitive exams based on age, qualification, and category.</span>
-        </li>
-        <li className="flex items-start mb-3">
-          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mr-3">
-            <span className="text-green-800">✓</span>
-          </span>
-          <span>Calculate the number of attempts remaining to help them plan their preparation accordingly.</span>
-        </li>
-        <li className="flex items-start mb-3">
-          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center mr-3">
-            <span className="text-green-800">✓</span>
-          </span>
-          <span>Discover alternative exams with a similar syllabus, ensuring they don't limit their career options.</span>
-        </li>
-      </ul>
-      
-      <div className="p-5 bg-gradient-to-r from-gray-50 to-white border-l-4 border-blue-500 rounded-r mb-6">
-        <p className="mb-0">
-          With a user-friendly interface and AI-powered analysis, <strong className="text-blue-700">Pariksha Yogya</strong> ensures that every aspirant makes informed decisions about their exam strategy. If a candidate has limited attempts left, they can prioritize their studies and accelerate their preparation. If they are ineligible, they will be suggested alternative exams that match their educational background and interests.
-        </p>
-      </div>
-      
-      <p className="mb-0">
-        By eliminating confusion and uncertainty, <strong className="text-blue-700">Pariksha Yogya</strong> empowers aspirants to take charge of their future with clarity, confidence, and strategic planning. With the right insights at the right time, they can maximize their opportunities and achieve their dream careers.
+      <p className="mb-4 font-semibold text-gray-800">Pratiyogita Setu was built to change that.</p>
+      <p className="mb-4">
+        We believe that the first step toward success is clear and reliable guidance.
+        Our platform helps aspirants understand their real eligibility, plan their preparation with structure,
+        and move forward with confidence instead of confusion.
       </p>
+      <p className="mb-4">
+        Through intelligent analysis, structured roadmaps, and trustworthy learning support,
+        we aim to make sure that no genuine effort goes in the wrong direction
+        and every student gets a fair chance to reach their goal.
+      </p>
+      <p className="mb-4">
+        This is not just a project for us,
+        it is a commitment to support students in one of the most important journeys of their lives.
+      </p>
+
     </div>
   </div>
 </div>
 
         {/* Meet The Team Section */}
-        <div className="w-full max-w-[1280px] mx-auto p-4 sm:p-8 lg:p-6 mt-4">
+        <div className="w-full max-w-[1280px] mx-auto p-4 sm:p-8 lg:p-6 mt-1">
           {/* Heading */}
           <h2 className="text-center text-black text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
             Meet the Team
           </h2>
 
           {/* Team Members Grid - Changed to show 2 members per row on mobile */}
-          <div className="mt-8 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {teamMembers.map((member, index) => (
               <div key={index} className="p-6 flex flex-col items-center text-center">
                 {/* Role Badge with Subtle Shining Effect */}

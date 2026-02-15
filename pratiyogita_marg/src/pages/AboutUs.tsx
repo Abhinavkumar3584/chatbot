@@ -2,74 +2,95 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 const AboutUs = () => {
+  const teamMembers = [
+    {
+      role: 'CO-FOUNDER & PRODUCT LEAD',
+      image: './Aboutusimages/Abhi.jpg',
+      name: 'Abhinav Kumar',
+    },
+    {
+      role: 'CO-FOUNDER & TECHNICAL LEAD',
+      image: './Aboutusimages/Manu.jpg',
+      name: 'Manu Dev',
+    },
+    {
+      role: 'DATA & OPERATIONS LEAD',
+      image: './Aboutusimages/Nitish.jpeg',
+      name: 'Nitish Yadav',
+    },
+  ];
+
   return (
     <>
       <Navbar />
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pt-20 pb-10">
-        <div className="max-w-4xl mx-auto px-4">
+        <div className="max-w-6xl mx-auto px-4">
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-8 mt-8">
-            About <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Pratiyogita Marg</span>
+            About <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Pratiyogita Setu</span>
           </h1>
-          
-          <div className="prose prose-lg max-w-none space-y-6">
-            <div className="bg-white rounded-xl p-8 shadow-sm border">
-              <h2 className="text-2xl font-bold mb-4">Our Mission</h2>
-              <p className="text-gray-700">
-                Pratiyogita Marg is dedicated to helping competitive exam aspirants navigate their preparation journey with clarity and confidence. We provide structured, visual roadmaps that break down complex exam syllabi into manageable, organized paths.
+
+          <div className="bg-white rounded-xl p-8 shadow-sm border">
+            <div className="w-full p-6 bg-blue-50 rounded-lg border-l-4 border-blue-500 text-gray-700 text-base sm:text-lg leading-relaxed">
+              <p className="mb-4 italic">
+                We are <span className="font-semibold text-blue-700">Abhinav Kumar</span>, <span className="font-semibold text-blue-700">Manu Dev</span>, and <span className="font-semibold text-blue-700">Nitish Yadav</span>, and we created <span className="font-semibold">Pratiyogita Setu</span> with a simple purpose—
+                to bring clarity, direction, and confidence to students preparing for competitive examinations.
+              </p>
+              <p className="mb-4">
+                Every year in India, millions of aspirants prepare for thousands of government and competitive exams.
+                But despite the effort they put in, many students struggle with one basic problem:
+                they don’t clearly know where they stand or what their best path forward is.
+              </p>
+              <p className="mb-4">
+                Some miss opportunities because they are unaware of their eligibility.
+                Others spend years preparing for exams they may never qualify for.
+                And many feel lost in a system filled with scattered information and uncertainty.
+              </p>
+              <p className="mb-4 font-semibold text-gray-800">Pratiyogita Setu was built to change that.</p>
+              <p className="mb-4">
+                We believe that the first step toward success is clear and reliable guidance.
+                Our platform helps aspirants understand their real eligibility, plan their preparation with structure,
+                and move forward with confidence instead of confusion.
+              </p>
+              <p className="mb-4">
+                Through intelligent analysis, structured roadmaps, and trustworthy learning support,
+                we aim to make sure that no genuine effort goes in the wrong direction
+                and every student gets a fair chance to reach their goal.
+              </p>
+              <p className="mb-0">
+                This is not just a project for us—
+                it is a commitment to support students in one of the most important journeys of their lives.
               </p>
             </div>
 
-            <div className="bg-white rounded-xl p-8 shadow-sm border">
-              <h2 className="text-2xl font-bold mb-4">What We Offer</h2>
-              <ul className="space-y-3 text-gray-700">
-                <li className="flex items-start">
-                  <span className="text-blue-600 mr-2">✓</span>
-                  <span><strong>Visual Mind Maps:</strong> Interactive roadmaps that visualize your entire exam preparation journey</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-blue-600 mr-2">✓</span>
-                  <span><strong>Progress Tracking:</strong> Mark completed topics and track your preparation progress</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-blue-600 mr-2">✓</span>
-                  <span><strong>Customizable Roadmaps:</strong> Create and edit your own study plans based on your strategy</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-blue-600 mr-2">✓</span>
-                  <span><strong>Comprehensive Coverage:</strong> Access roadmaps for 50+ major competitive exams</span>
-                </li>
-              </ul>
-            </div>
+            <div className="mt-8">
+              <h2 className="text-center text-black text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
+                Meet the Team
+              </h2>
 
-            <div className="bg-white rounded-xl p-8 shadow-sm border">
-              <h2 className="text-2xl font-bold mb-4">Our Ecosystem</h2>
-              <p className="text-gray-700 mb-4">
-                Pratiyogita Marg is part of the Pariksha Setu ecosystem, designed to support exam aspirants at every step:
-              </p>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="p-4 bg-violet-50 rounded-lg">
-                  <h3 className="font-bold text-violet-700 mb-2">Pratiyogita Yogya</h3>
-                  <p className="text-sm text-gray-600">Check your exam eligibility and remaining attempts instantly</p>
-                </div>
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h3 className="font-bold text-blue-700 mb-2">Pratiyogita Marg</h3>
-                  <p className="text-sm text-gray-600">Get structured roadmaps with topic-wise preparation paths</p>
-                </div>
-                <div className="p-4 bg-emerald-50 rounded-lg">
-                  <h3 className="font-bold text-emerald-700 mb-2">Pratiyogita Gyan</h3>
-                  <p className="text-sm text-gray-600">Learn with AI assistant trained on exam materials</p>
-                </div>
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {teamMembers.map((member) => (
+                  <div key={member.name} className="p-6 flex flex-col items-center text-center bg-white rounded-xl border shadow-sm">
+                    <div className="w-[200px] h-[250px] bg-gray-300 rounded-[20px] overflow-hidden flex items-center justify-center">
+                      <img
+                        src={member.image}
+                        alt={member.role}
+                        className="w-full h-full object-cover rounded-[20px]"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = 'https://via.placeholder.com/200';
+                        }}
+                      />
+                    </div>
+
+                    <h3 className="text-blue-700 text-xs sm:text-sm font-bold leading-5 mt-3 uppercase tracking-wide">
+                      {member.role}
+                    </h3>
+                    <p className="text-gray-700 text-base sm:text-lg font-semibold mt-1">
+                      {member.name}
+                    </p>
+                  </div>
+                ))}
               </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-8 shadow-sm border">
-              <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
-              <p className="text-gray-700">
-                Have questions or feedback? We'd love to hear from you!
-              </p>
-              <p className="text-gray-700 mt-4">
-                <strong>Email:</strong> <a href="mailto:askparikshasetu@gmail.com" className="text-blue-600 hover:underline">askparikshasetu@gmail.com</a>
-              </p>
             </div>
           </div>
         </div>

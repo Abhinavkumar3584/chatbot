@@ -17,9 +17,9 @@ const LandingPage = () => {
         <Hero />
       </div>
 
-      <div>
+      {/* <div>
         <StatsAnalytics/>
-      </div>
+      </div> */}
 
       <div>
         <InfinityImgScroll />

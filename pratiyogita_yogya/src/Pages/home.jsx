@@ -14,10 +14,10 @@ function Home() {
       <div className="w-full mx-0 px-0">
         <Hero />
       </div>
-
+{/* 
       <div>
         <StatsAnalytics/>
-      </div>
+      </div> */}
 
       <div>
         <InfinityImgScroll />
