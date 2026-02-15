@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react'
-import { MessageCircle, Search, BookOpen, FileText, Lightbulb, Trash2, Clock, Target, CheckCircle, PenTool, Home } from 'lucide-react'
+import { MessageCircle, Search, BookOpen, FileText, Lightbulb, Trash2, Clock, Target, CheckCircle, PenTool, Home, Plus } from 'lucide-react'
 import { Box, Paper, Stack, Typography, Button, IconButton, Divider } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useLayout } from '../contexts/LayoutContext'
@@ -380,13 +380,7 @@ const Sidebar = () => {
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <animated-icons
-                    src="https://animatedicons.co/get-icon?name=plus&style=minimalistic&token=3a3309ff-41ae-42ce-97d0-5767a4421b43"
-                    trigger="loop-on-hover"
-                    attributes='{"variationThumbColour":"#536DFE","variationName":"Two Tone","variationNumber":2,"numberOfGroups":2,"backgroundIsGroup":false,"strokeWidth":4,"defaultColours":{"group-1":"#000000","group-2":"#000000FF","background":"#FFFFFF00"}}'
-                    height="20"
-                    width="20"
-                  ></animated-icons>
+                  <Plus size={18} strokeWidth={2.6} color="#ffffff" />
                   <span>New Chat</span>
                 </Box>
               </Button>

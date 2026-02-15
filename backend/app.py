@@ -869,15 +869,17 @@ def is_greeting_or_casual(query: str) -> tuple[bool, str]:
         'thik hai', 'badhiya', 'badiya', 'sahi', 'haan', 'han', 'nahi', 'na'
     ]
     
-    # Combined greetings (hi gran setu, hello bhai, etc.)
-    combined_greeting_words = ['gran', 'setu', 'bhai', 'dost', 'friend', 'bot', 'chatbot']
+    # Combined greetings (hi pratiyogita gyan, hello bhai, etc.)
+    combined_greeting_words = [
+        'pratiyogita', 'gyan', 'bhai', 'dost', 'friend', 'bot', 'chatbot'
+    ]
     
     # 1. Check pure greetings (short phrases)
     if len(query_words) <= 5:
         # Check English greetings
         if any(query_lower == g or query_lower.startswith(g + ' ') for g in english_greetings):
             return True, (
-                "Hello! 👋 I'm **Gran Setu**, your NCERT learning assistant.\n\n"
+                "Hello! 👋 I'm **Pratiyogita Gyan**, your NCERT learning assistant.\n\n"
                 "I can help you with:\n"
                 "📚 NCERT subjects and concepts\n"
                 "💡 Detailed explanations\n"
@@ -889,7 +891,7 @@ def is_greeting_or_casual(query: str) -> tuple[bool, str]:
         # Check Hindi/Hinglish greetings
         if any(g in query_lower for g in hindi_greetings):
             return True, (
-                "Namaste! 🙏 Main **Gran Setu** hoon, aapka NCERT learning assistant.\n\n"
+                "Namaste! 🙏 Main **Pratiyogita Gyan** hoon, aapka NCERT learning assistant.\n\n"
                 "Main aapki help kar sakta hoon:\n"
                 "📚 NCERT subjects aur concepts mein\n"
                 "💡 Detailed explanations\n"
@@ -902,7 +904,7 @@ def is_greeting_or_casual(query: str) -> tuple[bool, str]:
         if any(word in query_words for word in english_greetings + hindi_greetings):
             if any(word in query_words for word in combined_greeting_words):
                 return True, (
-                    "Hello! 😊 I'm **Gran Setu**, ready to help you with your studies!\n\n"
+                    "Hello! 😊 I'm **Pratiyogita Gyan**, ready to help you with your studies!\n\n"
                     "Ask me anything about:\n"
                     "• NCERT topics (Class 6-12)\n"
                     "• Subject explanations\n"
@@ -915,7 +917,7 @@ def is_greeting_or_casual(query: str) -> tuple[bool, str]:
     if any(pattern in query_lower for pattern in casual_patterns):
         return True, (
             "I'm doing great, thanks for asking! 😊\n\n"
-            "I'm **Gran Setu**, your study companion. I'm here to help you with NCERT content, "
+            "I'm **Pratiyogita Gyan**, your study companion. I'm here to help you with NCERT content, "
             "exam preparation, and answer your educational questions.\n\n"
             "What topic would you like to explore today?"
         )
@@ -923,7 +925,7 @@ def is_greeting_or_casual(query: str) -> tuple[bool, str]:
     # 3. Check bot identity questions
     if any(pattern in query_lower for pattern in identity_patterns):
         return True, (
-            "I'm **Gran Setu** 🎓, your intelligent NCERT learning assistant!\n\n"
+            "I'm **Pratiyogita Gyan** 🎓, your intelligent NCERT learning assistant!\n\n"
             "**What I can do:**\n"
             "✅ Answer questions from NCERT textbooks (Class 6-12)\n"
             "✅ Explain complex concepts in simple language\n"
