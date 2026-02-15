@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
@@ -618,6 +619,8 @@ function CheckEligibilityPage() {
     // LOCK PAGE SCROLL (only for this route)
     // ============================================
 
+    const { currentUser, loading: authLoading, loginWithGoogle, loginWithGithub } = useAuth();
+
     useEffect(() => {
         const prevBodyOverflow = document.body.style.overflow;
         const prevHtmlOverflow = document.documentElement.style.overflow;
@@ -634,19 +637,61 @@ function CheckEligibilityPage() {
     // ============================================
 
     useEffect(() => {
+        if (authLoading) return;
+
+        let cancelled = false;
+
         const loadExamOptions = async () => {
             try {
+                if (currentUser) {
+                    await currentUser.getIdToken();
+                }
+
                 await ensureExamCatalogLoaded();
                 const options = getExamDropdownOptions();
-                setExamOptions(options);
+
+                if (!cancelled) {
+                    setExamOptions(options);
+                    setError("");
+                }
             } catch (err) {
                 console.error('Failed to load exam catalog from Firestore:', err);
-                setError('Failed to load exams. Please login and try again.');
+                if (cancelled) return;
+
+                const isPermissionError =
+                    err?.code === 'permission-denied' ||
+                    String(err?.message || '').toLowerCase().includes('access denied');
+
+                if (isPermissionError && currentUser) {
+                    try {
+                        await currentUser.getIdToken(true);
+                        await ensureExamCatalogLoaded();
+                        const retriedOptions = getExamDropdownOptions();
+
+                        if (!cancelled) {
+                            setExamOptions(retriedOptions);
+                            setError("");
+                        }
+                        return;
+                    } catch (retryError) {
+                        console.error('Retry after token refresh failed:', retryError);
+                    }
+                }
+
+                setError(
+                    isPermissionError && !!currentUser
+                        ? 'Your account is signed in but does not have access to exam data yet. Please contact support.'
+                        : 'Failed to load exams. Please login and try again.'
+                );
             }
         };
 
         loadExamOptions();
-    }, []);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [authLoading, currentUser]);
 
     // Filter exam options based on search and category
     const filteredExamOptions = examOptions.filter(option => {
@@ -854,13 +899,13 @@ function CheckEligibilityPage() {
         // Format: DD, MM, YYYY
         setDateDay('15');
         setDateMonth('06');
-        setDateYear('2000');
+        setDateYear('2002');
         
         // ========== PERSONAL INFORMATION ==========
         // You can change any of these values
         setFormData(prev => ({
             ...prev,
-            date_of_birth: '2000-06-15',
+            date_of_birth: '2002-06-15',
             gender: 'MALE',                    // Options: MALE, FEMALE, TRANSGENDER
             marital_status: 'UNMARRIED',       // Options: UNMARRIED, MARRIED, SEPARATED, DIVORCED, DIVORCEE, WIDOW, WIDOWER
             nationality: 'INDIAN',             // Options: INDIAN, CITIZEN OF NEPAL, etc.
@@ -1994,6 +2039,18 @@ function CheckEligibilityPage() {
 
                 {/* Scrollable Content (form + results) */}
                 <div className="flex-1 overflow-y-auto pb-4" style={greenScrollbarStyle}>
+                    {/* Cross-app login hint banner */}
+                    {(!currentUser && new URLSearchParams(window.location.search).get('loggedIn') === '1') && (
+                      <Alert severity="info" className="mb-4">
+                        We detected you're signed in on another Pratiyogita app — sign in here to load exams.
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button variant="outlined" size="small" onClick={() => loginWithGoogle()}>Sign in with Google</Button>
+                          <Button variant="outlined" size="small" onClick={() => loginWithGithub()}>Sign in with GitHub</Button>
+                          <Button variant="contained" size="small" onClick={() => window.location.href = '/login'}>Open login</Button>
+                        </div>
+                      </Alert>
+                    )}
+
                     {error && (
                         <Alert severity="error" className="mb-4" onClose={() => setError("")}>
                             {error}
