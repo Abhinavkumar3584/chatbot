@@ -119,6 +119,7 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 search_components = {}
 system_initialized = False
 rate_limit_storage = {}
+rate_limit_lock = threading.Lock()
 _init_lock = threading.Lock()
 
 # Simple in-memory cache for expensive read-only operations
@@ -174,6 +175,34 @@ def _get_index_stats_cached(index, cache_key, ttl_seconds=60):
     _set_cached_value(cache_key, stats, ttl_seconds)
     return stats
 
+
+def safe_int(value, default, min_value=None, max_value=None):
+    """Safely parse int with optional clamp bounds."""
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        parsed = int(default)
+
+    if min_value is not None:
+        parsed = max(min_value, parsed)
+    if max_value is not None:
+        parsed = min(max_value, parsed)
+    return parsed
+
+
+def safe_float(value, default, min_value=None, max_value=None):
+    """Safely parse float with optional clamp bounds."""
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        parsed = float(default)
+
+    if min_value is not None:
+        parsed = max(min_value, parsed)
+    if max_value is not None:
+        parsed = min(max_value, parsed)
+    return parsed
+
 def rate_limit(max_requests=None, window_seconds=None):
     """Simple rate limiting decorator
     
@@ -190,25 +219,30 @@ def rate_limit(max_requests=None, window_seconds=None):
         def decorated_function(*args, **kwargs):
             client_ip = request.remote_addr
             current_time = time.time()
-            
-            # Clean old entries
-            if client_ip in rate_limit_storage:
-                rate_limit_storage[client_ip] = [
-                    timestamp for timestamp in rate_limit_storage[client_ip]
-                    if current_time - timestamp < window_seconds
-                ]
-            else:
-                rate_limit_storage[client_ip] = []
-            
-            # Check rate limit
-            if len(rate_limit_storage[client_ip]) >= max_requests:
-                return jsonify({
-                    'error': 'Rate limit exceeded',
-                    'message': f'Maximum {max_requests} requests per {window_seconds} seconds'
-                }), 429
-            
-            # Add current request
-            rate_limit_storage[client_ip].append(current_time)
+
+            with rate_limit_lock:
+                # Periodic cleanup of stale IP buckets to prevent unbounded growth
+                stale_ips = []
+                for ip, timestamps in rate_limit_storage.items():
+                    recent = [ts for ts in timestamps if current_time - ts < window_seconds]
+                    if recent:
+                        rate_limit_storage[ip] = recent
+                    else:
+                        stale_ips.append(ip)
+                for ip in stale_ips:
+                    rate_limit_storage.pop(ip, None)
+
+                bucket = rate_limit_storage.setdefault(client_ip, [])
+
+                # Check rate limit
+                if len(bucket) >= max_requests:
+                    return jsonify({
+                        'error': 'Rate limit exceeded',
+                        'message': f'Maximum {max_requests} requests per {window_seconds} seconds'
+                    }), 429
+
+                # Add current request
+                bucket.append(current_time)
             
             return f(*args, **kwargs)
         return decorated_function
@@ -227,6 +261,14 @@ def after_request(response):
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Endpoint not found'}), 404
+
+
+@app.errorhandler(413)
+def payload_too_large(error):
+    return jsonify({
+        'error': 'Payload too large',
+        'message': 'Request body exceeds 1MB limit'
+    }), 413
 
 @app.errorhandler(500)
 def internal_error(error):
@@ -832,6 +874,41 @@ def sanitize_model_identity_text(text):
     return cleaned
 
 
+def query_source_overlap_count(query: str, source: dict) -> int:
+    """Count meaningful keyword overlap between query and a source payload."""
+    query_tokens = set(re.findall(r"[a-z0-9']+", str(query or "").lower()))
+    if not query_tokens:
+        return 0
+
+    stop_words = {
+        'the', 'a', 'an', 'is', 'are', 'was', 'were', 'what', 'why', 'how',
+        'you', 'your', 'from', 'with', 'for', 'and', 'or', 'to', 'of', 'in',
+        'on', 'this', 'that', 'these', 'those', 'about', 'can', 'could',
+        'should', 'would', 'tell', 'me', 'explain', 'describe', 'difference'
+    }
+    query_keywords = {t for t in query_tokens if len(t) > 2 and t not in stop_words}
+    if not query_keywords:
+        return 0
+
+    metadata = source.get('metadata', {}) if isinstance(source, dict) else {}
+    source_text = " ".join([
+        str(source.get('text_preview', '')),
+        str(source.get('full_text', '')),
+        str(source.get('subject', '')),
+        str(source.get('chapter_name', '')),
+        str(source.get('topic', '')),
+        str(metadata.get('subject', '')),
+        str(metadata.get('chapter_name', '')),
+        str(metadata.get('topic', '')),
+    ]).lower()
+
+    if not source_text.strip():
+        return 0
+
+    source_tokens = set(re.findall(r"[a-z0-9']+", source_text))
+    return len(query_keywords.intersection(source_tokens))
+
+
 def get_answer_length_profile(answer_length_mode):
     mode = str(answer_length_mode or "normal").strip().lower().replace("-", "_").replace(" ", "_")
     return ANSWER_LENGTH_PROFILES.get(mode, ANSWER_LENGTH_PROFILES["normal"]), mode if mode in ANSWER_LENGTH_PROFILES else "normal"
@@ -895,7 +972,7 @@ def is_greeting_or_casual(query: str) -> tuple[bool, str, str]:
 
     provider_terms = {
         'chatgpt', 'openai', 'gpt', 'gemini', 'claude', 'copilot', 'groq',
-        'llama', 'model', 'ai'
+        'llama', 'model', 'ai', 'assistant', 'bot'
     }
 
     has_provider_term = any(term in token_set for term in provider_terms)
@@ -905,19 +982,32 @@ def is_greeting_or_casual(query: str) -> tuple[bool, str, str]:
     identity_patterns = [
         r"\bwho\s+are\s+you\b", r"\bwhat\s+are\s+you\b",
         r"\bwhat\s+is\s+your\s+name\b", r"\bwhats\s+your\s+name\b",
+        r"\bwho\s+(made|created|built|developed)\s+you\b",
         r"\bwhat\s+can\s+you\s+do\b", r"\bwhat\s+do\s+you\s+do\b",
         r"\baap\s+kaun\s+ho\b", r"\btum\s+kaun\s+ho\b",
-        r"\bnaam\s+kya\s+hai\b"
+        r"\bnaam\s+kya\s+hai\b",
+        r"\bkisne\s+banaya\b", r"\bkisne\s+banaya\s+tumhe\b"
     ]
 
     comparison_patterns = [
         r"\bdifference\b.*\b(chatgpt|openai|gpt|gemini|claude|copilot|ai)\b",
+        r"\bdifferent\b.*\b(chatgpt|openai|gpt|gemini|claude|copilot|ai)\b",
+        r"\bhow\s+are\s+you\s+different\b",
+        r"\bhow\s+are\s+you\s+better\b",
+        r"\bbetter\s+than\b.*\b(chatgpt|openai|gpt|gemini|claude|copilot|ai)\b",
+        r"\bgeneral\s*[- ]?purpose\s+ai\b",
         r"\bcompare\b.*\b(chatgpt|openai|gpt|gemini|claude|copilot|ai)\b",
         r"\bvs\b\s*(chatgpt|openai|gpt|gemini|claude|copilot|ai)\b",
         r"\bversus\b\s*(chatgpt|openai|gpt|gemini|claude|copilot|ai)\b",
     ]
 
     provider_identity_patterns = [
+        r"\bare\s+you\s+ai\b",
+        r"\byou\s+are\s+ai\b",
+        r"\byou\s+are\s+an\s+ai\b",
+        r"\byou'?re\s+ai\b",
+        r"\byou\s+are\s+not\s+human\b",
+        r"\byou\s+are\s+ai\s+not\s+human\b",
         r"\bare\s+you\s+(open\s*ai|openai|chatgpt|gpt|groq|llama)\b",
         r"\byou\s+are\s+(open\s*ai|openai|chatgpt)\b",
         r"\bwhich\s+model\s+are\s+you\b",
@@ -926,20 +1016,50 @@ def is_greeting_or_casual(query: str) -> tuple[bool, str, str]:
         r"\bmodel\s+name\b",
     ]
 
-    if (
-        any(re.search(pattern, query_lower) for pattern in identity_patterns)
-        or any(re.search(pattern, query_lower) for pattern in provider_identity_patterns)
+    meta_pronouns = {'you', 'your', 'u', 'tum', 'aap'}
+    looks_like_short_meta_assertion = (
+        word_count <= 10
+        and not has_academic_term
+        and (has_provider_term or 'human' in token_set)
+        and bool(token_set.intersection(meta_pronouns))
+    )
+
+    matched_identity = any(re.search(pattern, query_lower) for pattern in identity_patterns)
+    matched_provider_identity = any(re.search(pattern, query_lower) for pattern in provider_identity_patterns)
+    matched_comparison = any(re.search(pattern, query_lower) for pattern in comparison_patterns)
+
+    comparison_intent = (
+        matched_comparison
         or (
             has_provider_term
-            and any(re.search(pattern, query_lower) for pattern in comparison_patterns)
             and ('you' in token_set or 'your' in token_set)
+            and any(word in token_set for word in {'better', 'difference', 'different', 'compare', 'vs', 'versus'})
         )
-    ):
+    )
+
+    if matched_identity or matched_provider_identity or looks_like_short_meta_assertion or comparison_intent:
+        if comparison_intent:
+            return True, (
+                "Good question. General-purpose AI can be better for broad/open-ended tasks.\n\n"
+                "Where **Pratiyogita Gyan** is better for exam prep:\n"
+                "• More syllabus-focused (NCERT + PYQ style)\n"
+                "• More concise exam-oriented explanations\n"
+                "• Better class/subject-filtered guidance\n"
+                "• Less generic detours in study answers\n\n"
+                "Where general-purpose AI can be better:\n"
+                "• Creative writing and non-academic conversation\n"
+                "• Wider general-topic exploration\n\n"
+                "For serious exam revision, use me as your primary tool and cross-check key facts when needed."
+            ), "meta_comparison"
+
         return True, (
-            "I'm **Pratiyogita Gyan** 🎓, your NCERT-focused educational assistant.\n\n"
-            "I am designed for exam prep and textbook learning support.\n"
-            "I can help with NCERT concepts, PYQs, class-wise topics, and revision guidance.\n\n"
-            "If you want, ask: *'How are you different from general-purpose AI for exam prep?'*"
+            "Yes — I am an AI assistant.\n\n"
+            "I’m **Pratiyogita Gyan** 🎓, built specifically for NCERT and exam preparation.\n\n"
+            "I’m strongest at:\n"
+            "• NCERT concept explanations\n"
+            "• PYQ-focused practice help\n"
+            "• Class-wise exam revision guidance\n\n"
+            "I avoid unrelated general-chat content and stay focused on syllabus-oriented answers."
         ), "meta_identity"
 
     # ---- 2) Greetings / casual (conservative rules only) ----
@@ -1468,8 +1588,10 @@ def search():
     
     # Pinecone is optional for a best-effort response
     pinecone_available = 'rag_index' in search_components and 'rag_model' in search_components
+    request_id = uuid.uuid4().hex[:12]
+    start_time = time.time()
     
-    data = request.json
+    data = request.get_json(silent=True) or {}
     if not data:
         return jsonify({"error": "No JSON data provided"}), 400
     
@@ -1480,12 +1602,12 @@ def search():
     if len(query) > 1000:
         return jsonify({"error": "Query too long (max 1000 characters)"}), 400
     
-    try:
-        n_results = int(data.get("n_results", int(os.getenv("DEFAULT_N_RESULTS", "5"))))
-        if n_results < 1 or n_results > 20:
-            n_results = 5
-    except (ValueError, TypeError):
-        n_results = 5
+    n_results = safe_int(
+        data.get("n_results", os.getenv("DEFAULT_N_RESULTS", "5")),
+        default=5,
+        min_value=1,
+        max_value=20,
+    )
     
     # Handle namespace - frontend sometimes sends dict instead of string
     namespace_raw = data.get("namespace", "")
@@ -1500,13 +1622,33 @@ def search():
     selected_class = data.get("selected_class")
     selected_subject = data.get("subject", "all")
     answer_length = data.get("answer_length", "normal")
-    mcq_threshold = data.get("mcq_threshold", float(os.getenv("DEFAULT_MCQ_THRESHOLD", "0.25")))
-    mcq_limit = data.get("mcq_limit", int(os.getenv("DEFAULT_MCQ_LIMIT", "0")))
+    mcq_threshold = safe_float(
+        data.get("mcq_threshold", os.getenv("DEFAULT_MCQ_THRESHOLD", "0.25")),
+        default=0.25,
+        min_value=0.0,
+        max_value=1.0,
+    )
+    mcq_limit = safe_int(
+        data.get("mcq_limit", os.getenv("DEFAULT_MCQ_LIMIT", "0")),
+        default=0,
+        min_value=0,
+        max_value=100,
+    )
     answer_settings = data.get("answer_settings", {}) or {}
 
     answer_profile, resolved_answer_length = get_answer_length_profile(answer_length)
-    llm_temperature = float(answer_settings.get("temperature", os.getenv("DEFAULT_ANSWER_TEMPERATURE", "0.3")))
-    llm_top_p = float(answer_settings.get("top_p", os.getenv("DEFAULT_ANSWER_TOP_P", "0.9")))
+    llm_temperature = safe_float(
+        answer_settings.get("temperature", os.getenv("DEFAULT_ANSWER_TEMPERATURE", "0.3")),
+        default=0.3,
+        min_value=0.0,
+        max_value=1.0,
+    )
+    llm_top_p = safe_float(
+        answer_settings.get("top_p", os.getenv("DEFAULT_ANSWER_TOP_P", "0.9")),
+        default=0.9,
+        min_value=0.0,
+        max_value=1.0,
+    )
     # Enforce profile-specific token limits regardless of client overrides
     llm_max_tokens = answer_profile["max_tokens"]
     
@@ -1519,7 +1661,8 @@ def search():
         decision_path.append(f"intent:{intent_label}")
         if is_casual:
             app.logger.info(
-                "search_decision intent=%s provider=%s namespace=%s class=%s sources=%s",
+                "search_decision request_id=%s intent=%s provider=%s namespace=%s class=%s sources=%s",
+                request_id,
                 intent_label,
                 "greeting_handler",
                 "none",
@@ -1538,11 +1681,12 @@ def search():
                 "is_greeting": True
                 ,"intent": intent_label,
                 "decision_path": decision_path,
-                "best_score": 0.0
+                "best_score": 0.0,
+                "request_id": request_id,
+                "elapsed_ms": int((time.time() - start_time) * 1000),
             }), 200
-        
+
         # Set a timeout for the entire operation
-        start_time = time.time()
         timeout_seconds = 30  # 30 second timeout
 
         if pinecone_available:
@@ -1560,7 +1704,8 @@ def search():
         decision_path.append(f"strict_subject:{strict_subject_selected}")
         decision_path.append(f"strict_class:{strict_class_selected}")
 
-        min_source_score = float(os.getenv("MIN_RAG_SOURCE_SCORE", "0.34"))
+        min_source_score = float(os.getenv("MIN_RAG_SOURCE_SCORE", "0.45"))
+        min_top_score_strict = float(os.getenv("MIN_TOP_SOURCE_SCORE_STRICT", "0.52"))
         retrieval_disclaimer = None
         fallback_reason = None
 
@@ -1658,6 +1803,23 @@ def search():
         # Get best match score and metadata for prompt quality assessment
         best_score = sources[0]['score'] if sources else 0.0
         source_metadata = sources[0] if sources else None
+        overlap_count = query_source_overlap_count(query, source_metadata) if source_metadata else 0
+
+        if sources and (best_score < min_top_score_strict or overlap_count == 0):
+            decision_path.append(f"strict_guard_drop:score={round(best_score,3)}:overlap={overlap_count}")
+            sources = []
+            context = ""
+            compact_context = ""
+            best_score = 0.0
+            source_metadata = None
+            fallback_reason = fallback_reason or "low_relevance_or_no_overlap"
+            retrieval_disclaimer = (
+                "I couldn't find a reliable match in indexed NCERT resources for this query. "
+                "The answer below is AI-generated guidance."
+            )
+        else:
+            decision_path.append(f"overlap_count:{overlap_count}")
+
         decision_path.append(f"best_score:{round(best_score, 3)}")
 
         # Generate RAG response using provider routing
@@ -1755,7 +1917,9 @@ def search():
                 "top_p": llm_top_p,
                 "max_tokens": llm_max_tokens
             },
-            "timestamp": time.time()
+            "timestamp": time.time(),
+            "request_id": request_id,
+            "elapsed_ms": int((time.time() - start_time) * 1000),
         }
         if not pinecone_available:
             warning = (warning + " | " if warning else "") + "Pinecone unavailable; returning LLM-only response"
@@ -1763,7 +1927,8 @@ def search():
             response_payload["warning"] = warning
 
         app.logger.info(
-            "search_decision intent=%s provider=%s ns=%s class=%s best_score=%.3f sources=%s path=%s",
+            "search_decision request_id=%s intent=%s provider=%s ns=%s class=%s best_score=%.3f sources=%s path=%s",
+            request_id,
             intent_label,
             provider_used or "none",
             effective_namespace or "all",
@@ -3212,21 +3377,24 @@ def generate_pyq_explanation():
         return jsonify({"error": "Search system not initialized"}), 500
 
     try:
+        request_id = uuid.uuid4().hex[:12]
+        started_at = time.time()
         data = request.get_json(silent=True) or {}
-        question = str(data.get('question', '')).strip()
+        question = str(data.get('question', '')).strip()[:1200]
         options = data.get('options', [])
         correct_answer = data.get('correct_answer', None)
-        correct_option = str(data.get('correct_option', '')).strip()
-        correct_answer_text = str(data.get('correct_answer_text', '')).strip()
-        subject = str(data.get('subject', '')).strip()
-        exam_name = str(data.get('exam_name', '')).strip()
-        existing_explanation = str(data.get('existing_explanation', '')).strip()
+        correct_option = str(data.get('correct_option', '')).strip()[:4]
+        correct_answer_text = str(data.get('correct_answer_text', '')).strip()[:400]
+        subject = str(data.get('subject', '')).strip()[:120]
+        exam_name = str(data.get('exam_name', '')).strip()[:120]
+        existing_explanation = str(data.get('existing_explanation', '')).strip()[:1200]
 
         if not question:
             return jsonify({'error': 'Question is required'}), 400
 
         if not isinstance(options, list):
             options = []
+        options = [str(option).strip()[:350] for option in options[:4] if str(option).strip()]
 
         option_labels = ['A', 'B', 'C', 'D']
 
@@ -3274,7 +3442,9 @@ def generate_pyq_explanation():
             return jsonify({
                 'status': 'success',
                 'provider': 'cache',
-                'explanation': cached_explanation
+                'explanation': cached_explanation,
+                'request_id': request_id,
+                'elapsed_ms': int((time.time() - started_at) * 1000),
             }), 200
 
         prompt = (
@@ -3313,7 +3483,9 @@ def generate_pyq_explanation():
                     return jsonify({
                         'status': 'success',
                         'provider': 'openai',
-                        'explanation': content
+                        'explanation': content,
+                        'request_id': request_id,
+                        'elapsed_ms': int((time.time() - started_at) * 1000),
                     }), 200
             except Exception as e:
                 app.logger.warning(f"OpenAI PYQ explanation failed, trying fallback: {e}")
@@ -3338,7 +3510,9 @@ def generate_pyq_explanation():
                     return jsonify({
                         'status': 'success',
                         'provider': 'groq',
-                        'explanation': content
+                        'explanation': content,
+                        'request_id': request_id,
+                        'elapsed_ms': int((time.time() - started_at) * 1000),
                     }), 200
             except Exception as e:
                 app.logger.warning(f"Groq PYQ explanation failed: {e}")
@@ -3350,7 +3524,9 @@ def generate_pyq_explanation():
         return jsonify({
             'status': 'fallback',
             'provider': 'none',
-            'explanation': fallback_explanation
+            'explanation': fallback_explanation,
+            'request_id': request_id,
+            'elapsed_ms': int((time.time() - started_at) * 1000),
         }), 200
 
     except Exception as e:
