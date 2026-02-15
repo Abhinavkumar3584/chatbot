@@ -210,6 +210,19 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      if (!user.displayName) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const docDisplayName = userDoc.exists() ? String(userDoc.data()?.displayName || '').trim() : '';
+
+        if (docDisplayName) {
+          await updateProfile(user, {
+            displayName: docDisplayName,
+          });
+        }
+      }
+
       await updateAuthSyncState(userCredential.user.uid, true);
       return userCredential;
     } catch (error) {

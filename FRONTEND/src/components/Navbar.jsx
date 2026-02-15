@@ -80,6 +80,17 @@ const Navbar = ({ onViewChange, currentView }) => {
     }
   }
 
+  const getUserDisplayName = () => {
+    const displayName = currentUser?.displayName?.trim()
+    if (displayName) return displayName
+
+    const email = currentUser?.email?.trim()
+    if (!email) return 'User'
+
+    const prefix = email.split('@')[0]?.trim()
+    return prefix || email
+  }
+
   const getUserInitials = (displayName) => {
     if (!displayName) return 'U'
     const names = displayName.split(' ')
@@ -277,13 +288,13 @@ const Navbar = ({ onViewChange, currentView }) => {
                     }}
                   >
                       <Avatar sx={{ width: 24, height: 24, bgcolor: 'primary.main', color: 'primary.contrastText', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center' }}>
-                      {getUserInitials(currentUser.displayName)}
+                      {getUserInitials(getUserDisplayName())}
                     </Avatar>
                     <Typography
                       variant="caption"
                         sx={{ ml: 0.75, color: 'primary.main', display: { xs: 'none', lg: 'inline' }, fontWeight: 600, lineHeight: 1 }}
                     >
-                      {currentUser.displayName || currentUser.email}
+                      {getUserDisplayName()}
                     </Typography>
                   </Button>
                   <Button

@@ -52,15 +52,28 @@ async function updateAuthSyncState(uid, loggedIn) {
 async function upsertUserDocument(user, displayName = null) {
   if (!user?.uid) return;
 
+  const trimmedDisplayName = displayName?.trim() || null;
   const userRef = doc(db, 'users', user.uid);
   const existing = await getDoc(userRef);
+  const existingData = existing.data() || {};
+
+  if (!trimmedDisplayName && !user.displayName && existingData?.displayName) {
+    try {
+      await updateProfile(user, { displayName: String(existingData.displayName) });
+    } catch (error) {
+      console.warn('Failed to sync display name from Firestore to auth profile:', error);
+    }
+  }
+
+  const resolvedDisplayName =
+    trimmedDisplayName || user.displayName || existingData?.displayName || null;
 
   if (!existing.exists()) {
     await setDoc(
       userRef,
       {
         email: user.email || null,
-        displayName: displayName || user.displayName || null,
+        displayName: resolvedDisplayName,
         createdAt: serverTimestamp(),
         provider: user.providerData?.[0]?.providerId || 'password',
       },
@@ -72,8 +85,8 @@ async function upsertUserDocument(user, displayName = null) {
   await setDoc(
     userRef,
     {
-      email: user.email || existing.data()?.email || null,
-      displayName: displayName || user.displayName || existing.data()?.displayName || null,
+      email: user.email || existingData?.email || null,
+      displayName: resolvedDisplayName,
       updatedAt: serverTimestamp(),
     },
     { merge: true }

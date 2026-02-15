@@ -75,6 +75,17 @@ const Navbar = () => {
     }
   };
 
+  const getUserDisplayName = () => {
+    const displayName = currentUser?.displayName?.trim();
+    if (displayName) return displayName;
+
+    const email = currentUser?.email?.trim();
+    if (!email) return "User";
+
+    const prefix = email.split("@")[0]?.trim();
+    return prefix || email;
+  };
+
   return (
     <div className="fixed top-1 left-0 right-0 z-50">
       <nav
@@ -137,7 +148,7 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <span className="text-sm text-gray-700">Hi, {currentUser.displayName || "User"}</span>
+                <span className="text-sm text-gray-700">Hi, {getUserDisplayName()}</span>
                 <button
                   onClick={handleLogout}
                   disabled={isLoggingOut}
@@ -216,7 +227,7 @@ const Navbar = () => {
                   <>
                     <div className="px-3 py-2 mb-2 text-center bg-gray-50 rounded-md">
                       <p className="text-sm text-gray-500">Logged in as</p>
-                      <p className="font-medium text-gray-900">{currentUser.displayName || currentUser.email}</p>
+                      <p className="font-medium text-gray-900">{getUserDisplayName()}</p>
                     </div>
                     <button
                       onClick={handleLogout}

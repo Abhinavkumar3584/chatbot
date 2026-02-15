@@ -85,24 +85,26 @@ const ExamCatalog = () => {
     navigate(`/view?map=${encodeURIComponent(sscCglRoadmapReactFlow.name)}`);
   };
 
-  // Get sub-exams for selected category (combine predefined + saved mindmaps)
-  const getSubExams = () => {
-    const predefined = SUB_EXAMS[selectedCategory] || [];
-    const savedForCategory = mindMaps
-      .filter(m => m.examCategory === selectedCategory)
-      .map(m => m.subExamName || m.name);
-    
-    // Combine and deduplicate
-    const combined = [...new Set([...predefined, ...savedForCategory])];
-    
-    // Filter by search term
-    if (searchTerm) {
-      return combined.filter(exam => 
-        exam.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    return combined;
-  };
+  const predefinedExams = SUB_EXAMS[selectedCategory] || [];
+
+  const savedMapsForCategory = mindMaps.filter(
+    (mapItem) => mapItem.examCategory === selectedCategory
+  );
+
+  const availableMindMaps = savedMapsForCategory.filter((mapItem) => {
+    const examLabel = mapItem.subExamName || mapItem.name;
+    if (!searchTerm) return true;
+    return examLabel.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  const availableExamNames = new Set(
+    savedMapsForCategory.map((mapItem) => mapItem.subExamName || mapItem.name)
+  );
+
+  const comingSoonExams = predefinedExams.filter((exam) => {
+    const matchesSearch = !searchTerm || exam.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch && !availableExamNames.has(exam);
+  });
 
   const handleExamClick = (examName: string) => {
     // Check if there's a saved mindmap for this exam
@@ -113,8 +115,13 @@ const ExamCatalog = () => {
     if (savedMap) {
       navigate(`/view?map=${encodeURIComponent(savedMap.name)}`);
     } else {
-      // Navigate to editor to create new mindmap for this exam
-      navigate(`/editor?exam=${encodeURIComponent(examName)}&category=${encodeURIComponent(selectedCategory)}`);
+      // Viewing mindmaps should not require login; avoid redirecting to protected editor.
+      if (examName === 'SSC CGL') {
+        handleOpenGeneratedSscRoadmap();
+        return;
+      }
+
+      navigate('/view');
     }
   };
 
@@ -128,8 +135,9 @@ const ExamCatalog = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
+      <div className="h-16 sm:h-20" />
 
-      <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto p-4 sm:p-6 2xl:p-8 pt-20">
+      <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto p-4 sm:p-6 2xl:p-8 pt-4 sm:pt-6">
         {/* Title */}
         <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h1 className="text-2xl sm:text-3xl 2xl:text-4xl font-bold text-gray-900">Explore Exams</h1>
@@ -185,32 +193,49 @@ const ExamCatalog = () => {
               ).join(' ')}
             </h2>
             
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 2xl:gap-5">
-              {getSubExams().map((exam) => {
-                const hasSavedMap = mindMaps.some(m => 
-                  m.subExamName === exam || m.name === exam
-                );
-                
-                return (
-                  <button
-                    key={exam}
-                    onClick={() => handleExamClick(exam)}
-                    className={`px-3 sm:px-4 2xl:px-5 py-2.5 sm:py-3 2xl:py-3.5 border rounded-lg text-left text-xs sm:text-sm 2xl:text-base font-medium transition-all hover:shadow-md ${
-                      hasSavedMap
-                        ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
-                        : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    {exam}
-                    {hasSavedMap && (
-                      <span className="ml-2 text-xs text-green-600">✓</span>
-                    )}
-                  </button>
-                );
-              })}
+            <div className="mb-6">
+              <h3 className="text-base sm:text-lg font-semibold text-green-700 mb-3">Available Mindmaps</h3>
+              {availableMindMaps.length > 0 ? (
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 2xl:gap-5">
+                  {availableMindMaps.map((mapItem) => {
+                    const examLabel = mapItem.subExamName || mapItem.name;
+                    return (
+                      <button
+                        key={`${mapItem.name}-${examLabel}`}
+                        onClick={() => handleExamClick(examLabel)}
+                        className="px-3 sm:px-4 2xl:px-5 py-2.5 sm:py-3 2xl:py-3.5 border rounded-lg text-left text-xs sm:text-sm 2xl:text-base font-medium transition-all hover:shadow-md bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                      >
+                        {examLabel}
+                        <span className="ml-2 text-xs text-green-600">✓</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No available mindmaps in this category yet.</p>
+              )}
             </div>
 
-            {getSubExams().length === 0 && (
+            <div>
+              <h3 className="text-base sm:text-lg font-semibold text-amber-700 mb-3">Coming Soon</h3>
+              {comingSoonExams.length > 0 ? (
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 2xl:gap-5">
+                  {comingSoonExams.map((exam) => (
+                    <div
+                      key={exam}
+                      className="px-3 sm:px-4 2xl:px-5 py-2.5 sm:py-3 2xl:py-3.5 border rounded-lg text-left text-xs sm:text-sm 2xl:text-base font-medium bg-amber-50 border-amber-200 text-amber-800"
+                    >
+                      {exam}
+                      <span className="ml-2 text-[10px] sm:text-xs font-semibold text-amber-700">COMING SOON</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No upcoming exams found for this filter.</p>
+              )}
+            </div>
+
+            {availableMindMaps.length === 0 && comingSoonExams.length === 0 && (
               <div className="text-center py-12 text-gray-500">
                 <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                 <p className="text-sm sm:text-base">No exams found for this category</p>
