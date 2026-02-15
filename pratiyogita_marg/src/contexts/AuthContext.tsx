@@ -288,54 +288,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     handleRedirectResult();
   }, []);
 
-  useEffect(() => {
-    if (currentUser || typeof window === 'undefined') return;
-
-    const params = new URLSearchParams(window.location.search);
-    const loggedInHint = params.get('loggedIn') === '1';
-    const providerHint = params.get('provider');
-
-    if (!loggedInHint) return;
-
-    const attemptKey = `seamless-login:${window.location.pathname}:${providerHint || 'none'}`;
-    if (sessionStorage.getItem(attemptKey)) return;
-    sessionStorage.setItem(attemptKey, '1');
-
-    const clearHintParams = () => {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('loggedIn');
-      url.searchParams.delete('source');
-      url.searchParams.delete('provider');
-      window.history.replaceState({}, '', url.toString());
-    };
-
-    const startSeamlessLogin = async () => {
-      try {
-        if (providerHint === 'google.com') {
-          const provider = new GoogleAuthProvider();
-          provider.setCustomParameters({ prompt: 'select_account' });
-          await signInWithRedirect(auth, provider);
-          return;
-        }
-
-        if (providerHint === 'github.com') {
-          const provider = new GithubAuthProvider();
-          provider.setCustomParameters({ allow_signup: 'true' });
-          await signInWithRedirect(auth, provider);
-          return;
-        }
-
-        // Email/password sessions cannot be transferred across domains with client-only Firebase auth.
-        clearHintParams();
-      } catch (error) {
-        console.error('Seamless login redirect failed:', error);
-        clearHintParams();
-      }
-    };
-
-    void startSeamlessLogin();
-  }, [currentUser]);
-
   const value = useMemo(
     () => ({
       currentUser,

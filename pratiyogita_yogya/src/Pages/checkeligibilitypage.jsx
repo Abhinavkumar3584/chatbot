@@ -620,7 +620,7 @@ function CheckEligibilityPage() {
     // LOCK PAGE SCROLL (only for this route)
     // ============================================
 
-    const { currentUser, loading: authLoading, loginWithGoogle, loginWithGithub } = useAuth();
+    const { currentUser, loading: authLoading } = useAuth();
 
     const handleOpenLoginForm = () => {
         const nextPath = encodeURIComponent('/check-eligibility');
@@ -2081,18 +2081,6 @@ function CheckEligibilityPage() {
 
                 {/* Scrollable Content (form + results) */}
                 <div className="flex-1 overflow-y-auto pb-4" style={greenScrollbarStyle}>
-                    {/* Cross-app login hint banner */}
-                    {(!currentUser && new URLSearchParams(window.location.search).get('loggedIn') === '1') && (
-                      <Alert severity="info" className="mb-4">
-                        We detected you're signed in on another Pratiyogita app — sign in here to load exams.
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <Button variant="outlined" size="small" onClick={() => loginWithGoogle()}>Sign in with Google</Button>
-                          <Button variant="outlined" size="small" onClick={() => loginWithGithub()}>Sign in with GitHub</Button>
-                                                    <Button variant="contained" size="small" onClick={handleOpenLoginForm}>Open login</Button>
-                        </div>
-                      </Alert>
-                    )}
-
                     {error && (
                         <Alert severity="error" className="mb-4" onClose={() => setError("")}>
                             {error}

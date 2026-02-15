@@ -58,23 +58,6 @@ const Navbar = () => {
     };
   }, [isOpen]);
 
-  const getRedirectUrlWithLoginHint = (baseUrl) => {
-    try {
-      const url = new URL(baseUrl, window.location.origin);
-      if (currentUser) {
-        url.searchParams.set("loggedIn", "1");
-        url.searchParams.set("source", "pratiyogita_yogya");
-        const providerId = currentUser?.providerData?.[0]?.providerId;
-        if (providerId) {
-          url.searchParams.set("provider", providerId);
-        }
-      }
-      return url.toString();
-    } catch {
-      return baseUrl;
-    }
-  };
-
   const getUserDisplayName = () => {
     const displayName = currentUser?.displayName?.trim();
     if (displayName) return displayName;
@@ -116,13 +99,13 @@ const Navbar = () => {
               Home
             </a>
             <a
-              href={getRedirectUrlWithLoginHint(PRATIYOGITA_GYAN_URL)}
+              href={PRATIYOGITA_GYAN_URL}
               className="text-gray-700 hover:text-blue-500"
             >
               Pratiyogita Gyan
             </a>
             <a
-              href={getRedirectUrlWithLoginHint(PRATIYOGITA_MARG_URL)}
+              href={PRATIYOGITA_MARG_URL}
               className="text-gray-700 hover:text-blue-500"
             >
               Pratiyogita Marg
@@ -197,8 +180,8 @@ const Navbar = () => {
 
               <div className="space-y-1">
                 <a href="/" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">Home</a>
-                <a href={getRedirectUrlWithLoginHint(PRATIYOGITA_GYAN_URL)} onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">Pratiyogita Gyan</a>
-                <a href={getRedirectUrlWithLoginHint(PRATIYOGITA_MARG_URL)} onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">Pratiyogita Marg</a>
+                <a href={PRATIYOGITA_GYAN_URL} onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">Pratiyogita Gyan</a>
+                <a href={PRATIYOGITA_MARG_URL} onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">Pratiyogita Marg</a>
                 <a href="/about" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">About Us</a>
               </div>
 
@@ -210,8 +193,8 @@ const Navbar = () => {
                   }`}
                 >
                   <a href="/" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center">Pratiyogita YOGYA</a>
-                  <a href={getRedirectUrlWithLoginHint(PRATIYOGITA_MARG_URL)} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center">Pratiyogita MARG</a>
-                  <a href={getRedirectUrlWithLoginHint(PRATIYOGITA_GYAN_URL)} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center">Pratiyogita GYAN</a>
+                  <a href={PRATIYOGITA_MARG_URL} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center">Pratiyogita MARG</a>
+                  <a href={PRATIYOGITA_GYAN_URL} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-center">Pratiyogita GYAN</a>
                 </div>
               </div>
 
