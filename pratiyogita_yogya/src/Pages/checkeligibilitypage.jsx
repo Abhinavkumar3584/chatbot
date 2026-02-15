@@ -520,6 +520,7 @@ function CheckEligibilityPage() {
     
     // State for Important Notice Dialog
     const [noticeDialogOpen, setNoticeDialogOpen] = useState(false);
+    const [loginRequiredDialogOpen, setLoginRequiredDialogOpen] = useState(false);
 
     // State for divisions
     const [hasDivisions, setHasDivisions] = useState(false);
@@ -621,6 +622,17 @@ function CheckEligibilityPage() {
 
     const { currentUser, loading: authLoading, loginWithGoogle, loginWithGithub } = useAuth();
 
+    const handleOpenLoginForm = () => {
+        const nextPath = encodeURIComponent('/check-eligibility');
+        window.location.href = `/login?next=${nextPath}`;
+    };
+
+    useEffect(() => {
+        if (currentUser) {
+            setLoginRequiredDialogOpen(false);
+        }
+    }, [currentUser]);
+
     useEffect(() => {
         const prevBodyOverflow = document.body.style.overflow;
         const prevHtmlOverflow = document.documentElement.style.overflow;
@@ -657,6 +669,12 @@ function CheckEligibilityPage() {
             } catch (err) {
                 console.error('Failed to load exam catalog from Firestore:', err);
                 if (cancelled) return;
+
+                if (!currentUser) {
+                    setError("");
+                    setLoginRequiredDialogOpen(true);
+                    return;
+                }
 
                 const isPermissionError =
                     err?.code === 'permission-denied' ||
@@ -2037,6 +2055,30 @@ function CheckEligibilityPage() {
                     </DialogActions>
                 </Dialog>
 
+                <Dialog
+                    open={loginRequiredDialogOpen}
+                    onClose={() => setLoginRequiredDialogOpen(false)}
+                    maxWidth="xs"
+                    fullWidth
+                >
+                    <DialogTitle sx={{ fontWeight: 700 }}>
+                        Login Required
+                    </DialogTitle>
+                    <DialogContent>
+                        <Typography variant="body2" color="text.secondary">
+                            Please login to use Eligibility Checker and fetch exam data.
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions sx={{ px: 3, pb: 2 }}>
+                        <Button onClick={() => setLoginRequiredDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="contained" onClick={handleOpenLoginForm}>
+                            Login
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
                 {/* Scrollable Content (form + results) */}
                 <div className="flex-1 overflow-y-auto pb-4" style={greenScrollbarStyle}>
                     {/* Cross-app login hint banner */}
@@ -2046,7 +2088,7 @@ function CheckEligibilityPage() {
                         <div className="mt-3 flex flex-wrap gap-2">
                           <Button variant="outlined" size="small" onClick={() => loginWithGoogle()}>Sign in with Google</Button>
                           <Button variant="outlined" size="small" onClick={() => loginWithGithub()}>Sign in with GitHub</Button>
-                          <Button variant="contained" size="small" onClick={() => window.location.href = '/login'}>Open login</Button>
+                                                    <Button variant="contained" size="small" onClick={handleOpenLoginForm}>Open login</Button>
                         </div>
                       </Alert>
                     )}

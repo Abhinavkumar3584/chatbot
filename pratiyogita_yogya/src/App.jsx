@@ -38,6 +38,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/check-eligibility" element={<CheckEligibility />} />
+          <Route path="/checkeligibility" element={<CheckEligibility />} />
           {/* <Route path="/privacy-policy" element={<PrivacyPolicy />} /> */}
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />
