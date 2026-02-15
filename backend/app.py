@@ -664,65 +664,61 @@ CLASS_OPTIONS = [
 ANSWER_LENGTH_PROFILES = {
     "very_short": {
         "label": "Very Short",
-        "max_tokens": 250,
-        "context_chars": 3800,
-        "min_words": 50,
-        "max_words": 95,
+        "max_tokens": 340,
+        "context_chars": 4500,
+        "min_words": 75,
+        "max_words": 135,
         "instruction": (
-            "Provide a concise, focused answer in 3-5 clear bullet points. "
-            "Each bullet should be one complete sentence. "
-            "60-90 words total. Be direct and factual. "
-            "No introductory phrases, no filler words."
+            "Provide a concise, student-friendly answer in 4-5 clear bullet points. "
+            "Each bullet must be one complete sentence with exam-relevant facts. "
+            "Keep language simple and high-yield for revision. "
+            "No filler words. End with one short takeaway sentence."
         ),
-        "format_hint": "3-5 bullets, direct facts"
+        "format_hint": "4-5 bullets + one takeaway line"
     },
     "short": {
         "label": "Short",
-        "max_tokens": 450,
-        "context_chars": 6500,
-        "min_words": 110,
-        "max_words": 170,
+        "max_tokens": 620,
+        "context_chars": 9000,
+        "min_words": 160,
+        "max_words": 250,
         "instruction": (
-            "Start with 1-2 sentence overview, then provide 4-6 detailed bullet points. "
-            "Each bullet should explain a key aspect clearly. "
-            "120-160 words total. Include relevant context but stay focused. "
-            "Use clear, specific language."
+            "Start with a 2-sentence overview in simple language. "
+            "Then provide 5-6 detailed bullet points that a student can revise from quickly. "
+            "Include key facts, terms, and one practical/example-based point where relevant. "
+            "End with a 1-line exam takeaway."
         ),
-        "format_hint": "Brief intro + 4-6 bullets"
+        "format_hint": "2-line intro + 5-6 bullets + 1-line takeaway"
     },
     "normal": {
         "label": "Normal",
-        "max_tokens": 750,
-        "context_chars": 9500,
-        "min_words": 220,
-        "max_words": 310,
+        "max_tokens": 1100,
+        "context_chars": 12000,
+        "min_words": 320,
+        "max_words": 620,
         "instruction": (
-            "Provide a well-structured explanation: "
-            "1) Start with a clear 2-3 sentence introduction defining the topic. "
-            "2) Present 5-7 detailed bullet points covering main aspects. "
-            "3) Include a brief concluding sentence if needed. "
-            "240-300 words total. Balance depth with clarity. "
-            "Use examples where helpful."
+            "Provide a well-structured, student-first explanation: "
+            "1) Start with a clear 3-4 sentence introduction defining the topic and why it matters. "
+            "2) Present 6-8 detailed bullet points covering core concepts, causes/effects, or features as relevant. "
+            "3) Add one short example or context clue in at least 2 bullets when useful. "
+            "4) End with a 'Key Takeaways' section of 2 concise lines for revision."
         ),
-        "format_hint": "Intro paragraph + detailed bullets + optional conclusion"
+        "format_hint": "3-4 sentence intro + 6-8 bullets + Key Takeaways (2 lines)"
     },
     "explanatory": {
         "label": "Explanatory (Comprehensive)",
-        "max_tokens": 1600,
-        "context_chars": 14000,
-        "min_words": 480,
-        "max_words": 720,
+        "max_tokens": 2300,
+        "context_chars": 19000,
+        "min_words": 700,
+        "max_words": 1700,
         "instruction": (
-            "Provide a comprehensive, thorough explanation in 500-700 words. "
-            "Start with a clear 3-4 sentence introduction defining the topic and its importance. "
-            "Then explain all major aspects in 10-15 detailed bullet points, covering mechanisms, components, history, or processes as relevant. "
-            "Naturally weave in concrete examples, real-world applications, or case studies where they help understanding. "
-            "Include specific details like dates, names, locations, or statistics when available from context. "
-            "Use analogies or comparisons when they make complex ideas clearer. "
-            "Conclude with 2-3 sentences summarizing the key takeaways or significance. "
-            "Make the explanation educational, engaging, and easy to understand."
+            "Provide a comprehensive, exam-oriented explanation in depth. "
+            "Start with a clear 4-5 sentence introduction defining the topic, scope, and importance. "
+            "Then explain major aspects in 10-14 detailed bullets, including definitions, mechanisms, chronology, and implications where relevant. "
+            "Use concrete examples, dates, and factual anchors from context whenever available. "
+            "Conclude with a brief 'Summary for Revision' section (3 lines) and an 'Exam Tip' line."
         ),
-        "format_hint": "Comprehensive explanation with intro, detailed points, examples woven naturally, and conclusion"
+        "format_hint": "4-5 sentence intro + 10-14 detailed bullets + Summary for Revision (3 lines) + Exam Tip"
     },
 }
 
@@ -1198,29 +1194,31 @@ def build_generation_prompt(context: str, query: str, answer_profile: dict, answ
         "very_short": (
             "Output contract for very_short:\n"
             "- No heading.\n"
-            "- Return exactly 3 bullets only.\n"
+            "- Return 4-5 bullets only.\n"
             "- Each bullet one sentence, high signal, exam-focused.\n"
-            "- Keep total within 55-90 words."
+            "- End with one short takeaway sentence.\n"
+            "- Keep total within 75-135 words."
         ),
         "short": (
             "Output contract for short:\n"
-            "- Start with 1 short intro sentence.\n"
-            "- Then return exactly 4 bullets.\n"
-            "- Keep total within 110-170 words."
+            "- Start with exactly 2 intro sentences.\n"
+            "- Then return 5-6 bullets.\n"
+            "- End with one takeaway line.\n"
+            "- Keep total within 160-250 words."
         ),
         "normal": (
             "Output contract for normal:\n"
-            "- Start with 1 compact intro paragraph (2-3 sentences).\n"
-            "- Then return 5-7 bullets with detail and examples where relevant.\n"
-            "- End with 1 brief concluding sentence.\n"
-            "- Keep total within 220-310 words."
+            "- Start with 1 compact intro paragraph (3-4 sentences).\n"
+            "- Then return 6-8 bullets with clear detail and examples where relevant.\n"
+            "- End with '**Key Takeaways**' and exactly 2 short lines.\n"
+            "- Keep total within 320-620 words."
         ),
         "explanatory": (
             "Output contract for explanatory:\n"
-            "- Start with a fuller intro paragraph (3-4 sentences).\n"
-            "- Then return 10-15 detailed bullets (concept + example/use-case).\n"
-            "- End with a 2-sentence takeaway.\n"
-            "- Keep total within 500-700 words."
+            "- Start with a fuller intro paragraph (4-5 sentences).\n"
+            "- Then return 10-14 detailed bullets (concept + example/use-case).\n"
+            "- End with '**Summary for Revision**' and exactly 3 lines, then one '**Exam Tip**' line.\n"
+            "- Keep total within 700-1700 words."
         ),
     }
     mode_contract = mode_contracts.get(answer_mode, mode_contracts["normal"])
@@ -1236,7 +1234,8 @@ def build_generation_prompt(context: str, query: str, answer_profile: dict, answ
     return (
         "You are an expert NCERT learning assistant. "
         "Use the provided context as the primary source of truth. "
-        "Be direct and accurate. "
+        "Be direct, accurate, and student-friendly. "
+        "Prioritize clarity, exam relevance, and revision usefulness. "
         "Never fabricate citations. "
         "Never mention model/provider names (e.g., ChatGPT, OpenAI, Groq). "
         "Do not exceed the word limit and end with a complete sentence.\n\n"
@@ -1252,6 +1251,37 @@ def build_generation_prompt(context: str, query: str, answer_profile: dict, answ
         "Provide the final answer now."
     )
     
+
+
+def _answer_word_count(text: str) -> int:
+    return len(re.findall(r"[a-zA-Z0-9']+", str(text or "")))
+
+
+def _needs_answer_expansion(text: str, answer_profile: dict) -> bool:
+    min_words = int(answer_profile.get("min_words") or 0)
+    if min_words <= 0:
+        return False
+    soft_floor = max(40, int(min_words * 0.82))
+    return _answer_word_count(text) < soft_floor
+
+
+def _build_expansion_prompt(query: str, draft: str, answer_mode: str, answer_profile: dict) -> str:
+    min_words = int(answer_profile.get("min_words") or 0)
+    max_words = int(answer_profile.get("max_words") or 0)
+    range_hint = f"{min_words}-{max_words}" if min_words and max_words else "the required"
+    return (
+        "Improve and expand the draft answer for students while keeping facts aligned with the original draft and context.\n"
+        f"Mode: {answer_mode}\n"
+        f"Target word range: {range_hint} words.\n"
+        "Requirements:\n"
+        "- Keep structure readable and exam-oriented.\n"
+        "- Keep all key facts from draft; add missing clarity and context.\n"
+        "- Include the required takeaway/summary section for this mode.\n"
+        "- No provider/model mentions.\n\n"
+        f"Question:\n{query}\n\n"
+        f"Draft Answer:\n{draft}\n\n"
+        "Return only the improved final answer."
+    )
 
 
 def generate_with_model_routing(query: str, context: str, answer_profile: dict, answer_mode: str = "normal", llm_temperature: float = 0.3, llm_top_p: float = 0.9, llm_max_tokens: int = 750, best_match_score: float = 0.0, source_metadata: dict = None):
@@ -1276,6 +1306,24 @@ def generate_with_model_routing(query: str, context: str, answer_profile: dict, 
             )
             content = (response.choices[0].message.content or "").strip()
             if content:
+                if _needs_answer_expansion(content, answer_profile):
+                    try:
+                        refine = openai_client.chat.completions.create(
+                            model=search_components.get('openai_model', 'gpt-4o-mini'),
+                            messages=[
+                                {"role": "system", "content": "You are a precise and helpful educational assistant."},
+                                {"role": "user", "content": _build_expansion_prompt(query, content, answer_mode, answer_profile)},
+                            ],
+                            max_tokens=max_tokens,
+                            temperature=min(llm_temperature, 0.25),
+                            top_p=llm_top_p,
+                            timeout=int(os.getenv('OPENAI_TIMEOUT_SECONDS', '20')),
+                        )
+                        refined_content = (refine.choices[0].message.content or "").strip()
+                        if refined_content:
+                            content = refined_content
+                    except Exception:
+                        pass
                 return content, "openai", None
         except Exception as e:
             app.logger.warning(f"OpenAI generation failed, trying fallback: {e}")
@@ -1296,6 +1344,23 @@ def generate_with_model_routing(query: str, context: str, answer_profile: dict, 
             )
             content = (response.choices[0].message.content or "").strip()
             if content:
+                if _needs_answer_expansion(content, answer_profile):
+                    try:
+                        refine = groq_client.chat.completions.create(
+                            messages=[
+                                {"role": "system", "content": "You are a precise and helpful educational assistant."},
+                                {"role": "user", "content": _build_expansion_prompt(query, content, answer_mode, answer_profile)},
+                            ],
+                            model=search_components.get('groq_model', os.getenv('GROQ_MODEL_NAME', 'llama-3.1-8b-instant')),
+                            max_tokens=max_tokens,
+                            temperature=min(llm_temperature, 0.25),
+                            top_p=llm_top_p,
+                        )
+                        refined_content = (refine.choices[0].message.content or "").strip()
+                        if refined_content:
+                            content = refined_content
+                    except Exception:
+                        pass
                 return content, "groq", None
         except Exception as e:
             return None, None, f"All LLM providers failed: {e}"
