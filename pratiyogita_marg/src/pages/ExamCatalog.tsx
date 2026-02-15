@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getAllMindMaps, syncMindMapsFromFirebaseToLocal } from '@/utils/mindmapStorage';
 import { EXAM_CATEGORIES, ExamCategory } from '@/components/mindmap/types';
 import { seedSscCglRoadmap, sscCglRoadmapReactFlow } from '@/data/roadmaps/sscCglRoadmap';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MindMapItem {
   name: string;
@@ -45,6 +46,7 @@ const ExamCatalog = () => {
   const [selectedCategory, setSelectedCategory] = useState<ExamCategory>(EXAM_CATEGORIES[0]);
   const [mindMaps, setMindMaps] = useState<MindMapItem[]>([]);
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   const refreshMindMapsFromLocal = () => {
     const savedMaps = getAllMindMaps();
@@ -141,16 +143,18 @@ const ExamCatalog = () => {
         {/* Title */}
         <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h1 className="text-2xl sm:text-3xl 2xl:text-4xl font-bold text-gray-900">Explore Exams</h1>
-          <Link to="/editor">
-            <Button
-              size="sm"
-              className="gap-2 text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Create New Mind Map</span>
-              <span className="sm:hidden">Create Map</span>
-            </Button>
-          </Link>
+          {currentUser && (
+            <Link to="/editor">
+              <Button
+                size="sm"
+                className="gap-2 text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                <BookOpen className="h-4 w-4" />
+                <span className="hidden sm:inline">Create New Mind Map</span>
+                <span className="sm:hidden">Create Map</span>
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* Search Bar */}
