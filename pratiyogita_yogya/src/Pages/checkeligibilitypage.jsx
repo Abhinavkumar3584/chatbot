@@ -915,15 +915,15 @@ function CheckEligibilityPage() {
     const fillMockData = () => {
         // ========== DATE OF BIRTH ==========
         // Format: DD, MM, YYYY
-        setDateDay('15');
-        setDateMonth('06');
-        setDateYear('2002');
+        setDateDay('03');
+        setDateMonth('07');
+        setDateYear('2003');
         
         // ========== PERSONAL INFORMATION ==========
         // You can change any of these values
         setFormData(prev => ({
             ...prev,
-            date_of_birth: '2002-06-15',
+            date_of_birth: '2003-07-03',
             gender: 'MALE',                    // Options: MALE, FEMALE, TRANSGENDER
             marital_status: 'UNMARRIED',       // Options: UNMARRIED, MARRIED, SEPARATED, DIVORCED, DIVORCEE, WIDOW, WIDOWER
             nationality: 'INDIAN',             // Options: INDIAN, CITIZEN OF NEPAL, etc.
@@ -934,8 +934,8 @@ function CheckEligibilityPage() {
             eligibility_education_course: 'BTech',  // Must match dropdown values (BTech, not B.TECH)
             eligibility_education_course_subject: 'Computer Science & Engineering',  // Must match dropdown
             eligibility_course_year: 'PASSED',
-            eligibility_marks: '75',
-            ncc_wing: 'NONE',                  // Options: NONE, ARMY, NAVY, AIR FORCE
+            eligibility_marks: '85',
+            ncc_wing: 'ARMY',                  // Options: NONE, ARMY, NAVY, AIR FORCE
             ncc_certificate: 'NONE',           // Options: NONE, A, B, C
             ncc_certificate_grade: 'NONE',     // Options: NONE, A, B, C
         }));
