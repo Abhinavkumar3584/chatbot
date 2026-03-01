@@ -12,6 +12,7 @@ interface NodeContainerProps {
   customStyle?: CSSProperties;
   forceAspectRatio?: boolean;
   showConnectors?: boolean;
+  nodeId?: string;
 }
 
 export const NodeContainer = ({
@@ -23,7 +24,10 @@ export const NodeContainer = ({
   customStyle = {},
   forceAspectRatio = false,
   showConnectors = true,
+  nodeId,
 }: NodeContainerProps) => {
+  // Use explicit nodeId prop, fall back to nodeData.id
+  const resolvedId = nodeId || nodeData.id;
   // Extract styles from nodeData with fallbacks
   const backgroundColor = nodeData.backgroundColor || '#ffffff';
   const strokeColor = nodeData.strokeColor || '#d1d5db';
@@ -77,7 +81,7 @@ export const NodeContainer = ({
                  ${nodeData.nodeType !== 'title' ? 'hover:border-mindmap-node-selected' : ''}`}
       style={combinedStyle}
       onDoubleClick={onDoubleClick}
-      data-nodeid={nodeData.id}
+      data-nodeid={resolvedId}
     >
       {showConnectors && <NodeConnectors />}
       <NodeResizer 
@@ -88,8 +92,8 @@ export const NodeContainer = ({
         handleClassName="h-3 w-3 bg-white border-2 border-mindmap-primary rounded"
         keepAspectRatio={forceAspectRatio}
         onResize={(_, params) => {
-          if (window.mindmapApi) {
-            window.mindmapApi.updateNodeData(nodeData.id, {
+          if (window.mindmapApi && resolvedId) {
+            window.mindmapApi.updateNodeData(resolvedId, {
               width: params.width,
               height: params.height,
             });

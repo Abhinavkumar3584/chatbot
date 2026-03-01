@@ -19,14 +19,9 @@ import {
   Square,
   Triangle,
   ListTodo,
-  Timer,
   FileText,
   StickyNote,
   Lightbulb,
-  Library,
-  FlaskConical,
-  BrainCircuit,
-  GraduationCap,
 } from "lucide-react";
 
 interface ComponentsSidebarProps {
@@ -182,16 +177,6 @@ export const ComponentsSidebar = ({
               variant="ghost"
               className="w-full justify-start gap-2"
               draggable
-              onDragStart={(event) => onDragStart(event, 'timeline')}
-              onClick={() => onAddNode("timeline")}
-            >
-              <Timer className="h-4 w-4" />
-              <span>Timeline</span>
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-2"
-              draggable
               onDragStart={(event) => onDragStart(event, 'resource')}
               onClick={() => onAddNode("resource")}
             >
@@ -221,41 +206,6 @@ export const ComponentsSidebar = ({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Education Tools</SidebarGroupLabel>
-          <SidebarGroupContent className="space-y-0.5 p-1">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-2"
-              draggable
-              onDragStart={(event) => onDragStart(event, 'flashcard')}
-              onClick={() => onAddNode("flashcard")}
-            >
-              <Library className="h-4 w-4" />
-              <span>Flashcards</span>
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-2"
-              draggable
-              onDragStart={(event) => onDragStart(event, 'quiz')}
-              onClick={() => onAddNode("quiz")}
-            >
-              <FlaskConical className="h-4 w-4" />
-              <span>Quiz</span>
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-2"
-              draggable
-              onDragStart={(event) => onDragStart(event, 'mindmap')}
-              onClick={() => onAddNode("mindmap")}
-            >
-              <BrainCircuit className="h-4 w-4" />
-              <span>Nested Map</span>
-            </Button>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
     </Sidebar>
   );

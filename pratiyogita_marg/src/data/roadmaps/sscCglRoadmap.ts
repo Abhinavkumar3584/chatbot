@@ -415,21 +415,6 @@ export const sscCglRoadmapReactFlow: MindMapData = {
       },
     },
     {
-      id: 'tool-timeline',
-      type: 'timeline',
-      position: { x: 420, y: 1120 },
-      data: {
-        id: 'tool-timeline',
-        label: '12-Week Timeline',
-        nodeType: 'timeline',
-        timelineEvents: [
-          { id: 't1', title: 'Foundation', date: '2026-02-16', description: 'Core concepts', isMilestone: true, isCompleted: false },
-          { id: 't2', title: 'Mixed Practice', date: '2026-03-20', description: 'Sectional speed + accuracy', isMilestone: true, isCompleted: false },
-          { id: 't3', title: 'Mock Intensive', date: '2026-04-18', description: '2 full mocks/week', isMilestone: true, isCompleted: false },
-        ],
-      },
-    },
-    {
       id: 'tool-concept',
       type: 'concept',
       position: { x: 740, y: 1120 },
@@ -454,43 +439,6 @@ export const sscCglRoadmapReactFlow: MindMapData = {
           { id: 'r1', title: 'SSC PYQ Booklet', url: 'https://ssc.nic.in/', type: 'website', rating: 5, tags: ['must'] },
           { id: 'r2', title: 'Quant Practice Set', url: 'https://testbook.com/', type: 'website', rating: 4, tags: ['practice'] },
           { id: 'r3', title: 'Weekly CA Capsule', url: 'https://www.affairscloud.com/', type: 'website', rating: 4, tags: ['GA'] },
-        ],
-      },
-    },
-    {
-      id: 'tool-flashcard',
-      type: 'flashcard',
-      position: { x: 1340, y: 1120 },
-      data: {
-        id: 'tool-flashcard',
-        label: 'Flashcard Drill',
-        nodeType: 'flashcard',
-        flashcards: [
-          { id: 'f1', question: 'Best first priority in Quant?', answer: 'Arithmetic + % + Ratio + TSD', difficulty: 'easy' },
-          { id: 'f2', question: 'How often to attempt full mocks?', answer: 'At least twice weekly after ~40% coverage', difficulty: 'medium' },
-        ],
-      },
-    },
-    {
-      id: 'tool-quiz',
-      type: 'quiz',
-      position: { x: 700, y: 1340 },
-      data: {
-        id: 'tool-quiz',
-        label: 'Quick Self Quiz',
-        nodeType: 'quiz',
-        questions: [
-          {
-            id: 'q1',
-            text: 'What should be done every Sunday?',
-            options: [
-              { id: 'a', text: 'Skip study', isCorrect: false },
-              { id: 'b', text: 'Error-log revision', isCorrect: true },
-              { id: 'c', text: 'Only read new topics', isCorrect: false },
-            ],
-            explanation: 'Weekly review consolidates gains and fixes recurring mistakes.',
-            difficulty: 'easy',
-          },
         ],
       },
     },
@@ -520,11 +468,8 @@ export const sscCglRoadmapReactFlow: MindMapData = {
     { id: 'e-comp-office', source: 'sub-computer', target: 'comp-unit-ms-office', sourceHandle: 'bottom-source', targetHandle: 'top-target', type: 'smoothstep' },
 
     { id: 'e-tests-note', source: 'sub-tests', target: 'tool-note', sourceHandle: 'bottom-source', targetHandle: 'top-target', type: 'smoothstep' },
-    { id: 'e-tests-timeline', source: 'sub-tests', target: 'tool-timeline', sourceHandle: 'bottom-source', targetHandle: 'top-target', type: 'smoothstep' },
     { id: 'e-tests-concept', source: 'sub-tests', target: 'tool-concept', sourceHandle: 'bottom-source', targetHandle: 'top-target', type: 'smoothstep' },
     { id: 'e-tests-resource', source: 'sub-tests', target: 'tool-resource', sourceHandle: 'bottom-source', targetHandle: 'top-target', type: 'smoothstep' },
-    { id: 'e-tests-flashcard', source: 'sub-tests', target: 'tool-flashcard', sourceHandle: 'bottom-source', targetHandle: 'top-target', type: 'smoothstep' },
-    { id: 'e-tests-quiz', source: 'sub-tests', target: 'tool-quiz', sourceHandle: 'bottom-source', targetHandle: 'top-target', type: 'smoothstep', animated: true },
   ],
 };
 

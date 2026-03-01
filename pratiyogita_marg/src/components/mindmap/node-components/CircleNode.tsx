@@ -49,6 +49,7 @@ export const CircleNode: React.FC<MindMapNodeProps> = ({
       onDoubleClick={handleDoubleClick}
       customStyle={combinedStyle}
       forceAspectRatio={data.aspectRatio !== false}
+      nodeId={id}
     >
       <div className="w-full h-full p-2 flex items-center justify-center relative">
         <div className="text-center">{data.label || 'Circle'}</div>

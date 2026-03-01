@@ -85,10 +85,12 @@ export const MindMapHeader = ({
     <Card className="mx-4 mt-2 border-l-4 border-l-blue-500">
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Type className="h-5 w-5 text-blue-600" />
-            <span className="font-medium text-gray-700">Mind Map Details</span>
-          </div>
+          {!readOnly && (
+            <div className="flex items-center gap-2">
+              <Type className="h-5 w-5 text-blue-600" />
+              <span className="font-medium text-gray-700">Mind Map Details</span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             {!isEditing && !readOnly ? (
               <Button
@@ -137,10 +139,12 @@ export const MindMapHeader = ({
         <div className="space-y-4">
           {/* Title Section */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Type className="h-4 w-4 text-gray-500" />
-              <label className="text-sm font-medium text-gray-700">Title</label>
-            </div>
+            {!readOnly && (
+              <div className="flex items-center gap-2">
+                <Type className="h-4 w-4 text-gray-500" />
+                <label className="text-sm font-medium text-gray-700">Title</label>
+              </div>
+            )}
             {isEditing ? (
               <Input
                 value={editData.title}

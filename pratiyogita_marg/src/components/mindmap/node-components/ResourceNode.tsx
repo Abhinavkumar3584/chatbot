@@ -53,6 +53,7 @@ export const ResourceNode: React.FC<MindMapNodeProps> = ({
       selected={selected}
       onDoubleClick={handleDoubleClick}
       forceAspectRatio={false}
+      nodeId={id}
     >
       <div className="w-full p-2 relative">
         <div className="font-semibold text-sm mb-2">{data.label || 'Resources'}</div>

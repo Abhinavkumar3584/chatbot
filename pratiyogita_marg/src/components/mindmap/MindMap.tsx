@@ -13,15 +13,11 @@ import '@xyflow/react/dist/style.css';
 import { BaseNode } from './BaseNode';
 import { SectionNode } from './node-components/SectionNode';
 import { ChecklistNode } from './node-components/ChecklistNode';
-import { TimelineNode } from './node-components/TimelineNode';
 import { ResourceNode } from './node-components/ResourceNode';
 import { CircleNode } from './node-components/CircleNode';
 import { RectangleNode } from './node-components/RectangleNode';
 import { SquareNode } from './node-components/SquareNode';
 import { TriangleNode } from './node-components/TriangleNode';
-import { FlashcardNode } from './node-components/FlashcardNode';
-import { QuizNode } from './node-components/QuizNode';
-import { MindMapNode as MindMapNodeComponent } from './node-components/MindMapNode';
 import { NoteNode } from './node-components/NoteNode';
 import { ConceptNode } from './node-components/ConceptNode';
 import { EdgeSettings } from './EdgeSettings';
@@ -38,13 +34,9 @@ import { useMindMapEdgeHandlers } from './hooks/useMindMapEdgeHandlers';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Settings, ChevronRight } from 'lucide-react';
-import { TimelineSettings } from './settings/TimelineSettings';
 import { ChecklistSettings } from './settings/ChecklistSettings';
 import { ResourceSettings } from './settings/ResourceSettings';
 import { ShapeSettings } from './settings/ShapeSettings';
-import { FlashcardSettings } from './settings/FlashcardSettings';
-import { QuizSettings } from './settings/QuizSettings';
-import { MindMapSettings } from './settings/MindMapSettings';
 import { NoteSettings } from './settings/NoteSettings';
 import { ConceptSettings } from './settings/ConceptSettings';
 import { NodeConnectors } from './NodeConnectors';
@@ -64,15 +56,11 @@ const nodeTypes: NodeTypes = {
   base: BaseNode,
   section: SectionNode,
   checklist: ChecklistNode,
-  timeline: TimelineNode,
   resource: ResourceNode,
   circle: CircleNode,
   rectangle: RectangleNode,
   square: SquareNode,
   triangle: TriangleNode,
-  flashcard: FlashcardNode,
-  quiz: QuizNode,
-  mindmap: MindMapNodeComponent,
   note: NoteNode,
   concept: ConceptNode,
   workspace: WorkspaceBoundaryNode,
@@ -312,8 +300,7 @@ export const MindMap = () => {
   // Check if the selected node is a shape
   const isShapeNode = nodeType === 'circle' || nodeType === 'rectangle' || nodeType === 'square' || nodeType === 'triangle';
 
-  // Check if the selected node is an education node
-  const isEducationNode = nodeType === 'flashcard' || nodeType === 'quiz' || nodeType === 'mindmap';
+
 
   return (
     <SidebarProvider>
@@ -393,11 +380,9 @@ export const MindMap = () => {
           
           {/* Settings Button for specialized nodes - only visible when a specialized node is selected */}
           {selectedNode && (
-            nodeType === 'timeline' || 
             nodeType === 'checklist' || 
             nodeType === 'resource' || 
             isShapeNode ||
-            isEducationNode ||
             nodeType === 'note' ||
             nodeType === 'concept'
           ) && (
@@ -409,22 +394,14 @@ export const MindMap = () => {
                   size="sm"
                 >
                   <Settings className="h-4 w-4 mr-1" />
-                  {nodeType === 'timeline' ? 'Timeline' : 
-                   nodeType === 'checklist' ? 'Checklist' : 
+                  {nodeType === 'checklist' ? 'Checklist' : 
                    nodeType === 'resource' ? 'Resources' : 
-                   nodeType === 'flashcard' ? 'Flashcards' :
-                   nodeType === 'quiz' ? 'Quiz' :
-                   nodeType === 'mindmap' ? 'Mind Map' :
                    nodeType === 'note' ? 'Note' :
                    nodeType === 'concept' ? 'Concept' :
                    'Shape'} Settings
                 </Button>
               </DialogTrigger>
               <DialogContent className="w-[90%] max-w-[600px] max-h-[80vh] overflow-y-auto">
-                {nodeType === 'timeline' && selectedNodeData && (
-                  <TimelineSettings nodeId={selectedNode} data={selectedNodeData} />
-                )}
-                
                 {nodeType === 'checklist' && selectedNodeData && (
                   <ChecklistSettings nodeId={selectedNode} data={selectedNodeData} />
                 )}
@@ -437,18 +414,6 @@ export const MindMap = () => {
                   <ShapeSettings nodeId={selectedNode} data={selectedNodeData} />
                 )}
 
-                {nodeType === 'flashcard' && selectedNodeData && (
-                  <FlashcardSettings nodeId={selectedNode} data={selectedNodeData} />
-                )}
-                
-                {nodeType === 'quiz' && selectedNodeData && (
-                  <QuizSettings nodeId={selectedNode} data={selectedNodeData} />
-                )}
-                
-                {nodeType === 'mindmap' && selectedNodeData && (
-                  <MindMapSettings nodeId={selectedNode} data={selectedNodeData} />
-                )}
-                
                 {nodeType === 'note' && selectedNodeData && (
                   <NoteSettings nodeId={selectedNode} data={selectedNodeData} />
                 )}

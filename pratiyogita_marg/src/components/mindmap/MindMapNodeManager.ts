@@ -11,10 +11,12 @@ export const addNode = (
 ) => {
   if (!type) return;
   
+  const nodeId = uuidv4();
   const newNode = {
-    id: uuidv4(),
+    id: nodeId,
     type: getNodeType(type),
     data: { 
+      id: nodeId,
       label: additionalData.label || getDefaultLabel(type),
       nodeType: type,
       backgroundColor: additionalData.backgroundColor || 'white',
@@ -45,8 +47,6 @@ const getNodeType = (nodeType: string): string => {
       return 'section';
     case 'checklist':
       return 'checklist';
-    case 'timeline':
-      return 'timeline';
     case 'resource':
       return 'resource';
     case 'circle':
@@ -57,12 +57,6 @@ const getNodeType = (nodeType: string): string => {
       return 'square';
     case 'triangle':
       return 'triangle';
-    case 'flashcard':
-      return 'flashcard';
-    case 'quiz':
-      return 'quiz';
-    case 'mindmap':
-      return 'mindmap';
     case 'note':
       return 'note';
     case 'concept':
@@ -87,16 +81,8 @@ const getDefaultLabel = (nodeType: string): string => {
       return 'Section';
     case 'checklist':
       return 'Study Checklist';
-    case 'timeline':
-      return 'Study Timeline';
     case 'resource':
       return 'Study Resources';
-    case 'flashcard':
-      return 'Flashcards';
-    case 'quiz':
-      return 'Quiz';
-    case 'mindmap':
-      return 'Mind Map';
     case 'circle':
       return 'Circle';
     case 'rectangle':
@@ -121,6 +107,36 @@ const getTypeSpecificData = (nodeType: string): Partial<BaseNodeData> => {
   nextWeek.setDate(now.getDate() + 7);
   
   switch (nodeType) {
+    case 'title':
+      return {
+        width: 180,
+        height: 90,
+      };
+    case 'topic':
+      return {
+        width: 160,
+        height: 70,
+      };
+    case 'subtopic':
+      return {
+        width: 150,
+        height: 60,
+      };
+    case 'paragraph':
+      return {
+        width: 200,
+        height: 80,
+      };
+    case 'rectangle':
+      return {
+        width: 180,
+        height: 90,
+      };
+    case 'section':
+      return {
+        width: 300,
+        height: 200,
+      };
     case 'checklist':
       return {
         checklistItems: [
@@ -129,52 +145,11 @@ const getTypeSpecificData = (nodeType: string): Partial<BaseNodeData> => {
           { id: '3', text: 'Review notes', isChecked: false, priority: 'low' }
         ]
       };
-    case 'timeline':
-      return {
-        startDate: now.toISOString(),
-        endDate: nextWeek.toISOString(),
-        timelineEvents: [
-          { id: '1', title: 'Start studying', date: now.toISOString(), isMilestone: true },
-          { id: '2', title: 'Complete first review', date: new Date(now.getTime() + 3*24*60*60*1000).toISOString(), isMilestone: false },
-          { id: '3', title: 'Exam day', date: nextWeek.toISOString(), isMilestone: true }
-        ]
-      };
     case 'resource':
       return {
         resources: [
           { id: '1', title: 'Course Textbook', url: 'https://example.com/textbook', type: 'pdf', rating: 5, tags: ['essential', 'reference'] },
           { id: '2', title: 'Tutorial Video', url: 'https://example.com/video', type: 'video', rating: 4, tags: ['helpful'] }
-        ]
-      };
-    case 'flashcard':
-      return {
-        flashcards: [
-          { id: '1', question: 'What is a mindmap?', answer: 'A visual diagram used to organize information', category: 'General', difficulty: 'easy' },
-          { id: '2', question: 'How do flashcards help learning?', answer: 'They use active recall to strengthen memory', category: 'Education', difficulty: 'medium' }
-        ]
-      };
-    case 'quiz':
-      return {
-        questions: [
-          { 
-            id: '1', 
-            text: 'What is the main benefit of mind mapping?', 
-            options: [
-              { id: 'a', text: 'Visual organization of ideas', isCorrect: true },
-              { id: 'b', text: 'Faster typing speed', isCorrect: false },
-              { id: 'c', text: 'Reduced eye strain', isCorrect: false }
-            ],
-            explanation: 'Mind mapping helps visualize connections between ideas',
-            difficulty: 'easy'
-          }
-        ]
-      };
-    case 'mindmap':
-      return {
-        branches: [
-          { id: '1', label: 'Main Idea', color: '#4299e1' },
-          { id: '2', label: 'Sub-topic 1', color: '#48bb78' },
-          { id: '3', label: 'Sub-topic 2', color: '#ed8936' }
         ]
       };
     case 'note':

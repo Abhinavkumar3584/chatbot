@@ -51,6 +51,7 @@ export function ConceptNode({ data, id, selected }: MindMapNodeProps) {
           minWidth: '150px'
         }}
         forceAspectRatio={false}
+        nodeId={id}
       >
         <div className="w-full h-full flex flex-col">
           <div className="flex items-center justify-between mb-2 border-b pb-1">

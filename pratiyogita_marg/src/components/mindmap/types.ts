@@ -63,15 +63,11 @@ export interface BaseNodeData {
   tags?: string[];
   definition?: string;
   examples?: string[];
+  position?: { x: number; y: number };
   pinned?: boolean;
   resources?: any[];
-  questions?: any[];
-  flashcards?: any[];
-  branches?: any[];
-  startDate?: string;
-  endDate?: string;
-  timelineItems?: any[];
-  position?: { x: number; y: number };
+  definition?: string;
+  examples?: string[];
   [key: string]: any; // Index signature to allow additional properties
 }
 

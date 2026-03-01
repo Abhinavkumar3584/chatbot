@@ -59,15 +59,11 @@ const getNodeType = (nodeTypeValue: string | undefined): string => {
     'paragraph': 'base',
     'section': 'section',
     'checklist': 'checklist',
-    'timeline': 'timeline',
     'resource': 'resource',
     'circle': 'circle',
     'rectangle': 'rectangle',
     'square': 'square',
     'triangle': 'triangle',
-    'flashcard': 'flashcard',
-    'quiz': 'quiz',
-    'mindmap': 'mindmap',
     'note': 'note',
     'concept': 'concept'
   };

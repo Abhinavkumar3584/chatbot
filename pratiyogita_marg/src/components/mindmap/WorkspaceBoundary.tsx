@@ -17,10 +17,10 @@ export const WorkspaceBoundaryNode = memo(({ }: WorkspaceBoundaryNodeProps) => {
       style={{
         width: WORKSPACE_WIDTH,
         height: WORKSPACE_HEIGHT,
-        border: '2px dashed hsl(var(--border))',
+        border: '2px dashed #f97316',
         borderRadius: 12,
         pointerEvents: 'none',
-        backgroundColor: 'hsl(var(--background) / 0.3)',
+        backgroundColor: 'rgba(249, 115, 22, 0.03)',
       }}
     />
   );

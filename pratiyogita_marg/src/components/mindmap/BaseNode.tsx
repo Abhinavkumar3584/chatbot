@@ -54,6 +54,7 @@ export const BaseNode = ({ data, id, selected }: MindMapNodeProps) => {
         selected={selected}
         onDoubleClick={handleDoubleClick}
         forceAspectRatio={forceAspectRatio}
+        nodeId={id}
       >
         <NodeContent
           nodeData={nodeData}
