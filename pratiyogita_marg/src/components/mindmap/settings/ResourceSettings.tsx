@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -189,10 +189,10 @@ export const ResourceSettings: React.FC<ResourceSettingsProps> = ({ nodeId, data
                 <div className="space-y-2 flex-1">
                   <div className="flex items-center space-x-2">
                     {getResourceIcon(resource.type)}
-                    <h4 className="font-medium text-sm">{resource.title}</h4>
+                    <h4 className="font-medium text-base">{resource.title}</h4>
                   </div>
                   
-                  <div className="flex items-center space-x-2 text-xs text-gray-500">
+                  <div className="flex items-center space-x-2 text-base text-gray-500">
                     <span>{getResourceTypeLabel(resource.type)}</span>
                     <span>•</span>
                     <a 
@@ -206,7 +206,7 @@ export const ResourceSettings: React.FC<ResourceSettingsProps> = ({ nodeId, data
                   </div>
                   
                   {resource.description && (
-                    <p className="text-xs text-gray-700">{resource.description}</p>
+                    <p className="text-base text-gray-700">{resource.description}</p>
                   )}
                   
                   <div className="flex items-center justify-between mt-1">
@@ -252,7 +252,7 @@ export const ResourceSettings: React.FC<ResourceSettingsProps> = ({ nodeId, data
           ))}
           
           {resources.length === 0 && (
-            <div className="text-center py-4 text-gray-500 text-sm">
+            <div className="text-center py-4 text-gray-500 text-base">
               No resources added yet. Create your first resource below.
             </div>
           )}
@@ -260,7 +260,7 @@ export const ResourceSettings: React.FC<ResourceSettingsProps> = ({ nodeId, data
         
         {/* Add/Edit resource form */}
         <div className="space-y-3 p-3 border rounded-md">
-          <h4 className="text-sm font-medium">
+          <h4 className="text-base font-medium">
             {editingResourceId ? 'Edit Resource' : 'Add New Resource'}
           </h4>
           <div className="space-y-3">

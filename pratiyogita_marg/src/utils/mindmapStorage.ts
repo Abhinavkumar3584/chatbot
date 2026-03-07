@@ -1,247 +1,80 @@
 
 import { MindMapData } from '@/components/mindmap/types';
-import { auth, db } from '@/config/firebase';
-import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
 
-// Helper function to ensure safe parsing of JSON data
-const safeJSONParse = (jsonString: string, fallback: any = {}): any => {
-  try {
-    return JSON.parse(jsonString);
-  } catch (error) {
-    console.error('Error parsing JSON data:', error);
-    return fallback;
-  }
-};
-
-// Helper function to ensure all node properties are properly preserved
-const processNodesForStorage = (nodes: any[]): any[] => {
-  return nodes.map(node => {
-    // Make a deep copy to avoid reference issues
-    const processedNode = JSON.parse(JSON.stringify(node));
-    
-    // Ensure node type and data are preserved
-    if (processedNode.data) {
-      // Make sure nodeType is set if it's missing
-      if (!processedNode.data.nodeType) {
-        processedNode.data.nodeType = processedNode.type || 'topic';
-      }
-    }
-    
-    return processedNode;
+// ─── Node pre-processing ─────────────────────────────────────────────────────
+const processNodesForStorage = (nodes: any[]): any[] =>
+  nodes.map(node => {
+    const n = JSON.parse(JSON.stringify(node));
+    if (n.data && !n.data.nodeType) n.data.nodeType = n.type || 'topic';
+    return n;
   });
-};
 
-const getMindMapDocId = (name: string) => encodeURIComponent(name);
-const getMindMapCollectionRef = (uid: string) => collection(db, 'users', uid, 'mindmaps');
+// ─── Public types ─────────────────────────────────────────────────────────────
+export interface MindMapListItem {
+  name: string;
+  examCategory: string;
+  savedAt?: string;
+}
 
-const mirrorMindMapToFirebase = async (data: MindMapData) => {
-  const uid = auth.currentUser?.uid;
-  if (!uid) return;
-
+// ─── Save ─────────────────────────────────────────────────────────────────────
+export const saveMindMap = async (data: MindMapData): Promise<boolean> => {
   try {
-    const processedNodes = processNodesForStorage(data.nodes);
-    const ref = doc(db, 'users', uid, 'mindmaps', getMindMapDocId(data.name));
-    await setDoc(
-      ref,
-      {
-        name: data.name,
-        nodes: processedNodes,
-        edges: data.edges,
-        examCategory: data.examCategory || '',
-        subExamName: data.subExamName || '',
-        headerData: data.headerData || null,
-        updatedAt: Date.now(),
-      },
-      { merge: true }
-    );
-  } catch (error) {
-    console.error('Error mirroring mind map to Firebase:', error);
-  }
-};
-
-const removeMindMapFromFirebase = async (name: string) => {
-  const uid = auth.currentUser?.uid;
-  if (!uid) return;
-
-  try {
-    const ref = doc(db, 'users', uid, 'mindmaps', getMindMapDocId(name));
-    await deleteDoc(ref);
-  } catch (error) {
-    console.error('Error removing mind map from Firebase:', error);
-  }
-};
-
-export const saveMindMap = (data: MindMapData): boolean => {
-  try {
-    const mindmapsData = localStorage.getItem('mindmaps') || '{}';
-    const mindmaps = safeJSONParse(mindmapsData, {});
-    
-    // Process nodes to ensure all properties are preserved
-    const processedNodes = processNodesForStorage(data.nodes);
-    
-    mindmaps[data.name] = {
-      nodes: processedNodes,
-      edges: data.edges,
-      name: data.name,
-      examCategory: data.examCategory || '',
-      subExamName: data.subExamName || '',
-      headerData: data.headerData
-    };
-    
-    localStorage.setItem('mindmaps', JSON.stringify(mindmaps));
-    void mirrorMindMapToFirebase({ ...data, nodes: processedNodes });
-    console.log('Mind map saved successfully:', data.name);
+    const payload = { ...data, nodes: processNodesForStorage(data.nodes) };
+    const res = await fetch('/api/save-mindmap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    console.log('Mind map saved to filesystem:', data.name);
     return true;
-  } catch (error) {
-    console.error('Error saving mind map:', error);
+  } catch (err) {
+    console.error('Error saving mind map:', err);
     return false;
   }
 };
 
-export const loadMindMap = (name: string): MindMapData | null => {
+// ─── Load ─────────────────────────────────────────────────────────────────────
+export const loadMindMap = async (name: string): Promise<MindMapData | null> => {
   try {
-    const mindmapsData = localStorage.getItem('mindmaps') || '{}';
-    const mindmaps = safeJSONParse(mindmapsData, {});
-    
-    if (!mindmaps[name]) {
-      console.error('Mind map not found:', name);
-      return null;
-    }
-    
-    // Ensure loaded data has all required properties
-    const loadedData = mindmaps[name];
-    
-    // Validate the structure of the loaded data
-    if (!Array.isArray(loadedData.nodes) || !Array.isArray(loadedData.edges)) {
-      console.error('Invalid mind map structure:', name);
-      return null;
-    }
-    
-    console.log('Mind map loaded successfully:', name);
-    return loadedData as MindMapData;
-  } catch (error) {
-    console.error('Error loading mind map:', error);
+    const res = await fetch(`/api/mindmap?name=${encodeURIComponent(name)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!Array.isArray(data.nodes) || !Array.isArray(data.edges)) return null;
+    console.log('Mind map loaded from filesystem:', name);
+    return data as MindMapData;
+  } catch (err) {
+    console.error('Error loading mind map:', err);
     return null;
   }
 };
 
-export const getAllMindMaps = (): string[] => {
+// ─── List all ─────────────────────────────────────────────────────────────────
+export const getAllMindMaps = async (): Promise<MindMapListItem[]> => {
   try {
-    const mindmapsData = localStorage.getItem('mindmaps') || '{}';
-    const mindmaps = safeJSONParse(mindmapsData, {});
-    return Object.keys(mindmaps);
-  } catch (error) {
-    console.error('Error getting mind maps list:', error);
+    const res = await fetch('/api/mindmaps');
+    if (!res.ok) return [];
+    return (await res.json()) as MindMapListItem[];
+  } catch (err) {
+    console.error('Error listing mind maps:', err);
     return [];
   }
 };
 
-export const deleteMindMap = (name: string): boolean => {
+// ─── Delete ───────────────────────────────────────────────────────────────────
+export const deleteMindMap = async (name: string): Promise<boolean> => {
   try {
-    const mindmapsData = localStorage.getItem('mindmaps') || '{}';
-    const mindmaps = safeJSONParse(mindmapsData, {});
-    
-    if (mindmaps[name]) {
-      delete mindmaps[name];
-      localStorage.setItem('mindmaps', JSON.stringify(mindmaps));
-      void removeMindMapFromFirebase(name);
-      console.log('Mind map deleted:', name);
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error('Error deleting mind map:', error);
+    const res = await fetch(`/api/delete-mindmap?name=${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) return false;
+    console.log('Mind map deleted from filesystem:', name);
+    return true;
+  } catch (err) {
+    console.error('Error deleting mind map:', err);
     return false;
   }
 };
 
-export const syncMindMapsFromFirebaseToLocal = async (): Promise<number> => {
-  const uid = auth.currentUser?.uid;
-  if (!uid) return 0;
-
-  try {
-    const mindmapsData = localStorage.getItem('mindmaps') || '{}';
-    const localMindmaps = safeJSONParse(mindmapsData, {});
-
-    const snapshot = await getDocs(getMindMapCollectionRef(uid));
-    let syncedCount = 0;
-
-    snapshot.forEach((documentSnapshot) => {
-      const data = documentSnapshot.data() as any;
-      const name = data?.name || decodeURIComponent(documentSnapshot.id);
-      if (!name) return;
-
-      localMindmaps[name] = {
-        nodes: Array.isArray(data?.nodes) ? data.nodes : [],
-        edges: Array.isArray(data?.edges) ? data.edges : [],
-        name,
-        examCategory: data?.examCategory || '',
-        subExamName: data?.subExamName || '',
-        headerData: data?.headerData || undefined,
-      };
-
-      syncedCount += 1;
-    });
-
-    localStorage.setItem('mindmaps', JSON.stringify(localMindmaps));
-    return syncedCount;
-  } catch (error) {
-    console.error('Error syncing mind maps from Firebase:', error);
-    return 0;
-  }
-};
-
-export const getMindMapsByExamCategory = (category: string): MindMapData[] => {
-  try {
-    const mindmapsData = localStorage.getItem('mindmaps') || '{}';
-    const mindmaps = safeJSONParse(mindmapsData, {});
-    
-    const result: MindMapData[] = [];
-    
-    Object.values(mindmaps).forEach((mindmap: any) => {
-      if (mindmap.examCategory === category) {
-        result.push({
-          nodes: mindmap.nodes || [],
-          edges: mindmap.edges || [],
-          name: mindmap.name || '',
-          examCategory: mindmap.examCategory,
-          subExamName: mindmap.subExamName,
-        });
-      }
-    });
-    
-    return result;
-  } catch (error) {
-    console.error('Error getting mind maps by category:', error);
-    return [];
-  }
-};
-
-export const getMindMapBySubExam = (category: string, subExam: string): MindMapData | null => {
-  try {
-    const mindmapsData = localStorage.getItem('mindmaps') || '{}';
-    const mindmaps = safeJSONParse(mindmapsData, {});
-    
-    for (const key in mindmaps) {
-      const mindmap = mindmaps[key];
-      if (
-        mindmap.examCategory === category && 
-        mindmap.subExamName && 
-        mindmap.subExamName.toLowerCase() === subExam.toLowerCase()
-      ) {
-        return {
-          nodes: mindmap.nodes || [],
-          edges: mindmap.edges || [],
-          name: mindmap.name || '',
-          examCategory: mindmap.examCategory,
-          subExamName: mindmap.subExamName,
-        };
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error finding mind map by sub-exam:', error);
-    return null;
-  }
-};
+/** @deprecated no-op: Firebase sync removed */
+export const syncMindMapsFromFirebaseToLocal = async (): Promise<number> => 0;

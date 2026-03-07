@@ -1,12 +1,9 @@
 
 import React, { useState } from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
-import { Settings } from 'lucide-react';
 import { NodeContainer } from './NodeContainer';
 import { MindMapNodeProps } from '../types';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ChecklistSettings } from '../settings/ChecklistSettings';
 
 export const ChecklistNode: React.FC<MindMapNodeProps> = ({ 
   id, 
@@ -63,24 +60,6 @@ export const ChecklistNode: React.FC<MindMapNodeProps> = ({
     >
       <div className="w-full p-2 relative">
         <div className="font-semibold text-sm mb-2">{data.label || 'Checklist'}</div>
-        
-        {/* Settings button in top right corner - only visible when selected and not in view mode */}
-        {selected && !document.querySelector('[data-viewmode="true"]') && (
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="settings-button absolute top-1 right-1 h-6 w-6 p-0 rounded-full bg-white/70 hover:bg-white/90"
-              >
-                <Settings className="h-3 w-3" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[80vh] overflow-y-auto">
-              <ChecklistSettings nodeId={id} data={data} />
-            </DialogContent>
-          </Dialog>
-        )}
         
         {/* Progress bar */}
         <div className="w-full bg-gray-200 h-2 rounded-full mb-3">

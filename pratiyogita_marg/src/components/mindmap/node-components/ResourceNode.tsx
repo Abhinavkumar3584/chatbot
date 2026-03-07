@@ -1,11 +1,9 @@
 
 import React, { useState } from 'react';
-import { FileText, Video, Globe, Star, ExternalLink, Settings } from 'lucide-react';
+import { FileText, Video, Globe, Star, ExternalLink } from 'lucide-react';
 import { NodeContainer } from './NodeContainer';
 import { MindMapNodeProps } from '../types';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ResourceSettings } from '../settings/ResourceSettings';
 
 export const ResourceNode: React.FC<MindMapNodeProps> = ({ 
   id, 
@@ -57,24 +55,6 @@ export const ResourceNode: React.FC<MindMapNodeProps> = ({
     >
       <div className="w-full p-2 relative">
         <div className="font-semibold text-sm mb-2">{data.label || 'Resources'}</div>
-        
-        {/* Settings button in top right corner */}
-        {selected && (
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="absolute top-1 right-1 h-6 w-6 p-0 rounded-full bg-white/70 hover:bg-white/90"
-              >
-                <Settings className="h-3 w-3" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[80vh] overflow-y-auto">
-              <ResourceSettings nodeId={id} data={data} />
-            </DialogContent>
-          </Dialog>
-        )}
         
         {/* Resource list */}
         <ul className="space-y-2 text-left">

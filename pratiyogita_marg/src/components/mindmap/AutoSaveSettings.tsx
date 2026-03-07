@@ -1,4 +1,4 @@
-
+﻿
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -69,7 +69,7 @@ export function AutoSaveSettings({ open, onOpenChange, config, onConfigChange }:
             />
           </div>
           
-          <div className="text-sm text-muted-foreground">
+          <div className="text-base text-muted-foreground">
             {enabled 
               ? `Mind map will automatically save every ${interval} seconds when changes are made.`
               : 'Auto-save is currently disabled.'}

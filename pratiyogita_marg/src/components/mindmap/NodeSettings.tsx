@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
-import { BaseNodeData, FontSize, NodeContent, LegendPosition } from "./types";
+import { BaseNodeData, FontSize, FontWeight, NodeContent, LegendPosition } from "./types";
 import { Plus, Trash, Check, Settings } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,14 @@ const fontFamilies = ['serif', 'sans-serif', 'monospace', 'cursive'];
 const strokeStyles = ['solid', 'dashed', 'dotted'] as const;
 const textAligns = ['left', 'center', 'right'] as const;
 const fontSizes: FontSize[] = ['xs', 's', 'm', 'l', 'xl'];
+const fontWeights: { value: FontWeight; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'semibold', label: 'Semi' },
+  { value: 'bold', label: 'Bold' },
+  { value: 'extrabold', label: 'Extra' },
+];
 
 const legendPositions: { value: LegendPosition; label: string }[] = [
   { value: 'left-top', label: 'Left: Top' },
@@ -114,7 +122,7 @@ export function NodeSettings({ data, nodeId }: NodeSettingsProps) {
             <TabsContent value="style" className="space-y-6 mt-4">
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Label</h4>
+                  <h4 className="text-base font-medium mb-3">Label</h4>
                   <Input
                     value={data.label}
                     onChange={(e) => handleChange({ label: e.target.value })}
@@ -123,7 +131,7 @@ export function NodeSettings({ data, nodeId }: NodeSettingsProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Font Size</h4>
+                  <h4 className="text-base font-medium mb-3">Font Size</h4>
                   <div className="flex gap-2">
                     {fontSizes.map((size) => (
                       <Button
@@ -139,7 +147,23 @@ export function NodeSettings({ data, nodeId }: NodeSettingsProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Stroke Color</h4>
+                  <h4 className="text-base font-medium mb-3">Font Weight</h4>
+                  <div className="flex gap-2 flex-wrap">
+                    {fontWeights.map(({ value, label }) => (
+                      <Button
+                        key={value}
+                        variant={data.fontWeight === value ? "default" : "outline"}
+                        onClick={() => handleChange({ fontWeight: value })}
+                        style={{ fontWeight: value === 'light' ? 300 : value === 'normal' ? 400 : value === 'medium' ? 500 : value === 'semibold' ? 600 : value === 'bold' ? 700 : 800 }}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-base font-medium mb-3">Stroke Color</h4>
                   <div className="flex gap-2 flex-wrap">
                     {strokeColors.map((color) => (
                       <button
@@ -155,7 +179,7 @@ export function NodeSettings({ data, nodeId }: NodeSettingsProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Background Color</h4>
+                  <h4 className="text-base font-medium mb-3">Background Color</h4>
                   <div className="flex gap-2 flex-wrap">
                     {backgroundColors.map((color) => (
                       <button
@@ -171,7 +195,7 @@ export function NodeSettings({ data, nodeId }: NodeSettingsProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Stroke Style</h4>
+                  <h4 className="text-base font-medium mb-3">Stroke Style</h4>
                   <div className="flex gap-2">
                     {strokeStyles.map((style) => (
                       <Button
@@ -186,7 +210,7 @@ export function NodeSettings({ data, nodeId }: NodeSettingsProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Font Family</h4>
+                  <h4 className="text-base font-medium mb-3">Font Family</h4>
                   <div className="flex gap-2 flex-wrap">
                     {fontFamilies.map((font) => (
                       <Button
@@ -202,7 +226,7 @@ export function NodeSettings({ data, nodeId }: NodeSettingsProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Text Align</h4>
+                  <h4 className="text-base font-medium mb-3">Text Align</h4>
                   <div className="flex gap-2">
                     {textAligns.map((align) => (
                       <Button
@@ -217,7 +241,7 @@ export function NodeSettings({ data, nodeId }: NodeSettingsProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Stroke Width</h4>
+                  <h4 className="text-base font-medium mb-3">Stroke Width</h4>
                   <div className="flex gap-2">
                     {[1, 2, 3, 4, 5].map((width) => (
                       <Button
@@ -236,7 +260,7 @@ export function NodeSettings({ data, nodeId }: NodeSettingsProps) {
             <TabsContent value="content" className="mt-4 space-y-6">
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Title</h4>
+                  <h4 className="text-base font-medium mb-3">Title</h4>
                   <Input
                     value={data.content?.title || ''}
                     onChange={(e) => handleContentChange({ title: e.target.value })}
@@ -245,7 +269,7 @@ export function NodeSettings({ data, nodeId }: NodeSettingsProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Description</h4>
+                  <h4 className="text-base font-medium mb-3">Description</h4>
                   <Textarea
                     value={data.content?.description || ''}
                     onChange={(e) => handleContentChange({ description: e.target.value })}
@@ -255,13 +279,13 @@ export function NodeSettings({ data, nodeId }: NodeSettingsProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Links</h4>
+                  <h4 className="text-base font-medium mb-3">Links</h4>
                   <div className="space-y-3">
                     {data.content?.links?.map((link, index) => (
                       <div key={index} className="flex items-center gap-2 bg-muted/50 p-2 rounded-md">
                         <div className="flex-1">
-                          <p className="text-sm font-medium">{link.label}</p>
-                          <p className="text-sm text-muted-foreground">{link.url}</p>
+                          <p className="text-base font-medium">{link.label}</p>
+                          <p className="text-base text-muted-foreground">{link.url}</p>
                         </div>
                         <Button
                           variant="ghost"
@@ -298,7 +322,7 @@ export function NodeSettings({ data, nodeId }: NodeSettingsProps) {
             <TabsContent value="legend" className="mt-4 space-y-6">
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Legend Position</h4>
+                  <h4 className="text-base font-medium mb-3">Legend Position</h4>
                   <RadioGroup
                     value={data.legend?.enabled ? data.legend.position : undefined}
                     onValueChange={(value) => handleLegendChange(value as LegendPosition)}
@@ -316,7 +340,7 @@ export function NodeSettings({ data, nodeId }: NodeSettingsProps) {
                 {data.legend?.enabled && (
                   <>
                     <div>
-                      <h4 className="text-sm font-medium mb-3">Legend Color</h4>
+                      <h4 className="text-base font-medium mb-3">Legend Color</h4>
                       <div className="flex gap-2 flex-wrap">
                         {strokeColors.map((color) => (
                           <button

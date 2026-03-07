@@ -14,6 +14,12 @@ module.exports = {
   ],
   theme: {
     extend: {
+      colors: {
+        "dark-coffee": "#2B1E17",
+        "burnt-orange": "#E4572E",
+        "muted-sand": "#E8D8C3",
+        "soft-ivory": "#FBF6EE",
+      },
       animation: {
         fadeIn: 'fadeIn 0.3s ease-in-out',
       },

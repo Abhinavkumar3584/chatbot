@@ -219,13 +219,13 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     >
       <div
         ref={modalRef}
-        className="bg-white w-full h-full max-w-none max-h-none rounded-none md:rounded-lg md:max-w-md md:h-auto md:max-h-[90vh] md:p-8 p-6 md:mx-4 overflow-y-auto relative transform transition-all duration-300 ease-out animate-slide-up"
+        className="w-full h-full max-w-none max-h-none rounded-none md:rounded-lg md:max-w-md md:h-auto md:max-h-[90vh] md:p-8 p-6 md:mx-4 overflow-y-auto relative transform transition-all duration-300 ease-out animate-slide-up" style={{background: "#2B1E17", border: "1px solid rgba(228,87,46,0.30)"}}
         role="document"
       >
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+          className="absolute top-4 right-4 text-[#E8D8C3]/60 hover:text-[#FBF6EE] transition-colors p-1 rounded-full hover:bg-[#E4572E]/10"
           aria-label="Close modal"
           type="button"
         >
@@ -233,10 +233,10 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
         </button>
 
         <div className="text-center mb-6">
-          <h2 id="modal-title" className="text-2xl font-bold text-gray-800">
+          <h2 id="modal-title" className="text-2xl font-bold text-[#FBF6EE]">
             {mode === 'login' ? 'Welcome Back' : 'Create Account'}
           </h2>
-          <p className="text-gray-600 mt-2">
+          <p className="text-[#E8D8C3] mt-2">
             {mode === 'login'
               ? 'Sign in to access your chat history'
               : 'Sign up to save your conversations'
@@ -245,26 +245,26 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-center">
-            <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-            <span className="text-red-700 text-sm">{error}</span>
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4 flex items-center">
+            <AlertCircle className="w-5 h-5 text-red-400 mr-2" />
+            <span className="text-red-300 text-sm">{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'signup' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#E8D8C3] mb-1">
                 Display Name
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#E8D8C3]/50 w-5 h-5" />
                 <input
                   type="text"
                   name="displayName"
                   value={formData.displayName}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-[#E4572E]/40 rounded-lg focus:ring-2 focus:ring-[#E4572E] focus:border-transparent bg-[#2B1E17]/80 text-[#FBF6EE]"
                   placeholder="Enter your name"
                   required={mode === 'signup'}
                 />
@@ -273,17 +273,17 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#E8D8C3] mb-1">
               Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#E8D8C3]/50 w-5 h-5" />
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-[#E4572E]/40 rounded-lg focus:ring-2 focus:ring-[#E4572E] focus:border-transparent bg-[#2B1E17]/80 text-[#FBF6EE]"
                 placeholder="Enter your email"
                 required
               />
@@ -291,24 +291,24 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[#E8D8C3] mb-1">
               Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#E8D8C3]/50 w-5 h-5" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-12 py-2 border border-[#E4572E]/40 rounded-lg focus:ring-2 focus:ring-[#E4572E] focus:border-transparent bg-[#2B1E17]/80 text-[#FBF6EE]"
                 placeholder="Enter your password"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#E8D8C3]/50 hover:text-[#FBF6EE]"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -317,24 +317,24 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
 
           {mode === 'signup' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#E8D8C3] mb-1">
                 Confirm Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#E8D8C3]/50 w-5 h-5" />
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-12 py-2 border border-[#E4572E]/40 rounded-lg focus:ring-2 focus:ring-[#E4572E] focus:border-transparent bg-[#2B1E17]/80 text-[#FBF6EE]"
                   placeholder="Confirm your password"
                   required={mode === 'signup'}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#E8D8C3]/50 hover:text-[#FBF6EE]"
                 >
                   {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -345,7 +345,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#E4572E] text-[#FBF6EE] py-2 px-4 rounded-lg hover:bg-[#E4572E]/80 focus:ring-2 focus:ring-[#E4572E] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Processing...' : (mode === 'login' ? 'Sign In' : 'Sign Up')}
           </button>
@@ -355,10 +355,10 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
         <div className="mt-4">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+              <div className="w-full border-t border-[#E4572E]/30" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <span className="px-2 bg-[#2B1E17] text-[#E8D8C3]/60">Or continue with</span>
             </div>
           </div>
 
@@ -366,7 +366,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="mt-4 w-full flex items-center justify-center gap-3 bg-white text-gray-900 border border-gray-300 py-2 px-4 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="mt-4 w-full flex items-center justify-center gap-3 bg-[#FBF6EE] text-[#2B1E17] border border-[#E4572E]/30 py-2 px-4 rounded-lg hover:bg-[#E8D8C3] focus:ring-2 focus:ring-[#E4572E] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Sign in with your Google account"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -383,7 +383,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
             type="button"
             onClick={handleGithubLogin}
             disabled={loading}
-            className="mt-3 w-full flex items-center justify-center gap-3 bg-gray-900 text-white py-2 px-4 rounded-lg hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="mt-3 w-full flex items-center justify-center gap-3 bg-[#2B1E17] text-[#FBF6EE] border border-[#E4572E]/30 py-2 px-4 rounded-lg hover:bg-[#2B1E17]/80 focus:ring-2 focus:ring-[#E4572E] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Sign in with your GitHub account"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -393,18 +393,18 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
           </button>
 
           {/* Popup blocker info */}
-          <p className="text-xs text-gray-500 mt-2 text-center">
+          <p className="text-xs text-[#E8D8C3]/50 mt-2 text-center">
             If popup is blocked, we&apos;ll redirect you to the provider
           </p>
         </div>
 
         <div className="mt-6 text-center">
-          <p className="text-gray-600">
+          <p className="text-[#E8D8C3]">
             {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
             <button
               type="button"
               onClick={toggleMode}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-[#E4572E] hover:text-[#E4572E]/80 font-medium"
             >
               {mode === 'login' ? 'Sign up' : 'Sign in'}
             </button>

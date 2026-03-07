@@ -21,9 +21,9 @@ export const addNode = (
       nodeType: type,
       backgroundColor: additionalData.backgroundColor || 'white',
       strokeColor: additionalData.strokeColor || 'black',
-      strokeWidth: additionalData.strokeWidth || 1,
+      strokeWidth: additionalData.strokeWidth || 3,
       strokeStyle: additionalData.strokeStyle || 'solid',
-      fontSize: additionalData.fontSize || 'xs',
+      fontSize: additionalData.fontSize || 'm',
       textAlign: additionalData.textAlign || 'center',
       opacity: additionalData.opacity || 1,
       hasCheckbox: additionalData.hasCheckbox || false,
@@ -61,6 +61,10 @@ const getNodeType = (nodeType: string): string => {
       return 'note';
     case 'concept':
       return 'concept';
+    case 'hline':
+      return 'hline';
+    case 'vline':
+      return 'vline';
     default:
       return 'base';
   }
@@ -95,6 +99,10 @@ const getDefaultLabel = (nodeType: string): string => {
       return 'Quick Note';
     case 'concept':
       return 'Key Concept';
+    case 'hline':
+      return '';
+    case 'vline':
+      return '';
     default:
       return nodeType.charAt(0).toUpperCase() + nodeType.slice(1);
   }
@@ -109,18 +117,30 @@ const getTypeSpecificData = (nodeType: string): Partial<BaseNodeData> => {
   switch (nodeType) {
     case 'title':
       return {
-        width: 180,
-        height: 90,
+        width: 100,
+        height: 40,
+        strokeWidth: 3,
+        strokeColor: '#ef4444',
+        backgroundColor: '#fee2e2',
+        fontSize: 'm',
       };
     case 'topic':
       return {
-        width: 160,
-        height: 70,
+        width: 100,
+        height: 40,
+        strokeWidth: 3,
+        strokeColor: '#22c55e',
+        backgroundColor: '#dcfce7',
+        fontSize: 'm',
       };
     case 'subtopic':
       return {
-        width: 150,
-        height: 60,
+        width: 100,
+        height: 40,
+        strokeWidth: 3,
+        strokeColor: '#eab308',
+        backgroundColor: '#fee2e2',
+        fontSize: 'm',
       };
     case 'paragraph':
       return {
@@ -165,6 +185,20 @@ const getTypeSpecificData = (nodeType: string): Partial<BaseNodeData> => {
         examples: ['Example 1'],
         importance: 'medium',
         backgroundColor: '#E6F0FF'
+      };
+    case 'hline':
+      return {
+        width: 200,
+        strokeWidth: 3,
+        strokeColor: '#374151',
+        strokeStyle: 'solid' as const,
+      };
+    case 'vline':
+      return {
+        height: 200,
+        strokeWidth: 3,
+        strokeColor: '#374151',
+        strokeStyle: 'solid' as const,
       };
     default:
       return {};

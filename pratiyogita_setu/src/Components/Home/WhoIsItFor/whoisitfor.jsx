@@ -19,35 +19,35 @@ const leftAudience = [
     title: "Competitive Exam Aspirants",
     tags: "UPSC, SSC, Banking, Defence, Railways",
     description: "Check eligibility, plan roadmaps, resolve doubts, PYQ practice.",
-    color: "#f97316",
+    color: "#E4572E",
   },
   {
     icon: GraduationCap,
     title: "College Students (UG/PG)",
     tags: "Discover exams early",
     description: "Discover exams based on degree, age & category. Start early prep.",
-    color: "#00ccff",
+    color: "#E8D8C3",
   },
   {
     icon: BookOpen,
     title: "School Students (6–12)",
     tags: "Build strong foundations",
     description: "Build NCERT foundations, practice PYQs, develop exam awareness.",
-    color: "#00ff15",
+    color: "#FBF6EE",
   },
   {
     icon: Briefcase,
     title: "Working Professionals",
     tags: "Time-efficient prep",
     description: "Quickly assess eligibility, calculate attempts, focused study.",
-    color: "#9900ff",
+    color: "#E4572E",
   },
   {
     icon: Clock,
     title: "Full-time Aspirants",
     tags: "Structured & tracked prep",
     description: "Structured syllabus visualization, track progress, AI answers.",
-    color: "#ffea00",
+    color: "#E8D8C3",
   },
 ];
 
@@ -57,35 +57,35 @@ const rightAudience = [
     title: "Coaching Institutes",
     tags: "Eligibility verification",
     description: "Recommend platform for eligibility verification & self-study.",
-    color: "#00ccff",
+    color: "#E8D8C3",
   },
   {
     icon: Users,
     title: "Parents & Guardians",
     tags: "Track child's progress",
     description: "Gain clarity on child's qualified exams. Track preparation.",
-    color: "#00ff15",
+    color: "#FBF6EE",
   },
   {
     icon: Compass,
     title: "Career Counselors",
     tags: "Profile-based advice",
     description: "Use eligibility engine for exam advice by age & education.",
-    color: "#ff3300",
+    color: "#E4572E",
   },
   {
     icon: Building2,
     title: "Exam Conducting Bodies",
     tags: "Reduce ineligible apps",
     description: "Aspirants pre-check eligibility before applying to exams.",
-    color: "#ffea00",
+    color: "#E8D8C3",
   },
   {
     icon: Palette,
     title: "Content Creators",
     tags: "Visual syllabus tools",
     description: "Use Marg's mind-map builder. Share visual syllabus roadmaps.",
-    color: "#9900ff",
+    color: "#FBF6EE",
   },
 ];
 
@@ -107,7 +107,7 @@ function AudienceCard({ item, index, side }) {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      className={`group flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:border-orange-500/40 hover:bg-white/[0.08] transition-all duration-300 ${
+      className={`group flex items-start gap-3 p-3 rounded-xl bg-[#2B1E17]/55 border border-[#E4572E]/18 hover:border-[#E4572E]/50 hover:bg-[#2B1E17]/75 transition-all duration-300 ${
         side === "right" ? "flex-row-reverse text-right" : ""
       }`}
     >
@@ -118,8 +118,8 @@ function AudienceCard({ item, index, side }) {
         <Icon className="w-8 h-8 md:w-10 md:h-10" style={{ color: item.color }} />
       </div>
       <div className="min-w-0">
-        <h4 className="text-base md:text-lg font-extrabold text-white leading-tight">{item.title}</h4>
-        <p className="text-sm md:text-base text-white/80 mt-2 font-semibold leading-relaxed">{item.description}</p>
+        <h4 className="text-base md:text-lg font-extrabold text-[#FBF6EE] leading-tight">{item.title}</h4>
+        <p className="text-sm md:text-base text-[#E8D8C3] mt-2 font-semibold leading-relaxed">{item.description}</p>
       </div>
     </motion.div>
   );
@@ -138,18 +138,18 @@ export default function WhoIsItFor() {
           transition={{ duration: 0.6 }}
         >
           <motion.div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30 mb-4"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E4572E]/10 border border-[#E4572E]/35 mb-4"
             whileHover={{ scale: 1.05 }}
           >
-            <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-            <span className="text-sm font-semibold text-orange-400">
+            <span className="w-2 h-2 rounded-full bg-[#E4572E] animate-pulse" />
+            <span className="text-sm font-semibold text-[#E4572E]">
               Target Audience
             </span>
           </motion.div>
 
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#FBF6EE] mb-4">
             Who Is{" "}
-            <span className="bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#E4572E] to-[#cf4a23] bg-clip-text text-transparent">
               Pratiyogita Setu
             </span>{" "}
             For?

@@ -79,11 +79,12 @@ pratiyogita-setu/
 │   │   │   └── checker/           # 15 modular criteria checkers
 │   │   ├── contexts/              # AuthContext
 │   │   └── config/                # Firebase config
-│   ├── examsdata/                 # Exam eligibility JSON data
-│   │   ├── BANKING_ED/            # 14 exam category folders
-│   │   ├── CIVIL_SERVICES_ED/
-│   │   ├── DEFENCE_ED/
-│   │   └── ...
+│   ├── public/
+│   │   ├── examsdata/             # Exam eligibility JSON data
+│   │   │   ├── BANKING_EXAMS/     # 14 exam category folders
+│   │   │   ├── CIVIL_SERVICES_EXAMS/
+│   │   │   ├── DEFENCE_EXAMS/
+│   │   │   └── ...
 │   ├── scripts/                   # Firestore data upload scripts
 │   └── vercel.json
 │

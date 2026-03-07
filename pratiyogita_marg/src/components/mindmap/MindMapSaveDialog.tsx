@@ -1,4 +1,4 @@
-
+﻿
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -24,8 +24,9 @@ import { useToast } from "@/hooks/use-toast";
 interface MindMapSaveDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (name: string, examCategory: ExamCategory, subExamName: string) => void;
+  onSave: (name: string, examCategory: ExamCategory) => void;
   currentName: string;
+  isNewFlow?: boolean;
 }
 
 export function MindMapSaveDialog({
@@ -33,17 +34,20 @@ export function MindMapSaveDialog({
   onOpenChange,
   onSave,
   currentName,
+  isNewFlow = false,
 }: MindMapSaveDialogProps) {
   const [name, setName] = useState(currentName);
   const [examCategory, setExamCategory] = useState<ExamCategory | ''>('');
-  const [subExamName, setSubExamName] = useState('');
+
   const { toast } = useToast();
 
   useEffect(() => {
     if (open) {
-      setName(currentName);
+      // For new flow, always start with blank name & category
+      setName(isNewFlow ? '' : currentName);
+      setExamCategory('');
     }
-  }, [open, currentName]);
+  }, [open, currentName, isNewFlow]);
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -64,16 +68,7 @@ export function MindMapSaveDialog({
       return;
     }
 
-    if (!subExamName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a sub-exam name",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    onSave(name, examCategory as ExamCategory, subExamName);
+    onSave(name, examCategory as ExamCategory);
     onOpenChange(false);
   };
 
@@ -81,9 +76,11 @@ export function MindMapSaveDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Save Mind Map</DialogTitle>
+          <DialogTitle>{isNewFlow ? 'New Mind Map' : 'Save Mind Map'}</DialogTitle>
           <DialogDescription>
-            Enter the details to save your mind map
+            {isNewFlow
+              ? 'Naye mind map ka naam aur exam category daalein'
+              : 'Enter the details to save your mind map'}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -110,24 +107,13 @@ export function MindMapSaveDialog({
               <SelectContent className="max-h-[300px]">
                 {EXAM_CATEGORIES.map((category) => (
                   <SelectItem key={category} value={category}>
-                    {category}
+                    {category.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="subExamName" className="text-right">
-              Sub-exam Name
-            </Label>
-            <Input
-              id="subExamName"
-              value={subExamName}
-              onChange={(e) => setSubExamName(e.target.value)}
-              className="col-span-3"
-              placeholder="Enter sub-exam name (e.g., CSE, NDA)"
-            />
-          </div>
+
         </div>
         <DialogFooter>
           <Button type="submit" onClick={handleSave}>

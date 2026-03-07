@@ -1,0 +1,166 @@
+{
+  "nodes": [
+    {
+      "id": "__workspace_boundary__",
+      "type": "workspace",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "id": "__workspace_boundary__",
+        "label": "",
+        "nodeType": "workspace"
+      },
+      "selectable": false,
+      "draggable": false,
+      "deletable": false,
+      "focusable": false,
+      "style": {
+        "zIndex": -1
+      },
+      "measured": {
+        "width": 800,
+        "height": 3000
+      }
+    },
+    {
+      "id": "1",
+      "type": "base",
+      "data": {
+        "id": "1",
+        "label": "Main Idea",
+        "nodeType": "title",
+        "backgroundColor": "#fee2e2",
+        "strokeColor": "#ef4444",
+        "strokeWidth": 3,
+        "strokeStyle": "solid",
+        "fontSize": "m",
+        "textAlign": "center",
+        "opacity": 1,
+        "width": 100,
+        "height": 40
+      },
+      "position": {
+        "x": 400,
+        "y": 200
+      },
+      "measured": {
+        "width": 108,
+        "height": 48
+      },
+      "selected": false
+    },
+    {
+      "id": "09a4fc00-c285-4eaa-a968-38a80581e7fd",
+      "type": "base",
+      "data": {
+        "id": "1",
+        "label": "Main Idea",
+        "nodeType": "title",
+        "backgroundColor": "#fee2e2",
+        "strokeColor": "#ef4444",
+        "strokeWidth": 3,
+        "strokeStyle": "solid",
+        "fontSize": "m",
+        "textAlign": "center",
+        "opacity": 1,
+        "hasCheckbox": false,
+        "isChecked": false,
+        "width": 100,
+        "height": 40,
+        "position": {
+          "x": 450,
+          "y": 250
+        }
+      },
+      "position": {
+        "x": 152.79837205407114,
+        "y": 30.427883246051437
+      },
+      "measured": {
+        "width": 108,
+        "height": 48
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "7767c854-b399-48ba-816b-afd2abe40510",
+      "type": "base",
+      "data": {
+        "id": "1",
+        "label": "Main Idea",
+        "nodeType": "title",
+        "backgroundColor": "#fee2e2",
+        "strokeColor": "#ef4444",
+        "strokeWidth": 3,
+        "strokeStyle": "solid",
+        "fontSize": "m",
+        "textAlign": "center",
+        "opacity": 1,
+        "hasCheckbox": false,
+        "isChecked": false,
+        "width": 100,
+        "height": 40,
+        "position": {
+          "x": 111.79837111415964,
+          "y": 173.42788420662032
+        }
+      },
+      "position": {
+        "x": 138.22120677837967,
+        "y": 336.87510832736587
+      },
+      "measured": {
+        "width": 108,
+        "height": 48
+      },
+      "selected": true,
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "1",
+      "sourceHandle": "top-source",
+      "target": "09a4fc00-c285-4eaa-a968-38a80581e7fd",
+      "targetHandle": "right-target",
+      "type": "default",
+      "animated": false,
+      "data": {
+        "strokeStyle": "solid",
+        "strokeWidth": 1,
+        "strokeColor": "#000000",
+        "arrowEnd": false,
+        "pathStyle": "straight"
+      },
+      "id": "xy-edge__1top-source-09a4fc00-c285-4eaa-a968-38a80581e7fdright-target",
+      "selected": false
+    },
+    {
+      "source": "1",
+      "sourceHandle": "left-source",
+      "target": "7767c854-b399-48ba-816b-afd2abe40510",
+      "targetHandle": "right-target",
+      "type": "default",
+      "animated": false,
+      "data": {
+        "strokeStyle": "solid",
+        "strokeWidth": 1,
+        "strokeColor": "#000000",
+        "arrowEnd": false,
+        "pathStyle": "straight"
+      },
+      "id": "xy-edge__1left-source-7767c854-b399-48ba-816b-afd2abe40510right-target"
+    }
+  ],
+  "name": "Abhinav Kumar",
+  "examCategory": "CIVIL_SERVICES_EXAMS",
+  "headerData": {
+    "title": "upsc",
+    "description": "hello",
+    "subDetails": ""
+  },
+  "savedAt": "2026-03-03T10:11:03.830Z"
+}

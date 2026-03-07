@@ -4,6 +4,13 @@ export default {
   darkMode: "class", // This enables the 'dark' class-based dark mode
   theme: {
     extend: {
+      colors: {
+        // ── Pratiyogita Setu Brand Palette ──────────────────────────
+        "dark-coffee": "#2B1E17",   // primary background / dark surfaces
+        "burnt-orange": "#E4572E", // primary accent / CTA
+        "muted-sand": "#E8D8C3",   // secondary text / card tint
+        "soft-ivory": "#FBF6EE",   // primary text / light surfaces
+      },
       screens: {
         // Extra small devices
         xxs: { raw: "(min-width: 320px)" },

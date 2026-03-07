@@ -1,21 +1,5 @@
 { 
 
-
-    "exam_code": [
-        "",
-        "ALL APPLICABLE",
-        "NOT APPLICABLE"
-    ],
-    "exam_name": [
-        "",
-        "ALL APPLICABLE",
-        "NOT APPLICABLE"
-    ],
-    "full_form": [
-        "",
-        "ALL APPLICABLE",
-        "NOT APPLICABLE"
-    ],
     "exam_level": [
         "",
         "ALL APPLICABLE",
@@ -25,33 +9,33 @@
         "STATE",
         "REGIONAL",
         "UNIVERSITY",
-        "INSTITUTIONAL"
+        "INSTITUTIONAL",
+        "SCHOOL",
+        "OTHER"
         
     ],
     "exam_sector": [
         "",
         "ALL APPLICABLE",
         "NOT APPLICABLE",
-        "SSC_ED': 'SSC Exams",
-        "DEFENCE_ED': 'Defence Exams",
-        "UG_ED': 'Undergraduate Exams",
-        "PG_ED': 'Postgraduate Exams",
-        "BANKING_ED': 'Banking Exams",
-        "RAILWAY_ED': 'Railway Exams",
-        "TEACHING_ED': 'Teaching Exams",
-        "CIVIL_SERVICES_ED': 'Civil Services",
-        "POLICE_ED': 'Police Exams",
-        "ENGINEERING_RECRUITING_ED': 'Engineering Recruitment",
-        "INSURANCE_ED': 'Insurance Exams",
-        "JUDICIARY_ED': 'Judiciary Exams",
-        "MBA_ED': 'MBA Exams",
-        "SCHOOL_ED': 'School Level Exams",
-        "NURSING_ED': 'Nursing Exams",
-        "REGULATORY_BODY_ED': 'Regulatory Body Exams",
-        "OTHER_GOV_ED': 'Other Government Exams",
-        "OTHERS_ED': 'Other Exams",
-        "CAMPUS_PLACEMENT_ED': 'Campus Placement",
-        "ACCOUNTING_COMMERCE_ED': 'Accounting & Commerce"
+        "GOVERNMENT",
+        "PUBLIC SECTOR UNDERTAKING (PSU)",
+        "PRIVATE SECTOR",
+        "DEFENCE",
+        "RAILWAYS",
+        "BANKING",
+        "INSURANCE",
+        "TELECOM",
+        "EDUCATION",
+        "HEALTHCARE",
+        "AGRICULTURE",
+        "MANUFACTURING",
+        "IT & SOFTWARE",
+        "RESEARCH",
+        "LAW ENFORCEMENT",
+        "JUDICIARY",
+        "OTHER"
+        
     ],
     "exam_target": [
         "",

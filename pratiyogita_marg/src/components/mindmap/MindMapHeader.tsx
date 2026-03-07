@@ -1,4 +1,5 @@
-import { useState } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
+import { toPng } from 'html-to-image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,8 +12,14 @@ import {
   ChevronUp,
   Type,
   FileText,
-  Info
+  Info,
+  ArrowLeft,
+  BookOpen,
+  Tag,
+  Share2,
+  Download,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export interface MindMapHeaderData {
   title: string;
@@ -25,7 +32,8 @@ interface MindMapHeaderProps {
   onChange: (data: MindMapHeaderData) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
-  readOnly?: boolean; // Add read-only prop for view mode
+  readOnly?: boolean;
+  onBack?: () => void;
 }
 
 export const MindMapHeader = ({ 
@@ -33,25 +41,145 @@ export const MindMapHeader = ({
   onChange, 
   isCollapsed = false,
   onToggleCollapse,
-  readOnly = false
+  readOnly = false,
+  onBack,
 }: MindMapHeaderProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  // Local buffer so inputs are always controlled and never stale
   const [editData, setEditData] = useState<MindMapHeaderData>(data);
+  // Snapshot for Cancel — taken when editing starts
+  const snapshotRef = useRef<MindMapHeaderData>(data);
+  // Ref for view-mode export
+  const viewContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleSave = () => {
-    onChange(editData);
+  const handleExportPng = async () => {
+    try {
+      // Capture full page in view mode
+      const el = document.body;
+      const dataUrl = await toPng(el, { cacheBust: true, pixelRatio: 2 });
+      const link = document.createElement('a');
+      link.download = `${data.title || 'mindmap'}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (e) {
+      console.error('PNG export failed', e);
+    }
+  };
+
+  // When a new map is loaded (data changes externally) and we are NOT in edit mode,
+  // sync editData so the display reflects the newly loaded map's header.
+  useEffect(() => {
+    if (!isEditing) {
+      setEditData(data);
+    }
+  }, [data, isEditing]);
+
+  const startEditing = () => {
+    snapshotRef.current = { ...editData }; // save current for cancel
+    setIsEditing(true);
+  };
+
+  const handleDone = () => {
     setIsEditing(false);
   };
 
   const handleCancel = () => {
-    setEditData(data);
+    setEditData(snapshotRef.current); // restore local buffer
+    onChange(snapshotRef.current);    // restore parent too
     setIsEditing(false);
   };
 
+  // Update local buffer AND propagate to parent immediately on every keystroke
   const handleChange = (field: keyof MindMapHeaderData, value: string) => {
-    setEditData(prev => ({ ...prev, [field]: value }));
+    const updated = { ...editData, [field]: value };
+    setEditData(updated);
+    onChange(updated);
   };
 
+  // ── READ-ONLY / VIEW MODE ──────────────────────────────────────────────
+  if (readOnly) {
+    const hasDescription = data.description && data.description !== 'No description provided';
+    const hasSubDetails  = data.subDetails  && data.subDetails  !== 'No additional details';
+
+    return (
+      <div ref={viewContainerRef} className="bg-white border-b border-gray-200">
+        <div className="px-5 py-5">
+          {/* Top row: back arrow + actions */}
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-1.5 text-gray-500 hover:text-gray-900 transition-colors group"
+                  title="Back to Explore"
+                >
+                  <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+                  <span className="text-sm font-medium">All Mind Maps</span>
+                </button>
+              )}
+            </div>
+            {/* Action buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportPng}
+                className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 transition-all"
+                title="Export as PNG"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export PNG</span>
+              </button>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href).then(() => {
+                    toast.success('Link copied to clipboard!');
+                  }).catch(() => {
+                    toast.error('Failed to copy link');
+                  });
+                }}
+                className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 transition-all"
+                title="Share this mind map"
+              >
+                <Share2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Share</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Main content */}
+          <div className="flex flex-col gap-2">
+            {/* Title */}
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-snug">
+              {data.title || 'Untitled Mind Map'}
+            </h1>
+
+            {/* Description — full, no truncation */}
+            {hasDescription && (
+              <p className="text-gray-600 text-base leading-relaxed max-w-3xl">
+                {data.description}
+              </p>
+            )}
+
+            {/* Sub-details as a tag/badge row */}
+            {hasSubDetails && (
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <Tag className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                {data.subDetails!.split(',').map((part, i) => (
+                  <span
+                    key={i}
+                    className="inline-block bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-0.5 rounded-full border border-gray-200"
+                  >
+                    {part.trim()}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── EDITOR MODE ────────────────────────────────────────────────────────
   if (isCollapsed) {
     return (
       <Card className="mx-4 mt-2 border-l-4 border-l-blue-500">
@@ -59,11 +187,11 @@ export const MindMapHeader = ({
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <h3 className="text-lg font-semibold truncate">
-                {data.title || 'Untitled Mind Map'}
+                {editData.title || 'Untitled Mind Map'}
               </h3>
-              {data.description && (
-                <p className="text-sm text-gray-600 truncate">
-                  {data.description}
+              {editData.description && (
+                <p className="text-base text-gray-600 truncate">
+                  {editData.description}
                 </p>
               )}
             </div>
@@ -96,7 +224,7 @@ export const MindMapHeader = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setIsEditing(true)}
+                onClick={startEditing}
                 className="gap-1"
               >
                 <Edit3 className="h-4 w-4" />
@@ -107,11 +235,11 @@ export const MindMapHeader = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleSave}
+                  onClick={handleDone}
                   className="gap-1"
                 >
                   <Save className="h-4 w-4" />
-                  Save
+                  Done
                 </Button>
                 <Button
                   variant="ghost"
@@ -142,7 +270,7 @@ export const MindMapHeader = ({
             {!readOnly && (
               <div className="flex items-center gap-2">
                 <Type className="h-4 w-4 text-gray-500" />
-                <label className="text-sm font-medium text-gray-700">Title</label>
+                <label className="text-base font-medium text-gray-700">Title</label>
               </div>
             )}
             {isEditing ? (
@@ -154,7 +282,7 @@ export const MindMapHeader = ({
               />
             ) : (
               <h1 className="text-xl font-bold text-gray-900">
-                {data.title || 'Untitled Mind Map'}
+                {editData.title || 'Untitled Mind Map'}
               </h1>
             )}
           </div>
@@ -163,7 +291,7 @@ export const MindMapHeader = ({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-gray-500" />
-              <label className="text-sm font-medium text-gray-700">Description</label>
+              <label className="text-base font-medium text-gray-700">Description</label>
             </div>
             {isEditing ? (
               <Textarea
@@ -175,7 +303,7 @@ export const MindMapHeader = ({
               />
             ) : (
               <p className="text-gray-700">
-                {data.description || 'No description provided'}
+                {editData.description || 'No description provided'}
               </p>
             )}
           </div>
@@ -184,7 +312,7 @@ export const MindMapHeader = ({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Info className="h-4 w-4 text-gray-500" />
-              <label className="text-sm font-medium text-gray-700">Sub Details</label>
+              <label className="text-base font-medium text-gray-700">Sub Details</label>
             </div>
             {isEditing ? (
               <Textarea
@@ -195,8 +323,8 @@ export const MindMapHeader = ({
                 className="resize-none"
               />
             ) : (
-              <p className="text-sm text-gray-600">
-                {data.subDetails || 'No additional details'}
+              <p className="text-base text-gray-600">
+                {editData.subDetails || 'No additional details'}
               </p>
             )}
           </div>
@@ -204,9 +332,8 @@ export const MindMapHeader = ({
 
         {/* Status/Metadata Bar */}
         <div className="mt-4 pt-3 border-t border-gray-200">
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <span>Created: {new Date().toLocaleDateString()}</span>
-            <span>Last edited: {new Date().toLocaleTimeString()}</span>
+          <div className="flex items-center justify-between text-base text-gray-500">
+            <span className="italic text-gray-400 text-sm">Mind map details</span>
           </div>
         </div>
       </CardContent>

@@ -8,6 +8,8 @@ import {
   useNodesState,
   useEdgesState,
   NodeTypes,
+  useReactFlow,
+  ReactFlowProvider,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { BaseNode } from './BaseNode';
@@ -20,7 +22,8 @@ import { SquareNode } from './node-components/SquareNode';
 import { TriangleNode } from './node-components/TriangleNode';
 import { NoteNode } from './node-components/NoteNode';
 import { ConceptNode } from './node-components/ConceptNode';
-import { EdgeSettings } from './EdgeSettings';
+import { HorizontalLineNode } from './node-components/HorizontalLineNode';
+import { VerticalLineNode } from './node-components/VerticalLineNode';
 import { initialNodes, initialEdges } from './MindMapInitialData';
 import { MindMapTopBar } from './MindMapTopBar';
 import { MindMapDeleteDialog } from './MindMapDeleteDialog';
@@ -28,18 +31,13 @@ import { MindMapSaveDialog } from './MindMapSaveDialog';
 
 import { useMindMapStorage } from './MindMapStorage';
 import { ComponentsSidebar } from './ComponentsSidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { RightPanel } from './RightPanel';
 import { useMindMapNodeHandlers } from './hooks/useMindMapNodeHandlers';
 import { useMindMapEdgeHandlers } from './hooks/useMindMapEdgeHandlers';
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Settings, ChevronRight } from 'lucide-react';
-import { ChecklistSettings } from './settings/ChecklistSettings';
-import { ResourceSettings } from './settings/ResourceSettings';
-import { ShapeSettings } from './settings/ShapeSettings';
-import { NoteSettings } from './settings/NoteSettings';
-import { ConceptSettings } from './settings/ConceptSettings';
-import { NodeConnectors } from './NodeConnectors';
+import { ChevronLeft } from 'lucide-react';
+import { toPng } from 'html-to-image';
+import { CanvasContextMenu } from './CanvasContextMenu';
+
 import { MindMapHeader, MindMapHeaderData } from './MindMapHeader';
 import { mindMapHistory } from '@/utils/mindmapHistory';
 import { WorkspaceBoundaryNode, WORKSPACE_WIDTH, WORKSPACE_HEIGHT, WORKSPACE_X, WORKSPACE_Y } from './WorkspaceBoundary';
@@ -48,9 +46,18 @@ import { ExamCategory } from './types';
 import { 
   AutoSaveConfig, 
   initAutoSaveConfig, 
-  shouldAutoSave, 
   performAutoSave 
 } from '@/utils/mindmapAutoSave';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const nodeTypes: NodeTypes = {
   base: BaseNode,
@@ -63,6 +70,8 @@ const nodeTypes: NodeTypes = {
   triangle: TriangleNode,
   note: NoteNode,
   concept: ConceptNode,
+  hline: HorizontalLineNode,
+  vline: VerticalLineNode,
   workspace: WorkspaceBoundaryNode,
 };
 
@@ -80,13 +89,23 @@ const workspaceBoundaryNode = {
 };
 
 export const MindMap = () => {
+  return (
+    <ReactFlowProvider>
+      <MindMapInner />
+    </ReactFlowProvider>
+  );
+};
+
+const MindMapInner = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const reactFlowInstanceRef = useRef<any>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([workspaceBoundaryNode, ...initialNodes]);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [currentMindMap, setCurrentMindMap] = useState<string>('');
+  const [currentExamCategory, setCurrentExamCategory] = useState<ExamCategory | ''>('');
   const [mindMapToDelete, setMindMapToDelete] = useState<string | null>(null);
   const [sidebarVisible, setSidebarVisible] = useState<boolean>(true);
+  const [rightPanelVisible, setRightPanelVisible] = useState<boolean>(true);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [canUndo, setCanUndo] = useState<boolean>(false);
   const [canRedo, setCanRedo] = useState<boolean>(false);
@@ -97,9 +116,28 @@ export const MindMap = () => {
     subDetails: ''
   });
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState<boolean>(false);
+  const [showNewWarning, setShowNewWarning] = useState<boolean>(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  // Canvas context menu
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; flowX: number; flowY: number } | null>(null);
+  const exportAreaRef = useRef<HTMLDivElement>(null);
+  const autoSaveSavedTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const { getNodes } = useReactFlow();
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const currentExamCategoryRef = useRef<ExamCategory | ''>('');
   const { toast } = useToast();
   const lastChangeRef = useRef<number>(Date.now());
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const isNewMapFlow = useRef<boolean>(false);
+  const historyTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const skipIsSavedResetRef = useRef<boolean>(false);
+  // Always-current refs so auto-save never uses stale closure values
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+  const currentMindMapRef = useRef(currentMindMap);
+  const autoSaveConfigRef = useRef(autoSaveConfig);
+  const autoSaveDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const headerDataRef = useRef(headerData);
 
   // Node handlers
   const { 
@@ -121,8 +159,6 @@ export const MindMap = () => {
 
   // Storage handlers
   const {
-    handleExport,
-    createNewMindMap,
     loadExistingMindMap,
     handleDeleteMindMap,
     confirmDeleteMindMap,
@@ -140,8 +176,25 @@ export const MindMap = () => {
     setMindMapToDelete,
     initialNodes,
     headerData,
-    setHeaderData
+    setHeaderData,
+    setCurrentExamCategory
   });
+
+  // New mind map: warn if unsaved changes, then open save dialog
+  const handleNewMindMap = useCallback(() => {
+    if (!isSaved) {
+      setShowNewWarning(true);
+    } else {
+      isNewMapFlow.current = true;
+      openSaveDialog();
+    }
+  }, [isSaved, openSaveDialog]);
+
+  const confirmNewMindMap = useCallback(() => {
+    setShowNewWarning(false);
+    isNewMapFlow.current = true;
+    openSaveDialog();
+  }, [openSaveDialog]);
 
   // Undo/Redo handlers
   const handleUndo = useCallback(() => {
@@ -176,56 +229,125 @@ export const MindMap = () => {
   }, []);
 
   // Handle saving mind map with exam category and sub-exam
-  const handleSaveMindMap = useCallback((name: string, examCategory: ExamCategory, subExamName: string) => {
-    saveCurrentMindMap(name, examCategory, subExamName);
-  }, [saveCurrentMindMap]);
+  const handleSaveMindMap = useCallback(async (name: string, examCategory: ExamCategory) => {
+    const emptyHeader = { title: '', description: '', subDetails: '' };
+    if (isNewMapFlow.current) {
+      // New map: persist an empty canvas immediately, then reset UI
+      await saveCurrentMindMap(name, examCategory, emptyHeader, [workspaceBoundaryNode, ...initialNodes], initialEdges);
+      setCurrentExamCategory(examCategory);
+      currentExamCategoryRef.current = examCategory;
+      isNewMapFlow.current = false;
+      setNodes([workspaceBoundaryNode, ...initialNodes]);
+      setEdges(initialEdges);
+      setHeaderData(emptyHeader);
+      mindMapHistory.clear();
+      updateUndoRedoState();
+      skipIsSavedResetRef.current = true;
+      setIsSaved(true);
+    } else {
+      // Normal save: persist whatever is on the canvas right now
+      await saveCurrentMindMap(name, examCategory, headerDataRef.current);
+      setCurrentExamCategory(examCategory);
+      currentExamCategoryRef.current = examCategory;
+      skipIsSavedResetRef.current = true;
+      setIsSaved(true);
+    }
+  }, [saveCurrentMindMap, setNodes, setEdges, updateUndoRedoState]);
 
-  // Record changes to history
+  // Keep always-current refs in sync
+  useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+  useEffect(() => { edgesRef.current = edges; }, [edges]);
+  useEffect(() => { currentMindMapRef.current = currentMindMap; }, [currentMindMap]);
+  useEffect(() => { autoSaveConfigRef.current = autoSaveConfig; }, [autoSaveConfig]);
+  useEffect(() => { headerDataRef.current = headerData; }, [headerData]);
+
+  // Keep exam category ref in sync with state (handles load-map path too)
   useEffect(() => {
-    // Don't record the initial state or states that are a result of undo/redo
-    if (nodes !== initialNodes || edges !== initialEdges) {
+    currentExamCategoryRef.current = currentExamCategory;
+  }, [currentExamCategory]);
+
+  // Record changes to history — debounced 500ms to group rapid small changes
+  useEffect(() => {
+    if (historyTimerRef.current) clearTimeout(historyTimerRef.current);
+    historyTimerRef.current = setTimeout(() => {
       mindMapHistory.record(nodes, edges);
       updateUndoRedoState();
       lastChangeRef.current = Date.now();
-    }
+      if (skipIsSavedResetRef.current) {
+        skipIsSavedResetRef.current = false;
+      } else {
+        setIsSaved(false);
+        // Debounced auto-save: save 2 seconds after the last change
+        if (autoSaveDebounceRef.current) clearTimeout(autoSaveDebounceRef.current);
+        autoSaveDebounceRef.current = setTimeout(async () => {
+          const mapName = currentMindMapRef.current;
+          const cfg = autoSaveConfigRef.current;
+          if (!cfg.enabled || !mapName) return;
+          setAutoSaveStatus('saving');
+          const newCfg = await performAutoSave(
+            {
+              nodes: nodesRef.current,
+              edges: edgesRef.current,
+              name: mapName,
+              examCategory: currentExamCategoryRef.current || undefined,
+              headerData: headerDataRef.current,
+            },
+            cfg
+          );
+          setAutoSaveConfig(newCfg);
+          skipIsSavedResetRef.current = true;
+          setIsSaved(true);
+          setAutoSaveStatus('saved');
+          // Reset indicator after 3 seconds
+          if (autoSaveSavedTimerRef.current) clearTimeout(autoSaveSavedTimerRef.current);
+          autoSaveSavedTimerRef.current = setTimeout(() => setAutoSaveStatus('idle'), 3000);
+        }, 2000);
+      }
+    }, 500);
+    return () => {
+      if (historyTimerRef.current) clearTimeout(historyTimerRef.current);
+    };
   }, [nodes, edges, updateUndoRedoState]);
 
-  // Auto-save functionality
+  // Mark unsaved + trigger auto-save when header data changes
   useEffect(() => {
-    // Clear any existing timer
-    if (autoSaveTimerRef.current) {
-      clearInterval(autoSaveTimerRef.current);
+    if (skipIsSavedResetRef.current) {
+      skipIsSavedResetRef.current = false;
+      return;
     }
+    setIsSaved(false);
+    if (autoSaveDebounceRef.current) clearTimeout(autoSaveDebounceRef.current);
+    autoSaveDebounceRef.current = setTimeout(async () => {
+      const mapName = currentMindMapRef.current;
+      const cfg = autoSaveConfigRef.current;
+      if (!cfg.enabled || !mapName) return;
+      setAutoSaveStatus('saving');
+      const newCfg = await performAutoSave(
+        {
+          nodes: nodesRef.current,
+          edges: edgesRef.current,
+          name: mapName,
+          examCategory: currentExamCategoryRef.current || undefined,
+          headerData: headerDataRef.current,
+        },
+        cfg
+      );
+      setAutoSaveConfig(newCfg);
+      skipIsSavedResetRef.current = true;
+      setIsSaved(true);
+      setAutoSaveStatus('saved');
+      if (autoSaveSavedTimerRef.current) clearTimeout(autoSaveSavedTimerRef.current);
+      autoSaveSavedTimerRef.current = setTimeout(() => setAutoSaveStatus('idle'), 3000);
+    }, 2000);
+  }, [headerData]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Setup new timer if auto-save is enabled
-    if (autoSaveConfig.enabled) {
-      autoSaveTimerRef.current = setInterval(() => {
-        // Only auto-save if there's a current mind map and changes since last save
-        if (currentMindMap && shouldAutoSave(autoSaveConfig)) {
-          const timeSinceLastChange = Date.now() - lastChangeRef.current;
-          
-          // Only save if there were changes in the last minute
-          if (timeSinceLastChange < 60000) {
-            const newConfig = performAutoSave(
-              { nodes, edges, name: currentMindMap, examCategory: (nodes[0]?.data as any)?.examCategory, subExamName: (nodes[0]?.data as any)?.subExamName },
-              autoSaveConfig
-            );
-            
-            if (newConfig.lastSaveTime !== autoSaveConfig.lastSaveTime) {
-              setAutoSaveConfig(newConfig);
-              console.log(`Auto-saved mind map: ${currentMindMap}`);
-            }
-          }
-        }
-      }, 5000); // Check every 5 seconds
-    }
-
+  // Auto-save functionality — legacy interval kept only for the switch UI, actual saving is debounced above
+  useEffect(() => {
+    if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
     return () => {
-      if (autoSaveTimerRef.current) {
-        clearInterval(autoSaveTimerRef.current);
-      }
+      if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
     };
-  }, [autoSaveConfig, currentMindMap, nodes, edges]);
+  }, [autoSaveConfig]);
 
   // Assign API to window for global access
   useEffect(() => {
@@ -245,6 +367,10 @@ export const MindMap = () => {
   // Toggle sidebar visibility
   const handleToggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
+  };
+
+  const handleToggleRightPanel = () => {
+    setRightPanelVisible(!rightPanelVisible);
   };
 
   // Confirm deletion handler for mind maps
@@ -289,6 +415,67 @@ export const MindMap = () => {
     setSelectedNode(node.id);
   };
 
+  // Right-click on empty canvas pane
+  const onPaneContextMenu = useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+    const rect = reactFlowWrapper.current?.getBoundingClientRect();
+    const flowPos = reactFlowInstanceRef.current?.screenToFlowPosition({
+      x: event.clientX - (rect?.left ?? 0),
+      y: event.clientY - (rect?.top ?? 0),
+    }) ?? { x: 0, y: 0 };
+    setContextMenu({ x: event.clientX, y: event.clientY, flowX: flowPos.x, flowY: flowPos.y });
+  }, []);
+
+  // Bulk delete all currently selected nodes
+  const handleDeleteSelected = useCallback(() => {
+    const selected = nodes.filter(n => n.selected && n.id !== '__workspace_boundary__');
+    if (selected.length === 0) return;
+    selected.forEach(n => deleteNode(n.id));
+  }, [nodes, deleteNode]);
+
+  // Select all nodes
+  const handleSelectAll = useCallback(() => {
+    setNodes(nds => nds.map(n =>
+      n.id === '__workspace_boundary__' ? n : { ...n, selected: true }
+    ));
+  }, [setNodes]);
+
+  // Export full canvas (header + canvas) as PNG
+  const handleExportPng = useCallback(async () => {
+    const el = exportAreaRef.current;
+    if (!el) return;
+    try {
+      const dataUrl = await toPng(el, { cacheBust: true, pixelRatio: 2 });
+      const link = document.createElement('a');
+      link.download = `${currentMindMap || 'mindmap'}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (e) {
+      console.error('PNG export failed', e);
+      toast({ title: 'Export failed', description: 'Could not export PNG', variant: 'destructive' });
+    }
+  }, [currentMindMap, toast]);
+
+  // Keyboard shortcut: Ctrl+A select all, Delete for bulk delete
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.ctrlKey && e.key === 'a') {
+        e.preventDefault();
+        handleSelectAll();
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey) {
+        const selected = nodes.filter(n => n.selected && n.id !== '__workspace_boundary__');
+        if (selected.length > 1) {
+          e.preventDefault();
+          selected.forEach(n => deleteNode(n.id));
+        }
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [nodes, handleSelectAll, deleteNode]);
+
   // Get the selected node data
   const getSelectedNodeData = () => {
     return nodes.find(node => node.id === selectedNode)?.data;
@@ -298,37 +485,24 @@ export const MindMap = () => {
   const nodeType = selectedNodeData?.nodeType;
   
   // Check if the selected node is a shape
-  const isShapeNode = nodeType === 'circle' || nodeType === 'rectangle' || nodeType === 'square' || nodeType === 'triangle';
-
-
 
   return (
-    <SidebarProvider>
+    <>
       <div className="w-full h-screen flex">
-        {!sidebarVisible && (
-          <Button 
-            variant="outline"
-            size="sm"
-            className="absolute top-16 left-4 z-50 bg-white shadow-md border flex items-center gap-1"
-            onClick={handleToggleSidebar}
-            title="Show Sidebar"
-          >
-            <ChevronRight className="h-4 w-4" />
-            <span>Tools</span>
-          </Button>
-        )}
-        {sidebarVisible && (
-          <ComponentsSidebar 
-            onAddNode={handleAddNode} 
-            onToggleSidebar={handleToggleSidebar}
-          />
-        )}
+        {/* Left panel */}
+        <ComponentsSidebar
+          onAddNode={handleAddNode}
+          onToggleSidebar={handleToggleSidebar}
+          collapsed={!sidebarVisible}
+        />
         <div className="flex-1 flex flex-col h-screen overflow-hidden">
           <MindMapTopBar
             currentMindMap={currentMindMap}
             onSave={openSaveDialog}
-            handleExport={handleExport}
-            createNewMindMap={createNewMindMap}
+            onNew={handleNewMindMap}
+            isSaved={isSaved}
+            autoSaveStatus={autoSaveStatus}
+            onExportPng={handleExportPng}
             loadExistingMindMap={loadExistingMindMap}
             handleDeleteMindMap={handleDeleteMindMap}
             onUndo={handleUndo}
@@ -340,6 +514,7 @@ export const MindMap = () => {
           />
           
           {/* Mind Map Header */}
+          <div ref={exportAreaRef} className="flex flex-col flex-1 overflow-hidden">
           <MindMapHeader
             data={headerData}
             onChange={setHeaderData}
@@ -356,6 +531,8 @@ export const MindMap = () => {
               onConnect={onConnect}
               onEdgeClick={onEdgeClick}
               onNodeClick={onNodeClick}
+              onPaneContextMenu={onPaneContextMenu}
+              onPaneClick={() => setContextMenu(null)}
               onInit={(instance) => {
                 reactFlowInstanceRef.current = instance;
               }}
@@ -363,69 +540,57 @@ export const MindMap = () => {
               onDragOver={onDragOver}
               nodeTypes={nodeTypes}
               fitView
+              selectionOnDrag
+              multiSelectionKeyCode="Shift"
+              selectionKeyCode="Shift"
               nodeExtent={[[WORKSPACE_X, WORKSPACE_Y], [WORKSPACE_X + WORKSPACE_WIDTH, WORKSPACE_Y + WORKSPACE_HEIGHT]]}
             >
             <Controls />
             <MiniMap />
             <Background gap={12} size={1} />
-            
-            {selectedEdge && edges.find(edge => edge.id === selectedEdge) && (
-              <EdgeSettings 
-                id={selectedEdge} 
-                data={edges.find(edge => edge.id === selectedEdge)?.data || {}} 
-              />
-            )}
           </ReactFlow>
           </div>
+          </div>
           
-          {/* Settings Button for specialized nodes - only visible when a specialized node is selected */}
-          {selectedNode && (
-            nodeType === 'checklist' || 
-            nodeType === 'resource' || 
-            isShapeNode ||
-            nodeType === 'note' ||
-            nodeType === 'concept'
-          ) && (
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button 
-                  className="absolute right-4 top-16 z-10 bg-white shadow-md border"
-                  variant="outline"
-                  size="sm"
-                >
-                  <Settings className="h-4 w-4 mr-1" />
-                  {nodeType === 'checklist' ? 'Checklist' : 
-                   nodeType === 'resource' ? 'Resources' : 
-                   nodeType === 'note' ? 'Note' :
-                   nodeType === 'concept' ? 'Concept' :
-                   'Shape'} Settings
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="w-[90%] max-w-[600px] max-h-[80vh] overflow-y-auto">
-                {nodeType === 'checklist' && selectedNodeData && (
-                  <ChecklistSettings nodeId={selectedNode} data={selectedNodeData} />
-                )}
-                
-                {nodeType === 'resource' && selectedNodeData && (
-                  <ResourceSettings nodeId={selectedNode} data={selectedNodeData} />
-                )}
-                
-                {isShapeNode && selectedNodeData && (
-                  <ShapeSettings nodeId={selectedNode} data={selectedNodeData} />
-                )}
-
-                {nodeType === 'note' && selectedNodeData && (
-                  <NoteSettings nodeId={selectedNode} data={selectedNodeData} />
-                )}
-                
-                {nodeType === 'concept' && selectedNodeData && (
-                  <ConceptSettings nodeId={selectedNode} data={selectedNodeData} />
-                )}
-              </DialogContent>
-            </Dialog>
-          )}
         </div>
+
+        {/* Right panel or collapsed bar */}
+        {rightPanelVisible ? (
+          <RightPanel
+            onToggle={handleToggleRightPanel}
+            selectedNode={selectedNode}
+            nodeType={nodeType}
+            selectedNodeData={selectedNodeData as any}
+            selectedEdgeId={selectedEdge}
+            selectedEdgeData={selectedEdge ? (edges.find(e => e.id === selectedEdge)?.data ?? null) : null}
+          />
+        ) : (
+          <button
+            onClick={handleToggleRightPanel}
+            title="Open Properties"
+            className="h-full w-10 flex-shrink-0 flex flex-col items-center justify-center gap-1 bg-white border-l border-gray-200 hover:bg-gray-50 transition-colors group"
+          >
+            <ChevronLeft className="h-3.5 w-3.5 text-gray-400 group-hover:text-gray-600" />
+            <span className="[writing-mode:vertical-rl] text-[10px] font-medium text-gray-400 group-hover:text-gray-600 tracking-widest uppercase">Props</span>
+          </button>
+        )}
       </div>
+
+      {/* Canvas right-click context menu */}
+      {contextMenu && (
+        <CanvasContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          flowPosition={{ x: contextMenu.flowX, y: contextMenu.flowY }}
+          onClose={() => setContextMenu(null)}
+          onAddNode={(type, pos) => addNode(type as any, { position: pos })}
+          onPaste={() => { window.mindmapApi?.pasteNode?.(); }}
+          onSelectAll={handleSelectAll}
+          onDeleteSelected={handleDeleteSelected}
+          hasSelection={nodes.some(n => n.selected && n.id !== '__workspace_boundary__')}
+          hasClipboard={!!localStorage.getItem('mindmap-copied-node')}
+        />
+      )}
 
       {/* Mind Map Delete Dialog */}
       <MindMapDeleteDialog
@@ -440,7 +605,26 @@ export const MindMap = () => {
         onOpenChange={setIsSaveDialogOpen}
         onSave={handleSaveMindMap}
         currentName={currentMindMap}
+        isNewFlow={isNewMapFlow.current}
       />
-    </SidebarProvider>
+
+      {/* Unsaved changes warning before creating new map */}
+      <AlertDialog open={showNewWarning} onOpenChange={setShowNewWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your current mind map has unsaved changes. Creating a new map will discard them. Do you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go Back</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmNewMindMap} className="bg-red-600 hover:bg-red-700">
+              Continue (Discard Changes)
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };

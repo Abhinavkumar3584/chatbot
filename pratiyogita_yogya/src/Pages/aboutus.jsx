@@ -116,26 +116,26 @@ const AboutUs = () => {
   } */
 `}</style>
 
-<div className="bg-gray-100 py-12 pb-0 px-4 sm:px-6 lg:px-8">
+<div className="py-12 pb-0 px-4 sm:px-6 lg:px-8 pt-20">
   {/* About Us Section - MODERNIZED */}
-  <div className="w-full max-w-[1280px] mx-auto p-6 sm:p-8 lg:p-10 bg-gradient-to-br from-white to-gray-50 rounded-[20px] shadow-lg mt-8 relative overflow-hidden">
+  <div className="w-full max-w-[1280px] mx-auto p-6 sm:p-8 lg:p-10 rounded-[20px] relative overflow-hidden" style={{background: 'rgba(43,30,23,0.6)', border: '1px solid rgba(228,87,46,0.30)'}}>
     {/* Decorative Elements - Modified positioning */}
-    <div className="absolute top-0 left-0 w-20 h-20 bg-blue-50 rounded-full opacity-30 -translate-x-1/3 -translate-y-1/3"></div>
-    <div className="absolute bottom-0 right-0 w-32 h-32 bg-green-50 rounded-full opacity-30 translate-x-1/3 translate-y-1/3"></div>
+    <div className="absolute top-0 left-0 w-20 h-20 rounded-full opacity-20 -translate-x-1/3 -translate-y-1/3" style={{background: 'rgba(228,87,46,0.3)'}}></div>
+    <div className="absolute bottom-0 right-0 w-32 h-32 rounded-full opacity-20 translate-x-1/3 translate-y-1/3" style={{background: 'rgba(232,216,195,0.2)'}}></div>
     
     {/* Heading with Underline */}
     <div className="relative">
-      <h2 className="text-center text-gray-800 text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
+      <h2 className="text-center text-[#FBF6EE] text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
         About Us
       </h2>
-      <div className="h-1 w-20 bg-gradient-to-r from-blue-500 to-green-500 mx-auto mt-3 rounded-full"></div>
+      <div className="h-1 w-20 bg-[#E4572E] mx-auto mt-3 rounded-full"></div>
     </div>
 
   {/* Content Wrapper */}
   <div className="mt-2 flex flex-col items-center gap-8 relative">
-    <div className="w-full p-6 bg-blue-50 rounded-lg border-l-4 border-blue-500 text-gray-700 text-base sm:text-lg leading-relaxed">
+    <div className="w-full p-6 rounded-lg border-l-4 border-[#E4572E] text-[#E8D8C3] text-base sm:text-lg leading-relaxed" style={{background: 'rgba(43,30,23,0.5)'}}>
       <p className="mb-4 italic">
-        We are <span className="font-semibold text-blue-700">Abhinav Kumar</span>, <span className="font-semibold text-blue-700">Manu Dev</span>, and <span className="font-semibold text-blue-700">Nitish Yadav</span>, and we created <span className="font-semibold">Pratiyogita Setu</span> with a simple purpose -
+        We are <span className="font-semibold text-[#E4572E]">Abhinav Kumar</span>, <span className="font-semibold text-[#E4572E]">Manu Dev</span>, and <span className="font-semibold text-[#E4572E]">Nitish Yadav</span>, and we created <span className="font-semibold text-[#FBF6EE]">Pratiyogita Setu</span> with a simple purpose -
         to bring clarity, direction, and confidence to students preparing for competitive examinations.
       </p>
       <p className="mb-4">
@@ -148,7 +148,7 @@ const AboutUs = () => {
         Others spend years preparing for exams they may never qualify for.
         And many feel lost in a system filled with scattered information and uncertainty.
       </p>
-      <p className="mb-4 font-semibold text-gray-800">Pratiyogita Setu was built to change that.</p>
+      <p className="mb-4 font-semibold text-[#FBF6EE]">Pratiyogita Setu was built to change that.</p>
       <p className="mb-4">
         We believe that the first step toward success is clear and reliable guidance.
         Our platform helps aspirants understand their real eligibility, plan their preparation with structure,
@@ -171,7 +171,7 @@ const AboutUs = () => {
         {/* Meet The Team Section */}
         <div className="w-full max-w-[1280px] mx-auto p-4 sm:p-8 lg:p-6 mt-1">
           {/* Heading */}
-          <h2 className="text-center text-black text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
+          <h2 className="text-center text-[#FBF6EE] text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
             Meet the Team
           </h2>
 
@@ -188,7 +188,7 @@ const AboutUs = () => {
                 </div>
 
                 {/* Profile Picture */}
-                <div className="w-[200px] h-[250px] bg-gray-300 rounded-[20px] overflow-hidden flex items-center justify-center">
+                <div className="w-[200px] h-[250px] rounded-[20px] overflow-hidden flex items-center justify-center" style={{background: 'rgba(43,30,23,0.5)', border: '1px solid rgba(228,87,46,0.20)'}}>
                   <img 
                     src={member.image} 
                     alt={member.role} 
@@ -201,7 +201,7 @@ const AboutUs = () => {
                 </div>
                 
                 {/* Member Name */}
-                <h3 className="text-gray-700 text-s sm:text-1xl font-bold leading-7 mt-3">
+                <h3 className="text-[#E8D8C3] text-s sm:text-1xl font-bold leading-7 mt-3">
                   {member.name}
                 </h3>
 
@@ -213,12 +213,12 @@ const AboutUs = () => {
                       href={social.url}
                       target="_blank"
                       rel="noopener noreferrer" 
-                      className="w-8 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                      className="w-8 h-10 rounded-full flex items-center justify-center hover:bg-[#E4572E]/20 transition-colors" style={{background: 'rgba(43,30,23,0.5)'}}>
                     >
                       <img 
                         src={socialIcons[social.type]} 
                         alt={social.type} 
-                        className="w-5 h-5 invert-0" 
+                        className="w-5 h-5 invert" 
                       />
                     </a>
                   ))}

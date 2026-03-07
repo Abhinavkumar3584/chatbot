@@ -52,7 +52,7 @@ const EDUCATION_LEVEL_KEY_MAP = {
     'BELOW 10TH': 'below_10th',
     'BELOW_10TH': 'below_10th',
     'NO EDUCATION': 'no_education',
-    'NO_EDUCATION': 'no_education'
+    'NO_EXAMSUCATION': 'no_education'
 };
 
 /**

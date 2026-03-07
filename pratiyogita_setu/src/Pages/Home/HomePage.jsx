@@ -1,5 +1,6 @@
 import React from "react";
 import HeroSection from "../../Components/Home/HeroSection";
+import BackedBySection from "../../Components/Home/BackedBySection";
 import FeatureSection from "../../Components/Home/FeatureSection";
 import FAQSection from "../../Components/Home/FAQSection";
 import WhoIsItFor from "../../Components/Home/WhoIsItFor/whoisitfor.jsx";
@@ -14,6 +15,7 @@ const HomePage = () => {
       </div> */}
 
       <HeroSection />
+      <BackedBySection />
       <ProblemSection />
 
       <FeatureSection />

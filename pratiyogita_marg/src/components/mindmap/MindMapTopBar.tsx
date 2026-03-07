@@ -1,37 +1,37 @@
-
+﻿
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { 
   Save, 
   FolderOpen, 
-  Download, 
   FilePlus, 
   ChevronDown, 
   Trash2,
-  Settings,
   Undo,
   Redo,
-  BookOpen,
-  Eye
+  Eye,
+  CheckCircle2,
+  Loader2,
+  Cloud,
+  Download,
 } from 'lucide-react';
-import { getAllMindMaps, syncMindMapsFromFirebaseToLocal } from '@/utils/mindmapStorage';
-import { useToast } from '@/hooks/use-toast';
-import { AutoSaveSettings } from './AutoSaveSettings';
-import { AutoSaveConfig } from '@/utils/mindmapAutoSave';
+import { getAllMindMaps } from '@/utils/mindmapStorage';
+import { AutoSaveConfig, saveAutoSaveConfig } from '@/utils/mindmapAutoSave';
 
 interface MindMapTopBarProps {
   currentMindMap: string;
   onSave: () => void;
-  handleExport: () => void;
-  createNewMindMap: () => void;
+  onNew: () => void;
+  isSaved: boolean;
+  autoSaveStatus: 'idle' | 'saving' | 'saved';
+  onExportPng: () => void;
   loadExistingMindMap: (name: string) => void;
   handleDeleteMindMap: (name: string) => void;
   onUndo: () => void;
@@ -45,8 +45,10 @@ interface MindMapTopBarProps {
 export const MindMapTopBar = ({
   currentMindMap,
   onSave,
-  handleExport,
-  createNewMindMap,
+  onNew,
+  isSaved,
+  autoSaveStatus,
+  onExportPng,
   loadExistingMindMap,
   handleDeleteMindMap,
   onUndo,
@@ -56,57 +58,38 @@ export const MindMapTopBar = ({
   autoSaveConfig,
   onAutoSaveConfigChange
 }: MindMapTopBarProps) => {
-  const [isCreating, setIsCreating] = useState(false);
-  const [autoSaveDialogOpen, setAutoSaveDialogOpen] = useState(false);
-  const { toast } = useToast();
-  
   const [existingMaps, setExistingMaps] = useState<string[]>([]);
 
   useEffect(() => {
     const refreshMindMaps = async () => {
-      await syncMindMapsFromFirebaseToLocal();
-      setExistingMaps(getAllMindMaps());
+      const maps = await getAllMindMaps();
+      setExistingMaps(maps.map(m => m.name));
     };
-
     void refreshMindMaps();
   }, [currentMindMap]);
 
-  const handleCreateClick = () => {
-    createNewMindMap();
-  };
-
   return (
     <>
-      <div className="bg-white shadow-sm border-b p-2 2xl:p-2.5 flex items-center gap-2">
+      <div className="bg-white border-b border-gray-200 px-2 py-1.5 flex items-center gap-1.5">
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={handleCreateClick} 
+          onClick={onNew}
           className="gap-1"
         >
           <FilePlus className="h-4 w-4" />
           New
         </Button>
-        
+
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={onSave} 
-          className="gap-1"
+          onClick={onSave}
+          disabled={isSaved}
+          className={`gap-1 transition-colors ${isSaved ? 'text-green-600 border-green-300 bg-green-50 hover:bg-green-50' : ''}`}
         >
-          <Save className="h-4 w-4" />
-          Save
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleExport} 
-          disabled={!currentMindMap} 
-          className="gap-1"
-        >
-          <Download className="h-4 w-4" />
-          Export
+          {isSaved ? <CheckCircle2 className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+          {isSaved ? 'Saved' : 'Save'}
         </Button>
         
         <DropdownMenu>
@@ -118,7 +101,7 @@ export const MindMapTopBar = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
             {existingMaps.length === 0 ? (
-              <div className="px-2 py-4 text-center text-sm text-gray-500">
+              <div className="px-2 py-4 text-center text-base text-gray-500">
                 No saved mind maps
               </div>
             ) : (
@@ -144,9 +127,9 @@ export const MindMapTopBar = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Undo/Redo Buttons */}
-        <div className="border-l mx-1 h-6"></div>
-        
+        {/* Undo/Redo */}
+        <div className="w-px h-6 bg-gray-200 mx-0.5 flex-shrink-0" />
+
         <Button 
           variant="outline" 
           size="sm" 
@@ -168,29 +151,26 @@ export const MindMapTopBar = ({
         >
           <Redo className="h-4 w-4" />
         </Button>
-        
-        {/* Auto-save settings */}
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => setAutoSaveDialogOpen(true)}
-          title="Auto-save Settings"
-          className="px-2"
-        >
-          <Settings className="h-4 w-4" />
-        </Button>        
-        {/* Browse Exams Button */}
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => window.open('/exams', '_blank')}
-          title="Browse Exams"
-          className="px-2 gap-1"
-        >
-          <BookOpen className="h-4 w-4" />
-          <span>Browse</span>
-        </Button>
-        
+
+        {/* Auto-save toggle */}
+        <div className="w-px h-6 bg-gray-200 mx-0.5 flex-shrink-0" />
+        <div className="flex items-center gap-1.5 px-1">
+          <Switch
+            id="autosave-toggle"
+            checked={autoSaveConfig.enabled}
+            onCheckedChange={(checked) => {
+              const newConfig = { ...autoSaveConfig, enabled: checked };
+              saveAutoSaveConfig(newConfig);
+              onAutoSaveConfigChange(newConfig);
+            }}
+          />
+          <label htmlFor="autosave-toggle" className="text-sm text-gray-600 cursor-pointer select-none whitespace-nowrap">
+            Auto-save
+          </label>
+        </div>
+
+        {/* Auto-save cloud indicator — shown to the RIGHT of the cloud save */}
+
         {/* View Mind Map Button */}
         <Button 
           variant="default" 
@@ -207,26 +187,38 @@ export const MindMapTopBar = ({
         >
           <Eye className="h-4 w-4" />
           <span>View</span>
-        </Button>        
-        <div className="ml-auto flex items-center gap-2">
-          {autoSaveConfig.enabled && (
-            <div className="text-xs 2xl:text-sm px-2 py-1 bg-blue-100 rounded-full">
-              Auto-save: {Math.floor(autoSaveConfig.interval / 1000)}s
-            </div>
-          )}
-          <div className="text-sm 2xl:text-base font-medium">
-            {currentMindMap ? `Current: ${currentMindMap}` : 'Unsaved mind map'}
+        </Button>
+
+        {/* Export as PNG */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onExportPng}
+          title="Export as PNG (header + canvas)"
+          className="px-2 gap-1"
+        >
+          <Download className="h-4 w-4" />
+          <span>Export PNG</span>
+        </Button>
+
+        {/* Auto-save cloud indicator: appears right of View button */}
+        {autoSaveStatus !== 'idle' && (
+          <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
+            autoSaveStatus === 'saving' ? 'text-blue-600 bg-blue-50' : 'text-green-600 bg-green-50'
+          }`}>
+            {autoSaveStatus === 'saving' ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /><span>Saving...</span></>
+            ) : (
+              <><Cloud className="h-3.5 w-3.5" /><CheckCircle2 className="h-3.5 w-3.5" /><span>Saved to cloud</span></>
+            )}
           </div>
+        )}        
+        <div className="ml-auto">
+          <span className="text-sm font-medium text-gray-600">
+            {currentMindMap || 'Unsaved mind map'}
+          </span>
         </div>
       </div>
-
-      {/* Auto-save Settings Dialog */}
-      <AutoSaveSettings
-        open={autoSaveDialogOpen}
-        onOpenChange={setAutoSaveDialogOpen}
-        config={autoSaveConfig}
-        onConfigChange={onAutoSaveConfigChange}
-      />
     </>
   );
 };

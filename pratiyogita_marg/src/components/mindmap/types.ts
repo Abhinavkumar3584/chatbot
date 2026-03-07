@@ -48,6 +48,7 @@ export interface BaseNodeData {
   opacity?: number;
   textAlign?: 'left' | 'center' | 'right';
   fontFamily?: string;
+  fontWeight?: FontWeight;
   legend?: {
     enabled: boolean;
     position: LegendPosition;
@@ -113,52 +114,41 @@ export type EdgeData = {
 export type OnEdgeClick = (event: React.MouseEvent, edge: MindMapEdge) => void;
 
 export type FontSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 's' | 'm' | 'l';
+export type FontWeight = 'light' | 'normal' | 'medium' | 'semibold' | 'bold' | 'extrabold';
 export type NodeContent = { title?: string; description?: string; links?: { label: string; url: string }[] };
 export type LegendPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'left-top' | 'left-center' | 'left-bottom' | 'right-top' | 'right-center' | 'right-bottom';
 
 export type ExamCategory = 
-  | 'SSC EXAMS'
-  | 'BANKING EXAMS'
-  | 'CIVIL SERVICES EXAMS'
-  | 'RAILWAY EXAMS'
-  | 'DEFENCE EXAMS'
-  | 'INSURANCES EXAMS'
-  | 'NURSING EXAMS'
-  | 'PG EXAMS'
-  | 'CAMPUS PLACEMENT EXAMS'
-  | 'MBA EXAMS'
-  | 'ACCOUNTING AND COMMERCE EXAMS'
-  | 'JUDICIARY EXAMS'
-  | 'REGULATORY BODY EXAMS'
-  | 'CUET AND UG ENTRANCE EXAMS'
-  | 'POLICE EXAMS'
-  | 'OTHER GOVT. EXAMS'
-  | 'SCHOOL EXAMS'
-  | 'TEACHING EXAMS'
-  | 'ENGINEERING RECRUITING EXAMS'
-  | 'LABOUR EXAMS';
+  | 'SSC_EXAMS'
+  | 'BANKING_EXAMS'
+  | 'CIVIL_SERVICES_EXAMS'
+  | 'DEFENCE_EXAMS'
+  | 'ENGINEERING_RECRUITING_EXAMS'
+  | 'INSURANCE_EXAMS'
+  | 'MBA_EXAMS'
+  | 'NURSUING_EXAMS'
+  | 'PG_EXAMS'
+  | 'POLICE_EXAMS'
+  | 'RAILWAY_EXAMS'
+  | 'SCHOOL_EXAMS'
+  | 'TEACHING_EXAMS'
+  | 'UG_EXAMS';
 
 export const EXAM_CATEGORIES: ExamCategory[] = [
-  'SSC EXAMS',
-  'BANKING EXAMS',
-  'CIVIL SERVICES EXAMS',
-  'RAILWAY EXAMS',
-  'DEFENCE EXAMS',
-  'INSURANCES EXAMS',
-  'NURSING EXAMS',
-  'PG EXAMS',
-  'CAMPUS PLACEMENT EXAMS',
-  'MBA EXAMS',
-  'ACCOUNTING AND COMMERCE EXAMS',
-  'JUDICIARY EXAMS',
-  'REGULATORY BODY EXAMS',
-  'CUET AND UG ENTRANCE EXAMS',
-  'POLICE EXAMS',
-  'OTHER GOVT. EXAMS',
-  'SCHOOL EXAMS',
-  'TEACHING EXAMS',
-  'ENGINEERING RECRUITING EXAMS',
-  'LABOUR EXAMS'
+  'SSC_EXAMS',
+  'BANKING_EXAMS',
+  'CIVIL_SERVICES_EXAMS',
+  'DEFENCE_EXAMS',
+  'ENGINEERING_RECRUITING_EXAMS',
+  'INSURANCE_EXAMS',
+  'MBA_EXAMS',
+  'NURSUING_EXAMS',
+  'PG_EXAMS',
+  'POLICE_EXAMS',
+  'RAILWAY_EXAMS',
+  'SCHOOL_EXAMS',
+  'TEACHING_EXAMS',
+  'UG_EXAMS'
 ];
 
 // Add a global declaration for the mindmapApi

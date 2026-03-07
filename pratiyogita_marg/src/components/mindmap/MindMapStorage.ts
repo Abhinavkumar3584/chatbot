@@ -16,6 +16,7 @@ interface UseMindMapStorageProps {
   initialNodes: any[];
   headerData?: MindMapHeaderData;
   setHeaderData?: React.Dispatch<React.SetStateAction<MindMapHeaderData>>;
+  setCurrentExamCategory?: React.Dispatch<React.SetStateAction<ExamCategory | ''>>;
 }
 
 export const useMindMapStorage = ({
@@ -28,7 +29,8 @@ export const useMindMapStorage = ({
   setMindMapToDelete,
   initialNodes,
   headerData,
-  setHeaderData
+  setHeaderData,
+  setCurrentExamCategory
 }: UseMindMapStorageProps) => {
   const { toast } = useToast();
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
@@ -47,11 +49,11 @@ export const useMindMapStorage = ({
     window.open(exportUrl, '_blank');
   }, [currentMindMap, toast]);
 
-  const createNewMindMap = useCallback(() => {
+  const createNewMindMap = useCallback(async () => {
     const name = prompt('Enter a name for the new mind map:');
     if (!name) return;
 
-    const success = saveMindMap({
+    const success = await saveMindMap({
       nodes: initialNodes,
       edges: [],
       name
@@ -74,16 +76,27 @@ export const useMindMapStorage = ({
     }
   }, [initialNodes, setNodes, setEdges, setCurrentMindMap, toast]);
 
-  const loadExistingMindMap = useCallback((name: string) => {
-    const data = loadMindMap(name);
+  const loadExistingMindMap = useCallback(async (name: string) => {
+    const data = await loadMindMap(name);
     if (data) {
       setNodes(data.nodes);
-      setEdges(data.edges);
+      // Normalize loaded edges: strip any leftover animated flag and arrow markers
+      setEdges((data.edges || []).map(e => ({
+        ...e,
+        animated: false,
+        markerEnd: undefined,
+        markerStart: undefined,
+      })));
       setCurrentMindMap(name);
       
-      // Load header data if available
-      if (data.headerData && setHeaderData) {
-        setHeaderData(data.headerData);
+      // Always reset header data — use saved value or fall back to empty
+      if (setHeaderData) {
+        setHeaderData(data.headerData || { title: '', description: '', subDetails: '' });
+      }
+
+      // Restore exam category
+      if (setCurrentExamCategory && data.examCategory) {
+        setCurrentExamCategory(data.examCategory as ExamCategory);
       }
       
       toast({
@@ -103,10 +116,10 @@ export const useMindMapStorage = ({
     setMindMapToDelete(name);
   }, [setMindMapToDelete]);
 
-  const confirmDeleteMindMap = useCallback((mindMapToDelete: string | null) => {
+  const confirmDeleteMindMap = useCallback(async (mindMapToDelete: string | null) => {
     if (!mindMapToDelete) return;
 
-    const success = deleteMindMap(mindMapToDelete);
+    const success = await deleteMindMap(mindMapToDelete);
     if (success) {
       if (currentMindMap === mindMapToDelete) {
         setNodes(initialNodes);
@@ -130,21 +143,26 @@ export const useMindMapStorage = ({
     setIsSaveDialogOpen(true);
   }, []);
 
-  const saveCurrentMindMap = useCallback((name: string, examCategory: ExamCategory, subExamName: string) => {
-    const success = saveMindMap({ 
-      nodes, 
-      edges, 
+  const saveCurrentMindMap = useCallback(async (
+    name: string,
+    examCategory: ExamCategory,
+    overrideHeaderData?: MindMapHeaderData,
+    nodesOverride?: any[],
+    edgesOverride?: any[]
+  ) => {
+    const success = await saveMindMap({ 
+      nodes: nodesOverride !== undefined ? nodesOverride : nodes, 
+      edges: edgesOverride !== undefined ? edgesOverride : edges, 
       name,
       examCategory,
-      subExamName,
-      headerData
+      headerData: overrideHeaderData !== undefined ? overrideHeaderData : headerData
     });
     
     if (success) {
       setCurrentMindMap(name);
       toast({
         title: "Success",
-        description: `Saved mind map: ${name} under ${examCategory} - ${subExamName}`,
+        description: `Saved mind map: ${name} under ${examCategory}`,
       });
     } else {
       toast({

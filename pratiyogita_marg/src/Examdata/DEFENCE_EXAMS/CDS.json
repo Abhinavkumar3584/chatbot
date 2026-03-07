@@ -1,0 +1,167 @@
+{
+  "nodes": [
+    {
+      "id": "__workspace_boundary__",
+      "type": "workspace",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "id": "__workspace_boundary__",
+        "label": "",
+        "nodeType": "workspace"
+      },
+      "selectable": false,
+      "draggable": false,
+      "deletable": false,
+      "focusable": false,
+      "style": {
+        "zIndex": -1
+      },
+      "measured": {
+        "width": 800,
+        "height": 3000
+      }
+    },
+    {
+      "id": "1",
+      "type": "base",
+      "data": {
+        "id": "1",
+        "label": "Main Idea",
+        "nodeType": "title",
+        "backgroundColor": "#fee2e2",
+        "strokeColor": "#ef4444",
+        "strokeWidth": 3,
+        "strokeStyle": "solid",
+        "fontSize": "m",
+        "textAlign": "center",
+        "opacity": 1,
+        "width": 100,
+        "height": 40
+      },
+      "position": {
+        "x": 73.73218666915676,
+        "y": 60.41119326567018
+      },
+      "measured": {
+        "width": 108,
+        "height": 48
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "106c2813-d82f-4667-abda-b6c3b152502b",
+      "type": "base",
+      "data": {
+        "id": "1",
+        "label": "Main Idea",
+        "nodeType": "title",
+        "backgroundColor": "#fee2e2",
+        "strokeColor": "#ef4444",
+        "strokeWidth": 3,
+        "strokeStyle": "solid",
+        "fontSize": "m",
+        "textAlign": "center",
+        "opacity": 1,
+        "hasCheckbox": false,
+        "isChecked": false,
+        "width": 100,
+        "height": 40,
+        "position": {
+          "x": 356.6604967017433,
+          "y": 73.41175051681167
+        }
+      },
+      "position": {
+        "x": 538.2941247415941,
+        "y": 260.93165353943544
+      },
+      "measured": {
+        "width": 108,
+        "height": 48
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "6618c4af-fe58-4a22-8347-a4098fd93e97",
+      "type": "base",
+      "data": {
+        "id": "1",
+        "label": "Main Idea",
+        "nodeType": "title",
+        "backgroundColor": "#fee2e2",
+        "strokeColor": "#ef4444",
+        "strokeWidth": 3,
+        "strokeStyle": "solid",
+        "fontSize": "m",
+        "textAlign": "center",
+        "opacity": 1,
+        "hasCheckbox": false,
+        "isChecked": false,
+        "width": 100,
+        "height": 40,
+        "position": {
+          "x": 406.6604967017433,
+          "y": 123.41175051681167
+        }
+      },
+      "position": {
+        "x": 383.1153967706515,
+        "y": 97.34396130738862
+      },
+      "measured": {
+        "width": 108,
+        "height": 48
+      },
+      "selected": false,
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "6618c4af-fe58-4a22-8347-a4098fd93e97",
+      "sourceHandle": "left-source",
+      "target": "1",
+      "targetHandle": "bottom-target",
+      "type": "default",
+      "animated": false,
+      "data": {
+        "strokeStyle": "solid",
+        "strokeWidth": 1,
+        "strokeColor": "#000000",
+        "arrowEnd": false,
+        "pathStyle": "straight"
+      },
+      "id": "xy-edge__6618c4af-fe58-4a22-8347-a4098fd93e97left-source-1bottom-target"
+    },
+    {
+      "source": "106c2813-d82f-4667-abda-b6c3b152502b",
+      "sourceHandle": "left-source",
+      "target": "6618c4af-fe58-4a22-8347-a4098fd93e97",
+      "targetHandle": "bottom-target",
+      "type": "default",
+      "animated": false,
+      "data": {
+        "strokeStyle": "solid",
+        "strokeWidth": 1,
+        "strokeColor": "#000000",
+        "arrowEnd": false,
+        "pathStyle": "straight"
+      },
+      "id": "xy-edge__106c2813-d82f-4667-abda-b6c3b152502bleft-source-6618c4af-fe58-4a22-8347-a4098fd93e97bottom-target",
+      "selected": true
+    }
+  ],
+  "name": "CDS",
+  "examCategory": "DEFENCE_EXAMS",
+  "headerData": {
+    "title": "",
+    "description": "",
+    "subDetails": ""
+  },
+  "savedAt": "2026-03-03T08:14:12.336Z"
+}

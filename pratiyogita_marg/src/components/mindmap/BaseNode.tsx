@@ -4,8 +4,6 @@ import { MindMapNodeProps } from './types';
 import { NodeContextMenu } from './node-components/NodeContextMenu';
 import { NodeContent } from './node-components/NodeContent';
 import { NodeContainer } from './node-components/NodeContainer';
-import { SettingsButton } from './node-components/SettingsButton';
-import { NodeSettings } from './NodeSettings';
 import { getNodeStyle } from './utils/fontSizeUtils';
 
 export const BaseNode = ({ data, id, selected }: MindMapNodeProps) => {
@@ -65,13 +63,7 @@ export const BaseNode = ({ data, id, selected }: MindMapNodeProps) => {
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
         />
-        {/* Only show settings in edit mode, not in view mode */}
-        {selected && !document.querySelector('[data-viewmode="true"]') && (
-          <>
-            <SettingsButton onClick={() => {}} />
-            <NodeSettings data={nodeData} nodeId={id} />
-          </>
-        )}
+
       </NodeContainer>
     </NodeContextMenu>
   );

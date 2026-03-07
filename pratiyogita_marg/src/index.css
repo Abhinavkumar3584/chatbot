@@ -82,6 +82,15 @@ html {
   @apply select-none;
 }
 
+/* Strip default box wrapper from line nodes — only the line itself should be visible */
+.react-flow__node-hline,
+.react-flow__node-vline {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
 .react-flow__handle {
   @apply opacity-0 transition-opacity;
 }
@@ -137,3 +146,4 @@ html {
 .animate-marquee-reverse {
   animation: marquee-reverse 30s linear infinite;
 }
+

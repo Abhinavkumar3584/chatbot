@@ -50,11 +50,11 @@ export const shouldAutoSave = (config: AutoSaveConfig): boolean => {
 };
 
 // Perform the actual auto-save operation
-export const performAutoSave = (data: MindMapData, config: AutoSaveConfig): AutoSaveConfig => {
+export const performAutoSave = async (data: MindMapData, config: AutoSaveConfig): Promise<AutoSaveConfig> => {
   if (!data.name || !config.enabled) return config;
   
   try {
-    saveMindMap(data);
+    await saveMindMap(data);
     
     // Update the last save time
     const updatedConfig = {

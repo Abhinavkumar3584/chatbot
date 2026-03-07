@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -186,14 +186,14 @@ export const ChecklistSettings: React.FC<ChecklistSettingsProps> = ({ nodeId, da
                   <div className="flex-1">
                     <label 
                       htmlFor={`checklist-setting-${item.id}`}
-                      className={`text-sm ${item.isChecked ? 'line-through text-gray-500' : ''}`}
+                      className={`text-base ${item.isChecked ? 'line-through text-gray-500' : ''}`}
                     >
                       {item.text}
                     </label>
                     
                     <div className="flex items-center mt-1">
-                      <span className="text-xs text-gray-500 mr-2">Priority:</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full inline-flex items-center justify-center ${
+                      <span className="text-base text-gray-500 mr-2">Priority:</span>
+                      <span className={`text-base px-2 py-0.5 rounded-full inline-flex items-center justify-center ${
                         item.priority === 'high' ? 'bg-red-100 text-red-800' : 
                         item.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
                         'bg-green-100 text-green-800'
@@ -230,7 +230,7 @@ export const ChecklistSettings: React.FC<ChecklistSettingsProps> = ({ nodeId, da
           ))}
           
           {checklistItems.length === 0 && (
-            <div className="text-center py-4 text-gray-500 text-sm">
+            <div className="text-center py-4 text-gray-500 text-base">
               No checklist items added yet. Create your first item below.
             </div>
           )}
@@ -238,7 +238,7 @@ export const ChecklistSettings: React.FC<ChecklistSettingsProps> = ({ nodeId, da
         
         {/* Add/Edit item form */}
         <div className="space-y-3 p-3 border rounded-md">
-          <h4 className="text-sm font-medium">
+          <h4 className="text-base font-medium">
             {editingItemId ? 'Edit Item' : 'Add New Item'}
           </h4>
           <div className="space-y-3">

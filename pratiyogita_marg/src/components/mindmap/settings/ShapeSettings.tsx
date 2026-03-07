@@ -1,4 +1,4 @@
-
+﻿
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { BaseNodeData } from "../types";
+import { BaseNodeData, FontWeight } from "../types";
 import { 
   Circle, Square, Triangle, RotateCw, AlignCenter, AlignLeft, 
   AlignRight, AlignStartVertical, AlignEndVertical, AlignCenterVertical,
@@ -86,7 +86,7 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
         <TabsContent value="style" className="space-y-6 mt-4">
           <div className="space-y-4">
             <div>
-              <h4 className="text-sm font-medium mb-3">Label</h4>
+              <h4 className="text-base font-medium mb-3">Label</h4>
               <Input
                 value={data.label}
                 onChange={(e) => handleChange({ label: e.target.value })}
@@ -95,7 +95,7 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
             </div>
 
             <div>
-              <h4 className="text-sm font-medium mb-3">Border Style</h4>
+              <h4 className="text-base font-medium mb-3">Border Style</h4>
               <div className="flex gap-2">
                 {strokeStyles.map((style) => (
                   <Button
@@ -110,7 +110,7 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
             </div>
 
             <div>
-              <h4 className="text-sm font-medium mb-3">Border Width</h4>
+              <h4 className="text-base font-medium mb-3">Border Width</h4>
               <Slider
                 defaultValue={[data.strokeWidth || 1]}
                 min={0}
@@ -119,11 +119,11 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
                 onValueChange={(value) => handleChange({ strokeWidth: value[0] })}
                 className="mb-2"
               />
-              <div className="text-xs text-gray-500">{data.strokeWidth || 1}px</div>
+              <div className="text-base text-gray-500">{data.strokeWidth || 1}px</div>
             </div>
 
             <div>
-              <h4 className="text-sm font-medium mb-3">Border Color</h4>
+              <h4 className="text-base font-medium mb-3">Border Color</h4>
               <div className="flex gap-2 flex-wrap">
                 {strokeColors.map((color) => (
                   <button
@@ -140,7 +140,7 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
 
             <div>
               <div className="flex justify-between mb-2">
-                <h4 className="text-sm font-medium">Background</h4>
+                <h4 className="text-base font-medium">Background</h4>
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="transparent-bg"
@@ -173,7 +173,7 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
         <TabsContent value="text" className="space-y-6 mt-4">
           <div className="space-y-4">
             <div>
-              <h4 className="text-sm font-medium mb-3">Font Family</h4>
+              <h4 className="text-base font-medium mb-3">Font Family</h4>
               <div className="flex gap-2 flex-wrap">
                 {fontFamilies.map((font) => (
                   <Button
@@ -189,7 +189,7 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
             </div>
             
             <div>
-              <h4 className="text-sm font-medium mb-3">Font Size</h4>
+              <h4 className="text-base font-medium mb-3">Font Size</h4>
               <div className="flex gap-2">
                 {["xs", "s", "m", "l", "xl"].map((size) => (
                   <Button
@@ -203,9 +203,33 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
                 ))}
               </div>
             </div>
+
+            <div>
+              <h4 className="text-base font-medium mb-3">Font Weight</h4>
+              <div className="flex gap-2 flex-wrap">
+                {([
+                  { value: 'light', label: 'Light' },
+                  { value: 'normal', label: 'Normal' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'semibold', label: 'Semi' },
+                  { value: 'bold', label: 'Bold' },
+                  { value: 'extrabold', label: 'Extra' },
+                ] as { value: FontWeight; label: string }[]).map(({ value, label }) => (
+                  <Button
+                    key={value}
+                    variant={data.fontWeight === value ? "default" : "outline"}
+                    onClick={() => handleChange({ fontWeight: value })}
+                    className="w-16"
+                    style={{ fontWeight: value === 'light' ? 300 : value === 'normal' ? 400 : value === 'medium' ? 500 : value === 'semibold' ? 600 : value === 'bold' ? 700 : 800 }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
             
             <div>
-              <h4 className="text-sm font-medium mb-3">Text Alignment</h4>
+              <h4 className="text-base font-medium mb-3">Text Alignment</h4>
               <div className="flex gap-2">
                 <Button
                   variant={data.textAlign === 'left' ? "default" : "outline"}
@@ -230,7 +254,7 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
             
             <div>
               <div className="flex justify-between mb-2">
-                <h4 className="text-sm font-medium">Drop Shadow</h4>
+                <h4 className="text-base font-medium">Drop Shadow</h4>
                 <Switch
                   id="shadow-enabled"
                   checked={shadowEnabled}
@@ -275,7 +299,7 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
             
             <div>
               <div className="flex justify-between mb-2">
-                <h4 className="text-sm font-medium">Glow Effect</h4>
+                <h4 className="text-base font-medium">Glow Effect</h4>
                 <Switch
                   id="glow-enabled"
                   checked={glowEnabled}
@@ -323,7 +347,7 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
         <TabsContent value="transform" className="space-y-6 mt-4">
           <div className="space-y-4">
             <div>
-              <h4 className="text-sm font-medium mb-3">Rotation</h4>
+              <h4 className="text-base font-medium mb-3">Rotation</h4>
               <div className="flex items-center gap-2">
                 <Slider
                   defaultValue={[rotation]}
@@ -333,7 +357,7 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
                   onValueChange={(value) => handleRotationChange(value[0])}
                   className="flex-1"
                 />
-                <div className="min-w-[40px] text-center text-sm">{rotation}°</div>
+                <div className="min-w-[40px] text-center text-base">{rotation}°</div>
                 <Button 
                   variant="outline" 
                   size="icon"
@@ -376,7 +400,7 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
             </div>
             
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium">Maintain Aspect Ratio</h4>
+              <h4 className="text-base font-medium">Maintain Aspect Ratio</h4>
               <Switch
                 id="aspect-ratio"
                 checked={maintainAspectRatio}
@@ -385,7 +409,7 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
             </div>
             
             <div>
-              <h4 className="text-sm font-medium mb-3">Vertical Alignment</h4>
+              <h4 className="text-base font-medium mb-3">Vertical Alignment</h4>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -409,7 +433,7 @@ export function ShapeSettings({ data, nodeId }: ShapeSettingsProps) {
             </div>
             
             <div>
-              <h4 className="text-sm font-medium mb-3">Layering</h4>
+              <h4 className="text-base font-medium mb-3">Layering</h4>
               <div className="flex gap-2">
                 <Button
                   variant="outline"

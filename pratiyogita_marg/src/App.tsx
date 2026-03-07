@@ -4,24 +4,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "r
 import MindMapEditor from "./pages/MindMapEditor";
 import MindMapViewer from "./pages/MindMapViewer";
 import ExamCatalog from "./pages/ExamCatalog";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
 import AboutUs from "./pages/AboutUs";
 import { Toaster } from "@/components/ui/sonner";
-import { useAuth } from "@/contexts/AuthContext";
-
-const ProtectedEditorRoute = () => {
-  const { currentUser } = useAuth();
-  if (!currentUser) {
-    return <Navigate to="/?auth=login" replace />;
-  }
-  return <MindMapEditor />;
-};
 
 /** Grainy background — only rendered on non-mindmap pages */
 const GrainyBackground = () => {
   const location = useLocation();
-  const isMindMapPage = location.pathname === "/editor" || location.pathname === "/view";
+  const isMindMapPage = location.pathname === "/editor";
 
   if (isMindMapPage) return null;
 
@@ -45,10 +34,10 @@ function App() {
       <GrainyBackground />
       <Routes>
         <Route path="/" element={<Navigate to="/explore" replace />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="/signup" element={<Navigate to="/" replace />} />
         <Route path="/about" element={<AboutUs />} />
-        <Route path="/editor" element={<ProtectedEditorRoute />} />
+        <Route path="/editor" element={<MindMapEditor />} />
         <Route path="/explore" element={<ExamCatalog />} />
         <Route path="/view" element={<MindMapViewer />} />
       </Routes>

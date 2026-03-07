@@ -8,19 +8,17 @@ const FAQItem = ({ question, answer, isOpen, onClick }) => {
 
   return (
     <div
-      className={`mb-4 overflow-hidden rounded-lg bg-white/5 backdrop-blur-sm border border-orange-500 shadow-md transition-all duration-200`}
+      className={`mb-4 overflow-hidden rounded-xl bg-[#2B1E17]/60 border border-[#E4572E]/40 transition-all duration-200 hover:border-[#E4572E]/70`}
     >
       <button
-        className={`flex w-full items-center justify-between p-3 sm:p-4 md:p-5 text-left font-medium ${
-          isDark ? "text-white" : "text-gray-900"
-        }`}
+        className={`flex w-full items-center justify-between p-3 sm:p-4 md:p-5 text-left font-medium text-[#FBF6EE]`}
         onClick={onClick}
       >
         <span className="text-base sm:text-lg md:text-lg pr-2">{question}</span>
         <svg
           className={`h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 transform transition-transform duration-300 ${
             isOpen ? "rotate-180" : ""
-          } ${isDark ? "text-gray-400" : "text-gray-500"}`}
+          } text-[#E4572E]`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -43,9 +41,7 @@ const FAQItem = ({ question, answer, isOpen, onClick }) => {
             transition={{ duration: 0.3 }}
           >
             <div
-              className={`px-3 sm:px-4 md:px-5 pb-3 sm:pb-4 md:pb-5 pt-0 text-sm sm:text-base ${
-                isDark ? "text-gray-300" : "text-gray-600"
-              }`}
+              className="px-3 sm:px-4 md:px-5 pb-3 sm:pb-4 md:pb-5 pt-0 text-sm sm:text-base text-[#E8D8C3]"
             >
               {typeof answer === "string" ? <p>{answer}</p> : answer}
             </div>
@@ -147,9 +143,7 @@ const FAQSection = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className={`text-2xl sm:text-3xl font-bold tracking-tight sm:text-4xl ${
-              isDark ? "text-white" : "text-gray-900"
-            }`}
+            className={`text-2xl sm:text-3xl font-bold tracking-tight sm:text-4xl text-[#FBF6EE]`}
           >
             {language === "en"
               ? "Frequently Asked Questions"
@@ -160,9 +154,7 @@ const FAQSection = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className={`mt-2 sm:mt-4 text-sm sm:text-base ${
-              isDark ? "text-gray-300" : "text-gray-600"
-            }`}
+            className="mt-2 sm:mt-4 text-sm sm:text-base text-[#E8D8C3]"
           >
             {language === "en"
               ? "Have questions about Pratiyogita Setu? Find quick answers to common queries below."
@@ -196,9 +188,7 @@ const FAQSection = () => {
             className="mt-6 sm:mt-8 md:mt-10 text-center"
           >
             <p
-              className={`mb-4 sm:mb-6 text-sm sm:text-base ${
-                isDark ? "text-gray-300" : "text-gray-600"
-              }`}
+              className="mb-4 sm:mb-6 text-sm sm:text-base text-[#E8D8C3]"
             >
               {language === "en"
                 ? "Didn't find what you're looking for?"
@@ -206,11 +196,7 @@ const FAQSection = () => {
             </p>
             <a
               href="#contact"
-              className={`inline-flex items-center rounded-md px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium shadow-lg ${
-                isDark
-                  ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                  : "bg-indigo-600 text-white hover:bg-indigo-700"
-              } transition-colors duration-300`}
+              className="inline-flex items-center rounded-lg px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-semibold bg-[#E4572E] text-[#FBF6EE] hover:bg-[#cf4a23] transition-colors duration-300"
             >
               {language === "en" ? "Contact Us" : "हमसे संपर्क करें"}
               <svg

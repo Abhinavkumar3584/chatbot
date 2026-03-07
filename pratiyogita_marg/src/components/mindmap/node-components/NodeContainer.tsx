@@ -1,7 +1,16 @@
 import { ReactNode, CSSProperties } from 'react';
 import { NodeResizer } from '@xyflow/react';
-import { BaseNodeData } from '../types';
+import { BaseNodeData, LegendPosition } from '../types';
 import { NodeConnectors } from '../NodeConnectors';
+
+const legendPositionClass: Record<LegendPosition, string> = {
+  'left-top':     'top-0 left-0 -translate-x-1/2 -translate-y-1/2',
+  'left-center':  'top-1/2 left-0 -translate-x-full -translate-y-1/2',
+  'left-bottom':  'bottom-0 left-0 -translate-x-1/2 translate-y-1/2',
+  'right-top':    'top-0 right-0 translate-x-1/2 -translate-y-1/2',
+  'right-center': 'top-1/2 right-0 translate-x-full -translate-y-1/2',
+  'right-bottom': 'bottom-0 right-0 translate-x-1/2 translate-y-1/2',
+};
 
 interface NodeContainerProps {
   nodeStyle: string;
@@ -84,6 +93,16 @@ export const NodeContainer = ({
       data-nodeid={resolvedId}
     >
       {showConnectors && <NodeConnectors />}
+
+      {/* Legend dot */}
+      {nodeData.legend?.enabled && (
+        <div
+          className={`absolute z-10 w-3.5 h-3.5 rounded-full shadow-md ring-2 ring-white pointer-events-none select-none
+            ${legendPositionClass[nodeData.legend.position] ?? 'top-0 right-0 translate-x-1/2 -translate-y-1/2'}`}
+          style={{ backgroundColor: nodeData.legend.color || '#3b82f6' }}
+        />
+      )}
+
       <NodeResizer 
         minWidth={100}
         minHeight={40}

@@ -8,7 +8,7 @@ import { buildExamDataDocId } from '../src/eligibility/examDataDocId.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
-const examDataRoot = path.join(projectRoot, 'examsdata');
+const examDataRoot = path.join(projectRoot, 'public', 'examsdata');
 
 async function readJson(filePath) {
   const raw = await fs.readFile(filePath, 'utf8');

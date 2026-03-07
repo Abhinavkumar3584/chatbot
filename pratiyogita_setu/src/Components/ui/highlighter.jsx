@@ -1,6 +1,6 @@
 import React from "react";
 
-export function Highlighter({ children, action = "highlight", color = "#FF9800" }) {
+export function Highlighter({ children, action = "highlight", color = "#E4572E" }) {
   const styles = {
     underline: {
       textDecoration: `underline wavy ${color}`,

@@ -10,7 +10,6 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useAuth } from "../contexts/AuthContext";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
@@ -65,15 +64,15 @@ const theme = createTheme({
     palette: {
         mode: 'dark',
         primary: {
-            main: "#f97316",
+            main: "#E4572E",
         },
         background: {
             default: 'transparent',
-            paper: '#2a2a2a',
+            paper: '#3d2419',
         },
         text: {
-            primary: '#ffffff',
-            secondary: 'rgba(255,255,255,0.7)',
+            primary: '#FBF6EE',
+            secondary: 'rgba(232,216,195,0.7)',
         },
     },
     components: {
@@ -82,29 +81,29 @@ const theme = createTheme({
                 root: {
                     "& .MuiInputBase-root": {
                         fontSize: "0.95rem",
-                        color: "#ffffff",
+                        color: "#FBF6EE",
                     },
                     "& .MuiInputBase-input": {
-                        color: "#ffffff",
+                        color: "#FBF6EE",
                     },
                     "& .MuiInputLabel-root": {
                         fontSize: "0.95rem",
-                        color: "rgba(255,255,255,0.7)",
+                        color: "rgba(232,216,195,0.7)",
                     },
                     "& .MuiFormHelperText-root": {
                         fontSize: "0.8rem",
                         marginTop: "1px",
-                        color: "rgba(255,255,255,0.5)",
+                        color: "rgba(232,216,195,0.5)",
                     },
                     "& .MuiOutlinedInput-root": {
                         "& fieldset": {
-                            borderColor: "rgba(249,115,22,0.4)",
+                            borderColor: "rgba(228,87,46,0.4)",
                         },
                         "&:hover fieldset": {
-                            borderColor: "#f97316",
+                            borderColor: "#E4572E",
                         },
                         "&.Mui-focused fieldset": {
-                            borderColor: "#f97316",
+                            borderColor: "#E4572E",
                         },
                     },
                 },
@@ -114,7 +113,7 @@ const theme = createTheme({
             styleOverrides: {
                 root: {
                     fontSize: "0.95rem",
-                    color: "#ffffff",
+                    color: "#FBF6EE",
                 },
             },
         },
@@ -136,20 +135,20 @@ const theme = createTheme({
                     maxHeight: 220,
                     overflowY: 'auto',
                     scrollbarWidth: 'thin',
-                    scrollbarColor: '#f97316 rgba(255,255,255,0.05)',
+                    scrollbarColor: '#E4572E rgba(43,30,23,0.5)',
                     '&::-webkit-scrollbar': {
                         width: '4px',
                     },
                     '&::-webkit-scrollbar-track': {
-                        background: 'rgba(255,255,255,0.05)',
+                        background: 'rgba(43,30,23,0.5)',
                         borderRadius: '999px',
                     },
                     '&::-webkit-scrollbar-thumb': {
-                        background: '#f97316',
+                        background: '#E4572E',
                         borderRadius: '999px',
                     },
                     '&::-webkit-scrollbar-thumb:hover': {
-                        background: '#ea580c',
+                        background: '#c9421e',
                     },
                 },
             },
@@ -160,20 +159,20 @@ const theme = createTheme({
                     maxHeight: 220,
                     overflowY: 'auto',
                     scrollbarWidth: 'thin',
-                    scrollbarColor: '#f97316 rgba(255,255,255,0.05)',
+                    scrollbarColor: '#E4572E rgba(43,30,23,0.5)',
                     '&::-webkit-scrollbar': {
                         width: '4px',
                     },
                     '&::-webkit-scrollbar-track': {
-                        background: 'rgba(255,255,255,0.05)',
+                        background: 'rgba(43,30,23,0.5)',
                         borderRadius: '999px',
                     },
                     '&::-webkit-scrollbar-thumb': {
-                        background: '#f97316',
+                        background: '#E4572E',
                         borderRadius: '999px',
                     },
                     '&::-webkit-scrollbar-thumb:hover': {
-                        background: '#ea580c',
+                        background: '#c9421e',
                     },
                 },
             },
@@ -192,18 +191,18 @@ const thinScrollbarStyle = {
         height: '4px',
     },
     '&::-webkit-scrollbar-track': {
-        background: 'rgba(255,255,255,0.05)',
+        background: 'rgba(43,30,23,0.5)',
         borderRadius: '2px',
     },
     '&::-webkit-scrollbar-thumb': {
-        background: '#f97316',
+        background: '#E4572E',
         borderRadius: '2px',
     },
     '&::-webkit-scrollbar-thumb:hover': {
-        background: '#ea580c',
+        background: '#c9421e',
     },
     scrollbarWidth: 'thin',
-    scrollbarColor: '#f97316 rgba(255,255,255,0.05)',
+    scrollbarColor: '#E4572E rgba(43,30,23,0.5)',
 };
 
 // Orange scrollbar for the /checkeligibility form/page scroll area
@@ -219,15 +218,15 @@ const greenScrollbarStyle = {
         margin: '8px 0',
     },
     '&::-webkit-scrollbar-thumb': {
-        background: 'linear-gradient(180deg, #f97316, #ea580c)',
+        background: 'linear-gradient(180deg, #E4572E, #c9421e)',
         borderRadius: '999px',
-        border: '1px solid rgba(255,255,255,0.1)',
+        border: '1px solid rgba(232,216,195,0.1)',
     },
     '&::-webkit-scrollbar-thumb:hover': {
-        background: 'linear-gradient(180deg, #ea580c, #c2410c)',
+        background: 'linear-gradient(180deg, #c9421e, #a8351a)',
     },
     scrollbarWidth: 'thin',
-    scrollbarColor: '#f97316 transparent',
+    scrollbarColor: '#E4572E transparent',
 };
 
 // ============================================
@@ -540,7 +539,6 @@ function CheckEligibilityPage() {
     
     // State for Important Notice Dialog
     const [noticeDialogOpen, setNoticeDialogOpen] = useState(false);
-    const [loginRequiredDialogOpen, setLoginRequiredDialogOpen] = useState(false);
 
     // State for divisions
     const [hasDivisions, setHasDivisions] = useState(false);
@@ -640,45 +638,15 @@ function CheckEligibilityPage() {
     // LOCK PAGE SCROLL (only for this route)
     // ============================================
 
-    const { currentUser, loading: authLoading } = useAuth();
-
-    const handleOpenLoginForm = () => {
-        const nextPath = encodeURIComponent('/check-eligibility');
-        window.location.href = `/login?next=${nextPath}`;
-    };
-
-    useEffect(() => {
-        if (currentUser) {
-            setLoginRequiredDialogOpen(false);
-        }
-    }, [currentUser]);
-
-    useEffect(() => {
-        const prevBodyOverflow = document.body.style.overflow;
-        const prevHtmlOverflow = document.documentElement.style.overflow;
-        document.body.style.overflow = 'hidden';
-        document.documentElement.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = prevBodyOverflow;
-            document.documentElement.style.overflow = prevHtmlOverflow;
-        };
-    }, []);
-
     // ============================================
     // LOAD DATA ON MOUNT
     // ============================================
 
     useEffect(() => {
-        if (authLoading) return;
-
         let cancelled = false;
 
         const loadExamOptions = async () => {
             try {
-                if (currentUser) {
-                    await currentUser.getIdToken();
-                }
-
                 await ensureExamCatalogLoaded();
                 const options = getExamDropdownOptions();
 
@@ -687,40 +655,10 @@ function CheckEligibilityPage() {
                     setError("");
                 }
             } catch (err) {
-                console.error('Failed to load exam catalog from Firestore:', err);
+                console.error('Failed to load exam catalog:', err);
                 if (cancelled) return;
 
-                if (!currentUser) {
-                    setError("");
-                    setLoginRequiredDialogOpen(true);
-                    return;
-                }
-
-                const isPermissionError =
-                    err?.code === 'permission-denied' ||
-                    String(err?.message || '').toLowerCase().includes('access denied');
-
-                if (isPermissionError && currentUser) {
-                    try {
-                        await currentUser.getIdToken(true);
-                        await ensureExamCatalogLoaded();
-                        const retriedOptions = getExamDropdownOptions();
-
-                        if (!cancelled) {
-                            setExamOptions(retriedOptions);
-                            setError("");
-                        }
-                        return;
-                    } catch (retryError) {
-                        console.error('Retry after token refresh failed:', retryError);
-                    }
-                }
-
-                setError(
-                    isPermissionError && !!currentUser
-                        ? 'Your account is signed in but does not have access to exam data yet. Please contact support.'
-                        : 'Failed to load exams. Please login and try again.'
-                );
+                setError('Failed to load exams. Please try again later.');
             }
         };
 
@@ -729,7 +667,7 @@ function CheckEligibilityPage() {
         return () => {
             cancelled = true;
         };
-    }, [authLoading, currentUser]);
+    }, []);
 
     // Filter exam options based on search and category
     const filteredExamOptions = examOptions.filter(option => {
@@ -1537,13 +1475,13 @@ function CheckEligibilityPage() {
         const notEligibleCount = results.length - eligibleCount;
 
         return (
-            <div className="bg-white/5 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden h-fit border border-orange-500/40">
-                <h3 className="bg-white/10 text-white px-3 py-2 font-semibold text-sm">
+            <div className="bg-[#2B1E17]/40 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden h-fit">
+                <h3 className="bg-[#2B1E17]/50 text-[#FBF6EE] px-3 py-2 font-semibold text-sm">
                     📋 Results Summary
                 </h3>
                 
-                <div className="p-2 sm:p-3 bg-orange-500/5 border-b border-orange-500/20">
-                    <p className="text-sm text-white/60 mb-2">
+                <div className="p-2 sm:p-3">
+                    <p className="text-sm text-[#FBF6EE]/60 mb-2">
                         {examData?.exam_name || selectedExam}
                     </p>
                     <div className="grid grid-cols-2 gap-2 sm:flex">
@@ -1556,7 +1494,7 @@ function CheckEligibilityPage() {
                             <p className="text-sm text-red-300">Not Eligible</p>
                         </div>
                     </div>
-                    <p className="text-sm text-white/50 mt-2">
+                    <p className="text-sm text-[#FBF6EE]/50 mt-2">
                         Checked {results.length} combination(s)
                     </p>
                 </div>
@@ -1566,23 +1504,23 @@ function CheckEligibilityPage() {
                     style={thinScrollbarStyle}
                 >
                     <table className="w-full min-w-[320px]">
-                        <thead className="bg-white/10 sticky top-0">
+                        <thead className="bg-[#2B1E17]/50 sticky top-0">
                             <tr>
-                                <th className="px-2 sm:px-3 py-2 text-left text-sm sm:text-base text-white/70">Division</th>
-                                <th className="px-2 sm:px-3 py-2 text-left text-sm sm:text-base text-white/70">Session</th>
-                                <th className="px-2 sm:px-3 py-2 text-center text-sm sm:text-base text-white/70">Status</th>
+                                <th className="px-2 sm:px-3 py-2 text-left text-sm sm:text-base text-[#FBF6EE]/70">Division</th>
+                                <th className="px-2 sm:px-3 py-2 text-left text-sm sm:text-base text-[#FBF6EE]/70">Session</th>
+                                <th className="px-2 sm:px-3 py-2 text-center text-sm sm:text-base text-[#FBF6EE]/70">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {results.map((result, index) => (
                                 <tr 
                                     key={index} 
-                                    className={`border-b border-white/10 hover:bg-white/5 ${result.eligible ? '' : 'bg-red-500/5'}`}
+                                    className={`border-b border-white/10 hover:bg-[#2B1E17]/40 ${result.eligible ? '' : 'bg-red-500/5'}`}
                                 >
                                     <td className="px-2 sm:px-3 py-2 text-sm sm:text-base">
-                                        <span className="font-semibold text-orange-400">{result.division}</span>
+                                        <span className="font-semibold text-[#E4572E]">{result.division}</span>
                                     </td>
-                                    <td className="px-2 sm:px-3 py-2 text-sm sm:text-base text-white/70">{result.session}</td>
+                                    <td className="px-2 sm:px-3 py-2 text-sm sm:text-base text-[#FBF6EE]/70">{result.session}</td>
                                     <td className="px-2 sm:px-3 py-2 text-center">
                                         <div className="flex flex-col items-center gap-1">
                                             <Chip
@@ -1665,8 +1603,8 @@ function CheckEligibilityPage() {
         };
 
         return (
-            <div className="bg-white/5 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden border border-orange-500/40">
-                <h3 className="bg-orange-500/20 text-white px-2 py-1.5 font-semibold text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="bg-[#2B1E17]/40 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden border border-[#E4572E]/40">
+                <h3 className="bg-[#E4572E]/20 text-[#FBF6EE] px-2 py-1.5 font-semibold text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <span className="text-sm sm:text-base">📊 Eligibility Results - Year-wise Analysis</span>
                     <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                         <div className="hidden sm:flex gap-1 text-sm">
@@ -1687,7 +1625,7 @@ function CheckEligibilityPage() {
                     </div>
                 </h3>
                 
-                <div className="p-2 bg-orange-500/5 border-b border-orange-500/20">
+                <div className="p-2 bg-[#E4572E]/5 border-b border-[#E4572E]/20">
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                         <div className="text-center px-2 py-1 bg-blue-500/15 rounded-lg">
                             <p className="text-lg font-bold text-blue-400">{totalExamsChecked}</p>
@@ -1713,19 +1651,19 @@ function CheckEligibilityPage() {
                     style={thinScrollbarStyle}
                 >
                     {tableRows.length === 0 ? (
-                        <div className="px-2 py-4 text-center text-white/50">
+                        <div className="px-2 py-4 text-center text-[#FBF6EE]/50">
                             <p className="text-sm">No exams found to display.</p>
                         </div>
                     ) : (
                         tableRows.map((row, index) => (
                             <div
                                 key={row.rowKey}
-                                className={`rounded-lg border border-white/10 p-2 ${index % 2 === 0 ? 'bg-white/5' : 'bg-white/[0.02]'}`}
+                                className={`rounded-lg border border-white/10 p-2 ${index % 2 === 0 ? 'bg-[#2B1E17]/40' : 'bg-white/[0.02]'}`}
                             >
                                 <div className="flex flex-col leading-tight">
-                                    <span className="font-semibold text-sm text-white">{row.displayName}</span>
+                                    <span className="font-semibold text-sm text-[#FBF6EE]">{row.displayName}</span>
                                     {row.displayDetails?.conducting_body && (
-                                        <span className="text-sm text-white/50 mt-0.5">
+                                        <span className="text-sm text-[#FBF6EE]/50 mt-0.5">
                                             {row.displayDetails.conducting_body}
                                         </span>
                                     )}
@@ -1733,8 +1671,8 @@ function CheckEligibilityPage() {
 
                                 <div className="mt-2 grid grid-cols-3 gap-1.5">
                                     {years.map(year => (
-                                        <div key={year} className="rounded-md border border-white/10 bg-white/5 px-1 py-1 text-center">
-                                            <p className="text-sm text-white/50">{year}</p>
+                                        <div key={year} className="rounded-md border border-white/10 bg-[#2B1E17]/40 px-1 py-1 text-center">
+                                            <p className="text-sm text-[#FBF6EE]/50">{year}</p>
                                             <div className="mt-0.5 flex justify-center">
                                                 {renderCellContent(row.yearData[year], row.examFrequency)}
                                             </div>
@@ -1751,13 +1689,13 @@ function CheckEligibilityPage() {
                     style={thinScrollbarStyle}
                 >
                     <table className="w-full border-collapse">
-                        <thead className="bg-white/10 sticky top-0 z-10">
+                        <thead className="bg-[#2B1E17]/50 sticky top-0 z-10">
                             <tr>
-                                <th className="px-1.5 py-1 text-left text-sm text-white font-semibold border-r border-white/10 min-w-[140px] sticky left-0 bg-gray-900/90 z-20">
+                                <th className="px-1.5 py-1 text-left text-sm text-[#FBF6EE] font-semibold border-r border-white/10 min-w-[140px] sticky left-0 bg-[#2B1E17]/90 z-20">
                                     Exam / Division
                                 </th>
                                 {years.map(year => (
-                                    <th key={year} className="px-0.5 py-1 text-center text-sm text-white font-semibold border-r border-white/10 min-w-[42px]">
+                                    <th key={year} className="px-0.5 py-1 text-center text-sm text-[#FBF6EE] font-semibold border-r border-white/10 min-w-[42px]">
                                         {year}
                                     </th>
                                 ))}
@@ -1766,7 +1704,7 @@ function CheckEligibilityPage() {
                         <tbody>
                             {tableRows.length === 0 ? (
                                 <tr>
-                                    <td colSpan={years.length + 1} className="px-2 py-4 text-center text-white/50">
+                                    <td colSpan={years.length + 1} className="px-2 py-4 text-center text-[#FBF6EE]/50">
                                         <p className="text-sm">No exams found to display.</p>
                                     </td>
                                 </tr>
@@ -1774,13 +1712,13 @@ function CheckEligibilityPage() {
                                 tableRows.map((row, index) => (
                                     <tr 
                                         key={row.rowKey} 
-                                        className={`border-b border-white/10 hover:bg-white/5 ${index % 2 === 0 ? 'bg-white/[0.02]' : 'bg-white/5'}`}
+                                        className={`border-b border-white/10 hover:bg-[#2B1E17]/40 ${index % 2 === 0 ? 'bg-white/[0.02]' : 'bg-[#2B1E17]/40'}`}
                                     >
-                                        <td className={`px-1.5 py-1 text-sm border-r border-white/10 sticky left-0 z-10 ${index % 2 === 0 ? 'bg-gray-900/90' : 'bg-gray-800/90'}`}>
+                                        <td className={`px-1.5 py-1 text-sm border-r border-white/10 sticky left-0 z-10 ${index % 2 === 0 ? 'bg-[#2B1E17]/90' : 'bg-gray-800/90'}`}>
                                             <div className="flex flex-col leading-tight">
-                                                <span className="font-semibold text-white">{row.displayName}</span>
+                                                <span className="font-semibold text-[#FBF6EE]">{row.displayName}</span>
                                                 {row.displayDetails?.conducting_body && (
-                                                    <span className="text-sm text-white/50 truncate max-w-[130px]" title={row.displayDetails.conducting_body}>
+                                                    <span className="text-sm text-[#FBF6EE]/50 truncate max-w-[130px]" title={row.displayDetails.conducting_body}>
                                                         {row.displayDetails.conducting_body}
                                                     </span>
                                                 )}
@@ -1799,8 +1737,8 @@ function CheckEligibilityPage() {
                 </div>
                 
                 {/* Legend */}
-                <div className="px-2 py-1.5 bg-white/5 border-t border-white/10">
-                    <div className="flex flex-wrap gap-3 text-sm text-white/60">
+                <div className="px-2 py-1.5 bg-[#2B1E17]/40 border-t border-white/10">
+                    <div className="flex flex-wrap gap-3 text-sm text-[#FBF6EE]/60">
                         <div className="flex items-center gap-0.5">
                             <span className="text-green-500 font-bold">✓</span>
                             <span>Eligible</span>
@@ -1842,27 +1780,27 @@ function CheckEligibilityPage() {
 
         return (
             <div className="h-full">
-                <h3 className="bg-white/10 text-white px-3 py-2 font-semibold text-sm rounded-t-lg">
+                <h3 className="bg-[#2B1E17]/50 text-[#FBF6EE] px-3 py-2 font-semibold text-sm rounded-t-lg">
                     📝 Detailed Eligibility Check
                 </h3>
                 
-                <div className="p-3 bg-orange-500/5 border-b border-orange-500/20">
+                <div className="p-3 bg-[#E4572E]/5 border-b border-[#E4572E]/20">
                     <div className="grid grid-cols-2 gap-2 text-sm">
                         {hasDivisions && divisions.length > 0 ? (
                             <div>
-                                <span className="text-white/50">Divisions:</span>
-                                <p className="font-medium text-orange-400">{divisions.length} divisions checked</p>
+                                <span className="text-[#FBF6EE]/50">Divisions:</span>
+                                <p className="font-medium text-[#E4572E]">{divisions.length} divisions checked</p>
                             </div>
                         ) : (
                             <div>
-                                <span className="text-white/50">Type:</span>
-                                <p className="font-medium text-orange-400">Single exam</p>
+                                <span className="text-[#FBF6EE]/50">Type:</span>
+                                <p className="font-medium text-[#E4572E]">Single exam</p>
                             </div>
                         )}
                         {displayDetails?.conducting_body && (
                             <div>
-                                <span className="text-white/50">Conducting Body:</span>
-                                <p className="font-medium text-orange-400">{displayDetails.conducting_body}</p>
+                                <span className="text-[#FBF6EE]/50">Conducting Body:</span>
+                                <p className="font-medium text-[#E4572E]">{displayDetails.conducting_body}</p>
                             </div>
                         )}
                     </div>
@@ -1878,9 +1816,9 @@ function CheckEligibilityPage() {
                             className={`rounded-lg p-2 border mb-2 ${result.eligible ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}
                         >
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                <span className="font-bold text-orange-400 text-sm">{result.division}</span>
-                                <span className="text-white/30">|</span>
-                                <span className="text-sm text-white/60">{result.session}</span>
+                                <span className="font-bold text-[#E4572E] text-sm">{result.division}</span>
+                                <span className="text-[#FBF6EE]/30">|</span>
+                                <span className="text-sm text-[#FBF6EE]/60">{result.session}</span>
                                 <Chip
                                     label={result.eligible ? "Eligible" : "Not Eligible"}
                                     color={result.eligible ? "success" : "error"}
@@ -1890,20 +1828,20 @@ function CheckEligibilityPage() {
 
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
-                                    <thead className="bg-white/10">
+                                    <thead className="bg-[#2B1E17]/50">
                                         <tr>
-                                            <th className="px-2 py-1 text-left text-white/70">Criteria</th>
-                                            <th className="px-2 py-1 text-left text-white/70">You</th>
-                                            <th className="px-2 py-1 text-left text-white/70">Required</th>
-                                            <th className="px-2 py-1 text-center text-white/70">✓/✗</th>
+                                            <th className="px-2 py-1 text-left text-[#FBF6EE]/70">Criteria</th>
+                                            <th className="px-2 py-1 text-left text-[#FBF6EE]/70">You</th>
+                                            <th className="px-2 py-1 text-left text-[#FBF6EE]/70">Required</th>
+                                            <th className="px-2 py-1 text-center text-[#FBF6EE]/70">✓/✗</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {result.results && result.results.map((check, idx) => (
                                             <tr key={idx} className={`border-b border-white/10 ${check.eligible ? '' : 'bg-red-500/10'}`}>
-                                                <td className="px-2 py-1 text-white/80">{check.field}</td>
-                                                <td className="px-2 py-1 text-white/80">{check.userValue}</td>
-                                                <td className="px-2 py-1 text-white/60 truncate max-w-[80px]" title={check.examRequirement}>
+                                                <td className="px-2 py-1 text-[#FBF6EE]/80">{check.field}</td>
+                                                <td className="px-2 py-1 text-[#FBF6EE]/80">{check.userValue}</td>
+                                                <td className="px-2 py-1 text-[#FBF6EE]/60 truncate max-w-[80px]" title={check.examRequirement}>
                                                     {check.examRequirement?.length > 12 ? check.examRequirement.substring(0, 12) + '...' : check.examRequirement}
                                                 </td>
                                                 <td className="px-2 py-1 text-center">
@@ -1947,13 +1885,13 @@ function CheckEligibilityPage() {
 
     return (
         <ThemeProvider theme={theme}>
-            <div className="font-fredoka bg-transparent pt-22 px-2 sm:px-3 lg:px-4 h-[100dvh] overflow-hidden flex flex-col">
+            <div className="font-fredoka bg-transparent pt-22 px-2 sm:px-3 lg:px-4 pb-8 min-h-[calc(100vh-80px)] lg:min-h-screen">
                 {/* Header Section */}
                 <div className="w-full mx-auto p-2 sm:p-3 mb-2">
                     <div className="flex flex-row items-center gap-2 sm:gap-3">
                         <div className="flex-1">
                             <div className=" rounded-xl px-3 py-2 sm:px-6 sm:py-3 flex items-center justify-center gap-2 sm:gap-3">
-                                <h1 className="text-base sm:text-2xl font-bold text-white whitespace-nowrap">
+                                <h1 className="text-base sm:text-2xl font-bold text-[#FBF6EE] whitespace-nowrap">
                                     Check Your Eligibility
                                 </h1>
                                 <button
@@ -1964,19 +1902,19 @@ function CheckEligibilityPage() {
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                                         <span className="relative inline-flex rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2 bg-white"></span>
                                     </span>
-                                    <span className="text-sm sm:text-base font-semibold text-white">Notice</span>
+                                    <span className="text-sm sm:text-base font-semibold text-[#FBF6EE]">Notice</span>
                                 </button>
                             </div>
                         </div>
                         
                         <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                            <div className="bg-white/5 border border-orange-500/40 sm:border-2 rounded-lg sm:rounded-xl px-1.5 py-1 sm:px-4 sm:py-2 text-center">
-                                <span className="text-sm sm:text-base text-white/60 font-medium">Total exam : </span>
-                                <span className="text-sm sm:text-base font-bold text-white">{examOptions.length}</span>
+                            <div className="bg-[#2B1E17]/40 border border-[#E4572E]/40 sm:border-2 rounded-lg sm:rounded-xl px-1.5 py-1 sm:px-4 sm:py-2 text-center">
+                                <span className="text-sm sm:text-base text-[#FBF6EE]/60 font-medium">Total exam : </span>
+                                <span className="text-sm sm:text-base font-bold text-[#FBF6EE]">{examOptions.length}</span>
                             </div>
-                            <div className="bg-white/5 border border-orange-500/40 sm:border-2 rounded-lg sm:rounded-xl px-1.5 py-1 sm:px-4 sm:py-2 text-center">
-                                <span className="text-sm sm:text-base text-white/60 font-medium">Total inputs : </span>
-                                <span className="text-sm sm:text-base font-bold text-white">54</span>
+                            <div className="bg-[#2B1E17]/40 border border-[#E4572E]/40 sm:border-2 rounded-lg sm:rounded-xl px-1.5 py-1 sm:px-4 sm:py-2 text-center">
+                                <span className="text-sm sm:text-base text-[#FBF6EE]/60 font-medium">Total inputs : </span>
+                                <span className="text-sm sm:text-base font-bold text-[#FBF6EE]">54</span>
                             </div>
                         </div>
                     </div>
@@ -1996,8 +1934,8 @@ function CheckEligibilityPage() {
                     }}
                 >
                     <DialogTitle sx={{ 
-                        background: 'linear-gradient(135deg, #ff6600 0%, #ff8533 100%)',
-                        color: 'white',
+                        background: 'linear-gradient(135deg, #E4572E 0%, #c9421e 100%)',
+                        color: '#FBF6EE',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -2011,58 +1949,58 @@ function CheckEligibilityPage() {
                         </div>
                         <IconButton 
                             onClick={() => setNoticeDialogOpen(false)} 
-                            sx={{ color: 'white' }}
+                            sx={{ color: '#FBF6EE' }}
                             size="small"
                         >
                             ✕
                         </IconButton>
                     </DialogTitle>
-                    <DialogContent sx={{ pt: 3, pb: 2 }}>
+                    <DialogContent sx={{ pt: 3, pb: 2, bgcolor: '#2B1E17' }}>
                         <div className="space-y-4">
-                            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-                                <Typography variant="h6" className="text-blue-800 font-bold mb-2">
+                            <div className="bg-[#E4572E]/10 border-l-4 border-[#E4572E] p-4 rounded-r-lg">
+                                <Typography variant="h6" className="text-[#FBF6EE] font-bold mb-2">
                                     🙏 Welcome to Pratiyogita Yogya!
                                 </Typography>
-                                <Typography variant="body2" className="text-blue-700">
+                                <Typography variant="body2" className="text-[#E8D8C3]">
                                     Your trusted companion for exam eligibility checking.
                                 </Typography>
                             </div>
 
-                            <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
-                                <Typography variant="subtitle1" className="text-green-800 font-bold mb-2">
+                            <div className="bg-green-500/10 border-l-4 border-green-500 p-4 rounded-r-lg">
+                                <Typography variant="subtitle1" className="text-green-400 font-bold mb-2">
                                     🔒 Data Privacy & Security
                                 </Typography>
-                                <Typography variant="body2" className="text-green-700">
+                                <Typography variant="body2" className="text-green-300">
                                     We <strong>DO NOT</strong> sell your data or use it for any fraudulent activities. 
                                     Your information is safe with us.
                                 </Typography>
                             </div>
 
-                            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
-                                <Typography variant="subtitle1" className="text-yellow-800 font-bold mb-2">
+                            <div className="bg-yellow-500/10 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                                <Typography variant="subtitle1" className="text-yellow-400 font-bold mb-2">
                                     📋 Eligibility Criteria Disclaimer
                                 </Typography>
-                                <Typography variant="body2" className="text-yellow-700">
+                                <Typography variant="body2" className="text-yellow-300">
                                     The information is <strong>only</strong> to determine eligibility based on our defined criteria.
                                 </Typography>
                             </div>
 
-                            <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg">
-                                <Typography variant="subtitle1" className="text-purple-800 font-bold mb-2">
+                            <div className="bg-purple-500/10 border-l-4 border-purple-500 p-4 rounded-r-lg">
+                                <Typography variant="subtitle1" className="text-purple-400 font-bold mb-2">
                                     📄 Official Notification
                                 </Typography>
-                                <Typography variant="body2" className="text-purple-700">
+                                <Typography variant="body2" className="text-purple-300">
                                     Always refer to the <strong>official exam notification</strong> for complete eligibility criteria.
                                 </Typography>
                             </div>
                         </div>
                     </DialogContent>
-                    <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'center' }}>
+                    <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'center', bgcolor: '#2B1E17' }}>
                         <Button 
                             onClick={() => setNoticeDialogOpen(false)} 
                             variant="contained"
                             sx={{ 
-                                background: 'linear-gradient(135deg, #ff6600 0%, #ff8533 100%)',
+                                background: 'linear-gradient(135deg, #E4572E 0%, #c9421e 100%)',
                                 borderRadius: '8px',
                                 px: 4,
                                 py: 1,
@@ -2075,32 +2013,8 @@ function CheckEligibilityPage() {
                     </DialogActions>
                 </Dialog>
 
-                <Dialog
-                    open={loginRequiredDialogOpen}
-                    onClose={() => setLoginRequiredDialogOpen(false)}
-                    maxWidth="xs"
-                    fullWidth
-                >
-                    <DialogTitle sx={{ fontWeight: 700 }}>
-                        Login Required
-                    </DialogTitle>
-                    <DialogContent>
-                        <Typography variant="body2" color="text.secondary">
-                            Please login to use Eligibility Checker and fetch exam data.
-                        </Typography>
-                    </DialogContent>
-                    <DialogActions sx={{ px: 3, pb: 2 }}>
-                        <Button onClick={() => setLoginRequiredDialogOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button variant="contained" onClick={handleOpenLoginForm}>
-                            Login
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-
-                {/* Scrollable Content (form + results) */}
-                <div className="flex-1 overflow-y-auto pb-4" style={greenScrollbarStyle}>
+                {/* Content (form + results) */}
+                <div className="pb-4">
                     {error && (
                         <Alert severity="error" className="mb-4" onClose={() => setError("")}>
                             {error}
@@ -2109,24 +2023,24 @@ function CheckEligibilityPage() {
 
                     {/* Form Section */}
                     <div className="w-full">
-                        <div className="bg-white/5 backdrop-blur-sm rounded-xl shadow-lg p-3 border border-orange-500/40">
+                        <div className="bg-[#2B1E17]/40 backdrop-blur-sm rounded-xl shadow-lg p-3 border border-[#E4572E]/40">
                             <Box component="form" noValidate autoComplete="off">
                             {/* Section 1: Exam Selection with Toggle */}
-                            <div className="p-3 mb-3">
-                                <h2 className="text-base font-semibold text-white mb-3 text-left">
+                            <div className="p-3 mb-3 rounded-lg border-l-4 border-l-[#E4572E] bg-[#E4572E]/8 border border-[#E4572E]/15">
+                                <h2 className="text-base font-semibold text-[#E4572E] mb-3 text-left">
                                     Select Target Exam
                                 </h2>
                                 <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                                     {/* Toggle Switch */}
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <span className={`text-sm font-semibold transition-colors ${searchMode === 'exam' ? 'text-green-400' : 'text-white/40'}`}>
+                                        <span className={`text-sm font-semibold transition-colors ${searchMode === 'exam' ? 'text-green-400' : 'text-[#FBF6EE]/40'}`}>
                                             Exam Basis
                                         </span>
                                         <button
                                             type="button"
                                             onClick={() => setSearchMode(searchMode === 'exam' ? 'eligibility' : 'exam')}
                                             className={`relative w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none ${
-                                                searchMode === 'eligibility' ? 'bg-orange-500' : 'bg-green-500'
+                                                searchMode === 'eligibility' ? 'bg-[#E4572E]' : 'bg-green-500'
                                             }`}
                                         >
                                             <span
@@ -2135,27 +2049,27 @@ function CheckEligibilityPage() {
                                                 }`}
                                             />
                                         </button>
-                                        <span className={`text-sm font-semibold transition-colors ${searchMode === 'eligibility' ? 'text-orange-400' : 'text-white/40'}`}>
+                                        <span className={`text-sm font-semibold transition-colors ${searchMode === 'eligibility' ? 'text-[#E4572E]' : 'text-[#FBF6EE]/40'}`}>
                                             Eligibility Basis
                                         </span>
                                         
                                         {/* Info Icon with Tooltip */}
                                         <div className="relative group">
-                                            <span className="cursor-help text-white/40 hover:text-white/70 transition-colors">
+                                            <span className="cursor-help text-[#FBF6EE]/40 hover:text-[#FBF6EE]/70 transition-colors">
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
                                             </span>
-                                            <div className="absolute left-0 top-6 z-50 hidden group-hover:block w-72 bg-gray-900 text-white text-sm rounded-lg p-3 shadow-xl">
+                                            <div className="absolute left-0 top-6 z-50 hidden group-hover:block w-72 bg-[#2B1E17] text-[#FBF6EE] text-sm rounded-lg p-3 shadow-xl">
                                                 <div className="mb-2 pb-2 border-b border-gray-700">
                                                     <span className="font-bold text-green-400">🎯 Exam Basis:</span>
                                                     <p className="mt-1 text-gray-300">Select an exam first, then fill your details to check if you're eligible.</p>
                                                 </div>
                                                 <div>
-                                                    <span className="font-bold text-orange-400">📋 Eligibility Basis:</span>
+                                                    <span className="font-bold text-[#E4572E]">📋 Eligibility Basis:</span>
                                                     <p className="mt-1 text-gray-300">Fill your details first, and we'll show you all exams you're eligible for.</p>
                                                 </div>
-                                                <div className="absolute -top-1 left-2 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+                                                <div className="absolute -top-1 left-2 w-2 h-2 bg-[#2B1E17] transform rotate-45"></div>
                                             </div>
                                         </div>
                                     </div>
@@ -2225,11 +2139,11 @@ function CheckEligibilityPage() {
                                     
                                     {/* Eligibility Basis Mode Description */}
                                     {searchMode === 'eligibility' && (
-                                        <div className="flex-1 w-full bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+                                        <div className="flex-1 w-full bg-[#E4572E]/10 border border-[#E4572E]/30 rounded-lg p-3">
                                             <div className="flex items-start gap-2">
-                                                <span className="text-orange-500 text-lg">📋</span>
+                                                <span className="text-[#E4572E] text-lg">📋</span>
                                                 <div>
-                                                    <p className="text-sm font-semibold text-orange-400">Eligibility Basis Mode</p>
+                                                    <p className="text-sm font-semibold text-[#E4572E]">Eligibility Basis Mode</p>
                                                     <p className="text-sm text-orange-300 mt-1">
                                                         Fill in your details below, and we'll check <strong>all {examOptions.length} exams</strong> to show which ones you're eligible for.
                                                     </p>
@@ -2240,19 +2154,19 @@ function CheckEligibilityPage() {
                                 </div>
 
                                 {loading && (
-                                    <div className="flex flex-col items-center justify-center mt-4 p-4 bg-orange-500/10 rounded-lg">
+                                    <div className="flex flex-col items-center justify-center mt-4 p-4 bg-[#E4572E]/10 rounded-lg">
                                         <CircularProgress size={24} />
                                         {searchMode === 'eligibility' && checkingProgress.total > 0 ? (
                                             <div className="mt-2 text-center">
-                                                <p className="text-sm text-white">
+                                                <p className="text-sm text-[#FBF6EE]">
                                                     Checking: <span className="font-semibold">{checkingProgress.examName}</span>
                                                 </p>
-                                                <p className="text-sm text-white/60">
+                                                <p className="text-sm text-[#FBF6EE]/60">
                                                     {checkingProgress.current} of {checkingProgress.total} exams
                                                 </p>
                                                 <div className="w-48 h-2 bg-gray-200 rounded-full mt-2">
                                                     <div 
-                                                        className="h-2 bg-orange-500 rounded-full transition-all duration-300"
+                                                        className="h-2 bg-[#E4572E] rounded-full transition-all duration-300"
                                                         style={{ width: `${(checkingProgress.current / checkingProgress.total) * 100}%` }}
                                                     />
                                                 </div>
@@ -2266,9 +2180,9 @@ function CheckEligibilityPage() {
 
                             {/* Section 2: Personal Information */}
                             {(examData || searchMode === 'eligibility') && (
-                                <div className="p-3 mb-3">
+                                <div className="p-3 mb-3 rounded-lg border-l-4 border-l-[#E8D8C3] bg-[#E8D8C3]/8 border border-[#E8D8C3]/15">
                                     <div className="flex justify-between items-center mb-3">
-                                        <h2 className="text-base font-semibold text-white text-left">
+                                        <h2 className="text-base font-semibold text-[#E8D8C3] text-left">
                                             Personal Information
                                         </h2>
                                         <Button
@@ -2278,11 +2192,11 @@ function CheckEligibilityPage() {
                                             sx={{ 
                                                 fontSize: '0.85rem', 
                                                 padding: '2px 8px',
-                                                borderColor: '#f97316',
-                                                color: '#f97316',
+                                                borderColor: '#E4572E',
+                                                color: '#E4572E',
                                                 '&:hover': {
-                                                    borderColor: '#ea580c',
-                                                    backgroundColor: 'rgba(249,115,22,0.1)',
+                                                    borderColor: '#c9421e',
+                                                    backgroundColor: 'rgba(228,87,46,0.1)',
                                                 }
                                             }}
                                         >
@@ -2342,6 +2256,8 @@ function CheckEligibilityPage() {
                                             </TextField>
                                         </div>
 
+                                        {/* Gender + Marital Status: side by side on mobile */}
+                                        <div className="grid grid-cols-2 gap-2 sm:contents">
                                         <TextField
                                             select
                                             fullWidth
@@ -2375,7 +2291,10 @@ function CheckEligibilityPage() {
                                                 </MenuItem>
                                             ))}
                                         </TextField>
+                                        </div>
 
+                                        {/* Nationality + Domicile: side by side on mobile */}
+                                        <div className="grid grid-cols-2 gap-2 sm:contents">
                                         <TextField
                                             select
                                             fullWidth
@@ -2409,6 +2328,7 @@ function CheckEligibilityPage() {
                                                 </MenuItem>
                                             ))}
                                         </TextField>
+                                        </div>
 
                                         <TextField
                                             select
@@ -2448,8 +2368,8 @@ function CheckEligibilityPage() {
 
                             {/* Section 3: Educational Qualification */}
                             {(examData || searchMode === 'eligibility') && (
-                                <div className="p-3 mb-3">
-                                    <h2 className="text-base font-semibold text-white mb-3 text-left">
+                                <div className="p-3 mb-3 rounded-lg border-l-4 border-l-[#5b8a72] bg-[#5b8a72]/8 border border-[#5b8a72]/15">
+                                    <h2 className="text-base font-semibold text-[#5b8a72] mb-3 text-left">
                                         Educational Qualification
                                     </h2>
                                     
@@ -2474,7 +2394,7 @@ function CheckEligibilityPage() {
                                     
                                     {visibleEducationLevels.length > 0 && (
                                         <div className="overflow-x-auto">
-                                            <div className="hidden sm:grid sm:grid-cols-8 gap-2 mb-2 px-2 text-sm font-semibold text-white/60">
+                                            <div className="hidden sm:grid sm:grid-cols-8 gap-2 mb-2 px-2 text-sm font-semibold text-[#FBF6EE]/60">
                                                 <div className="text-left"></div>
                                                 <div className="text-left">Course/Stream</div>
                                                 <div className="text-left">Subject</div>
@@ -2485,7 +2405,20 @@ function CheckEligibilityPage() {
                                                 <div className="text-left">Active Backlogs</div>
                                             </div>
                                             
-                                            {visibleEducationLevels.map((level) => {
+                                            {visibleEducationLevels.map((level, levelIndex) => {
+                                                // Color palette for differentiating each education level
+                                                const eduLevelColors = [
+                                                    { border: '#E4572E', bg: 'rgba(228,87,46,0.08)', text: '#E4572E' },     // Burnt Orange
+                                                    { border: '#E8D8C3', bg: 'rgba(232,216,195,0.08)', text: '#E8D8C3' },   // Muted Sand
+                                                    { border: '#5b8a72', bg: 'rgba(91,138,114,0.08)', text: '#5b8a72' },     // Sage Green
+                                                    { border: '#9b8ec4', bg: 'rgba(155,142,196,0.08)', text: '#9b8ec4' },    // Soft Purple
+                                                    { border: '#4da6c9', bg: 'rgba(77,166,201,0.08)', text: '#4da6c9' },     // Teal Blue
+                                                    { border: '#c9a84c', bg: 'rgba(201,168,76,0.08)', text: '#c9a84c' },     // Gold
+                                                    { border: '#d4726a', bg: 'rgba(212,114,106,0.08)', text: '#d4726a' },    // Rose
+                                                    { border: '#6b9e78', bg: 'rgba(107,158,120,0.08)', text: '#6b9e78' },    // Forest Green
+                                                    { border: '#b8860b', bg: 'rgba(184,134,11,0.08)', text: '#b8860b' },     // Dark Goldenrod
+                                                ];
+                                                const levelColor = eduLevelColors[levelIndex % eduLevelColors.length];
                                                 const levelData = educationTableData[level.key] || {};
                                                 const levelCourses = getCourseOptionsForLevel(level.key);
                                                 const levelSubjects = levelData.course ? getSubjectOptionsForCourse(levelData.course, level.key) : [];
@@ -2674,9 +2607,10 @@ function CheckEligibilityPage() {
                                                 return (
                                                     <React.Fragment key={level.key}>
                                                     <div 
-                                                        className="grid grid-cols-1 sm:grid-cols-8 gap-2 mb-3 p-2 bg-white/5 rounded-lg items-center border border-white/10"
+                                                        className="grid grid-cols-1 sm:grid-cols-8 gap-2 mb-3 p-2 rounded-lg items-center border-l-4"
+                                                        style={{ backgroundColor: levelColor.bg, borderLeftColor: levelColor.border, borderTop: `1px solid ${levelColor.border}25`, borderRight: `1px solid ${levelColor.border}25`, borderBottom: `1px solid ${levelColor.border}25` }}
                                                     >
-                                                        <div className="font-medium text-sm text-white sm:text-left">
+                                                        <div className="font-medium text-sm sm:text-left" style={{ color: levelColor.text }}>
                                                             {level.shortLabel}
                                                         </div>
                                                         
@@ -2782,6 +2716,8 @@ function CheckEligibilityPage() {
                                                             <div className="text-center text-gray-400 text-sm">—</div>
                                                         )}
                                                         
+                                                        {/* Status + Marks + Year: side by side on mobile */}
+                                                        <div className="grid grid-cols-3 gap-2 sm:contents">
                                                         <TextField
                                                             select
                                                             fullWidth
@@ -2827,6 +2763,7 @@ function CheckEligibilityPage() {
                                                                 </MenuItem>
                                                             ))}
                                                         </TextField>
+                                                        </div>
                                                         
                                                         {/* Active Backlogs - Only show for exam's required education level */}
                                                         {isExamRequiredLevel ? (
@@ -2859,14 +2796,14 @@ function CheckEligibilityPage() {
                                                      (selectedMandatorySubjects[level.key] || []).length > 0 && 
                                                      !(selectedMandatorySubjects[level.key] || []).includes('ALL') && 
                                                      !(selectedMandatorySubjects[level.key] || []).includes('NO') && (
-                                                        <div className="col-span-1 sm:col-span-8 p-2 bg-orange-500/10 rounded-lg border border-orange-500/30 mt-1">
+                                                        <div className="col-span-1 sm:col-span-8 p-2 bg-[#E4572E]/10 rounded-lg border border-[#E4572E]/30 mt-1">
                                                             <div className="flex flex-wrap items-center gap-3">
-                                                                <span className="text-sm font-medium text-orange-400">
+                                                                <span className="text-sm font-medium text-[#E4572E]">
                                                                     📝 Marks in Selected Subjects:
                                                                 </span>
                                                                 {(selectedMandatorySubjects[level.key] || []).map(subject => (
                                                                     <div key={subject} className="flex items-center gap-1">
-                                                                        <span className="text-sm text-white/70">{subject}:</span>
+                                                                        <span className="text-sm text-[#FBF6EE]/70">{subject}:</span>
                                                                         <TextField
                                                                             size="small"
                                                                             type="number"
@@ -2904,8 +2841,8 @@ function CheckEligibilityPage() {
 
                             {/* Section 5: NCC & Sports */}
                             {(examData || searchMode === 'eligibility') && (
-                                <div className="p-3 mb-3">
-                                    <h2 className="text-base font-semibold text-white mb-3 text-left">
+                                <div className="p-3 mb-3 rounded-lg border-l-4 border-l-[#9b8ec4] bg-[#9b8ec4]/8 border border-[#9b8ec4]/15">
+                                    <h2 className="text-base font-semibold text-[#9b8ec4] mb-3 text-left">
                                         NCC & Sports Details
                                     </h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -2925,6 +2862,8 @@ function CheckEligibilityPage() {
                                             ))}
                                         </TextField>
 
+                                        {/* NCC Certificate + NCC Grade: side by side on mobile */}
+                                        <div className="grid grid-cols-2 gap-2 sm:contents">
                                         <TextField
                                             select
                                             fullWidth
@@ -2956,6 +2895,7 @@ function CheckEligibilityPage() {
                                                 </MenuItem>
                                             ))}
                                         </TextField>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -2969,9 +2909,9 @@ function CheckEligibilityPage() {
                                         onClick={handleCheckEligibility}
                                         disabled={loading}
                                         sx={{
-                                            backgroundColor: "#f97316",
+                                            backgroundColor: "#E4572E",
                                             "&:hover": {
-                                                backgroundColor: "#ea580c",
+                                                backgroundColor: "#c9421e",
                                             },
                                             borderRadius: "20px",
                                             paddingX: 3,
@@ -2993,11 +2933,11 @@ function CheckEligibilityPage() {
                     {/* Results Section - For Exam Basis Mode (Side by Side) */}
                     {showResults && results.length > 0 && searchMode === 'exam' && (
                         <div ref={resultsRef} className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                            <div className="bg-white/5 backdrop-blur-sm rounded-xl shadow-lg p-3 border border-orange-500/40">
+                            <div className="bg-[#2B1E17]/40 backdrop-blur-sm rounded-xl shadow-lg p-3 border border-[#E4572E]/40">
                                 {renderResultsSummary()}
                             </div>
                             
-                            <div className="bg-white/5 backdrop-blur-sm rounded-xl shadow-lg p-3 border border-orange-500/40">
+                            <div className="bg-[#2B1E17]/40 backdrop-blur-sm rounded-xl shadow-lg p-3 border border-[#E4572E]/40">
                                 {renderDetailedResultsInline()}
                             </div>
                         </div>
@@ -3009,133 +2949,9 @@ function CheckEligibilityPage() {
                             {renderResultsSummary()}
                         </div>
                     )}
+
                 </div>
             </div>
-
-            {/* Footer */}
-            <footer className="w-full mt-8 overflow-hidden rounded-lg" style={{background: 'linear-gradient(to top, rgba(249,115,22,0.18) 60%, transparent 100%)'}}>
-                <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8 md:py-10">
-                    {/* Two-column layout: Our Services | About Us */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-
-                        {/* Left Column - Our Services */}
-                        <div>
-                            <div className="inline-block bg-orange-500 rounded-lg px-3 py-1 mb-5">
-                                <h3 className="text-sm sm:text-base font-semibold text-white">Our Services</h3>
-                            </div>
-
-                            <div className="space-y-5">
-                                {/* Pariksha Yogya */}
-                                <div>
-                                    <a href="/" className="flex items-center gap-2 mb-1.5">
-                                        <img src="/logos/py.png" alt="Pariksha Yogya" className="h-10 sm:h-12 w-auto object-contain" />
-                                        <span className="text-base sm:text-lg font-bold text-white">Pariksha Yogya</span>
-                                    </a>
-                                    <p className="text-sm text-white/70 leading-relaxed text-justify">
-                                        Exam eligibility and attempts calculator providing personalized insights based on age, education, and criteria for competitive exams.
-                                    </p>
-                                </div>
-
-                                {/* Pariksha Marg */}
-                                <div>
-                                    <a href={import.meta.env.VITE_PRATIYOGITA_MARG_URL || "https://marg.psetu.com/"} className="flex items-center gap-2 mb-1.5">
-                                        <img src="/logos/pm.png" alt="Pariksha Marg" className="h-10 sm:h-12 w-auto object-contain" />
-                                        <span className="text-base sm:text-lg font-bold text-white">Pariksha Marg</span>
-                                    </a>
-                                    <p className="text-sm text-white/70 leading-relaxed text-justify">
-                                        Guided path to competitive exam success with Subject - Expert roadmaps, best practices, and essential study materials.
-                                    </p>
-                                </div>
-
-                                {/* Pariksha Gyan */}
-                                <div>
-                                    <a href={import.meta.env.VITE_PRATIYOGITA_GYAN_URL || "https://gyan.psetu.com/"} className="flex items-center gap-2 mb-1.5">
-                                        <img src="/logos/pg.png" alt="Pariksha Gyan" className="h-10 sm:h-12 w-auto object-contain" />
-                                        <span className="text-base sm:text-lg font-bold text-white">Pariksha Gyan</span>
-                                    </a>
-                                    <p className="text-sm text-white/70 leading-relaxed text-justify">
-                                        AI-powered chatbot with all necessary books, references, and explanations for competitive exam preparation.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right Column - About Us */}
-                        <div>
-                            <div className="inline-block bg-orange-500 rounded-lg px-3 py-1 mb-5">
-                                <h3 className="text-sm sm:text-base font-semibold text-white">About Us</h3>
-                            </div>
-
-                            {/* Pariksha Setu logo + description */}
-                            <div className="mb-4">
-                                <a href={import.meta.env.VITE_PRATIYOGITA_SETU_URL || "https://psetu.com/"} className="flex items-center gap-2 mb-2">
-                                    <img src="/logos/ps.png" alt="Pariksha Setu" className="h-10 sm:h-12 w-auto object-contain" />
-                                    <span className="text-base sm:text-lg font-bold text-white">Pariksha Setu</span>
-                                </a>
-                                <p className="text-sm text-white/70 leading-relaxed text-justify">
-                                    One-stop platform for competitive exam aspirants, offering a personalized exam eligibility and attempts calculator, an AI-powered chatbot with essential books and explanations, and a structured roadmap with best practices and study resources.
-                                </p>
-                            </div>
-
-                            {/* Support email */}
-                            <div className="flex flex-wrap items-center gap-1.5 mb-5">
-                                <span className="text-sm text-white/50">For help and support:</span>
-                                <a href="mailto:askparikshasetu@gmail.com" className="text-orange-400 hover:underline text-sm">
-                                    askparikshasetu@gmail.com
-                                </a>
-                            </div>
-
-                            {/* Connect With Us */}
-                            <div className="inline-block bg-orange-500 rounded-lg px-3 py-1 mb-4">
-                                <h3 className="text-sm sm:text-base font-semibold text-white">Connect With Us</h3>
-                            </div>
-
-                            {/* Social Media Icons */}
-                            <div className="flex flex-wrap gap-3 sm:gap-4 mb-5">
-                                <a href="mailto:askparikshasetu@gmail.com" className="text-white/50 hover:text-indigo-400 transition-colors duration-300">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                                        <path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z" />
-                                        <path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
-                                    </svg>
-                                </a>
-                                <a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-blue-400 transition-colors duration-300">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                                        <path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z" />
-                                    </svg>
-                                </a>
-                                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white transition-colors duration-300">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                                    </svg>
-                                </a>
-                                <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-pink-400 transition-colors duration-300">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                                        <path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.465.66.254 1.216.598 1.772 1.153.509.5.902 1.105 1.153 1.772.247.637.415 1.363.465 2.428.047 1.066.06 1.405.06 4.122 0 2.717-.01 3.056-.06 4.122-.05 1.065-.218 1.79-.465 2.428a4.883 4.883 0 01-1.153 1.772c-.5.508-1.105.902-1.772 1.153-.637.247-1.363.415-2.428.465-1.066.047-1.405.06-4.122.06-2.717 0-3.056-.01-4.122-.06-1.065-.05-1.79-.218-2.428-.465a4.89 4.89 0 01-1.772-1.153 4.904 4.904 0 01-1.153-1.772c-.247-.637-.415-1.363-.465-2.428C2.013 15.056 2 14.717 2 12c0-2.717.01-3.056.06-4.122.05-1.066.217-1.79.465-2.428.254-.66.599-1.216 1.153-1.772.5-.508 1.105-.902 1.772-1.153.637-.247 1.363-.415 2.428-.465C8.944 2.013 9.283 2 12 2zm0 1.8c-2.67 0-2.986.01-4.04.059-.976.045-1.505.207-1.858.344-.466.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.048 1.055-.058 1.37-.058 4.041 0 2.67.01 2.986.058 4.04.045.977.207 1.505.344 1.858.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058 2.67 0 2.986-.01 4.04-.058.977-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041 0-2.67-.01-2.986-.058-4.04-.045-.977-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15c-.35-.35-.683-.566-1.15-.748-.353-.137-.882-.3-1.857-.344-1.055-.048-1.37-.058-4.041-.058zm0 3.1a5.1 5.1 0 110 10.2 5.1 5.1 0 010-10.2zm0 8.4a3.3 3.3 0 100-6.6 3.3 3.3 0 000 6.6zm6.4-8.63a1.19 1.19 0 11-2.38 0 1.19 1.19 0 012.38 0z" />
-                                    </svg>
-                                </a>
-                            </div>
-
-                            {/* Nav Links */}
-                            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                                <a href="/" className="text-white/70 hover:text-orange-400 hover:underline transition-colors">Home</a>
-                                <a href="/about" className="text-white/70 hover:text-orange-400 hover:underline transition-colors">About Us</a>
-                                <a href="/contribution" className="text-white/70 hover:text-orange-400 hover:underline transition-colors">Contribution</a>
-                                <a href="/contact" className="text-white/70 hover:text-orange-400 hover:underline transition-colors">Contact Us</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Bottom bar */}
-                    <div className="border-t border-orange-500/40 mt-6 pt-3">
-                        <div className="flex flex-col sm:flex-row justify-between items-center text-white/60 text-xs sm:text-sm">
-                            <div>Made with ❤️ for Aspirants</div>
-                            <div className="mt-1 sm:mt-0">
-                                © {new Date().getFullYear()} | Privacy Policy | Terms & Conditions | Refund Policy
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </footer>
         </ThemeProvider>
     );
 }

@@ -60,6 +60,18 @@ export const NodeContent: React.FC<NodeContentProps> = ({
     }
   };
 
+  const getFontWeight = (fw?: string): number | undefined => {
+    switch (fw) {
+      case 'light': return 300;
+      case 'normal': return 400;
+      case 'medium': return 500;
+      case 'semibold': return 600;
+      case 'bold': return 700;
+      case 'extrabold': return 800;
+      default: return undefined;
+    }
+  };
+
   if (isEditing) {
     return (
       <textarea
@@ -72,6 +84,7 @@ export const NodeContent: React.FC<NodeContentProps> = ({
         style={{
           fontFamily: nodeData.fontFamily,
           fontSize: typeof nodeData.fontSize === 'number' ? `${nodeData.fontSize}px` : undefined,
+          fontWeight: getFontWeight(nodeData.fontWeight),
           textAlign: nodeData.textAlign || 'center',
         }}
       />
@@ -83,6 +96,7 @@ export const NodeContent: React.FC<NodeContentProps> = ({
       className={`w-full h-full break-words ${getFontClassName(nodeData.fontSize)}`}
       style={{
         fontFamily: nodeData.fontFamily,
+        fontWeight: getFontWeight(nodeData.fontWeight),
         color: nodeData.fontColor,
         textAlign: nodeData.textAlign || 'center',
         display: 'flex',

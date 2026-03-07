@@ -276,7 +276,7 @@ const Circle = forwardRef<
       <div
         ref={ref}
         className={cn(
-          "z-10 flex items-center justify-center rounded-[20%] border-0 shadow-[0_0_20px_-12px_rgba(0,0,0,0.8)]",
+          "z-10 flex items-center justify-center rounded-[20%] border-0",
           isDark ? "bg-gray-800" : "bg-amber-50",
           "w-12 h-12 p-2 xs:w-16 xs:h-16 xs:p-3 sm:w-14 sm:h-14 sm:p-3.5 md:w-40 md:h-40 md:p-4", // Enhanced mobile sizing
           className

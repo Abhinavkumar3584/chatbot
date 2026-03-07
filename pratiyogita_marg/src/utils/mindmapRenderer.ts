@@ -1,130 +1,46 @@
 
 import { MindMapData } from "@/components/mindmap/types";
 
-// Helper function to ensure safe parsing of JSON data
-const safeJSONParse = (jsonString: string, fallback: any = {}): any => {
+const nodeTypeMap: Record<string, string> = {
+  title: 'base', topic: 'base', subtopic: 'base', paragraph: 'base',
+  section: 'section', checklist: 'checklist', resource: 'resource',
+  circle: 'circle', rectangle: 'rectangle', square: 'square',
+  triangle: 'triangle', note: 'note', concept: 'concept',
+  hline: 'hline', vline: 'vline',
+};
+
+const getNodeType = (t: string | undefined) =>
+  t && nodeTypeMap[t] ? nodeTypeMap[t] : 'base';
+
+const validNode = (n: any) =>
+  n.id && typeof n.id === 'string' &&
+  n.position && typeof n.position.x === 'number' &&
+  typeof n.position.y === 'number' && n.data;
+
+const validEdge = (e: any) =>
+  e.id && typeof e.id === 'string' && e.source && e.target;
+
+export const renderMindMap = async (name: string): Promise<MindMapData | null> => {
   try {
-    return JSON.parse(jsonString);
-  } catch (error) {
-    console.error('Error parsing JSON data:', error);
-    return fallback;
-  }
-};
+    const res = await fetch(`/api/mindmap?name=${encodeURIComponent(name)}`);
+    if (!res.ok) { console.error('Mind map not found:', name); return null; }
+    const mm = await res.json();
 
-// Helper function to validate node structure
-const validateNodeStructure = (node: any): boolean => {
-  // Check for required properties
-  if (!node.id || typeof node.id !== 'string') {
-    console.error('Node missing required id property:', node);
-    return false;
-  }
-  
-  // Ensure position is valid
-  if (!node.position || typeof node.position.x !== 'number' || typeof node.position.y !== 'number') {
-    console.error('Node has invalid position:', node);
-    return false;
-  }
-  
-  // Ensure data exists
-  if (!node.data) {
-    console.error('Node missing data property:', node);
-    return false;
-  }
-  
-  return true;
-};
+    mm.nodes = Array.isArray(mm.nodes)
+      ? mm.nodes.filter(validNode).map((n: any) => {
+          if (n.data?.nodeType) n.type = getNodeType(n.data.nodeType);
+          if (!n.type) n.type = 'base';
+          return n;
+        })
+      : [];
 
-// Helper function to validate edge structure
-const validateEdgeStructure = (edge: any): boolean => {
-  // Check for required properties
-  if (!edge.id || typeof edge.id !== 'string') {
-    console.error('Edge missing required id property:', edge);
-    return false;
-  }
-  
-  if (!edge.source || !edge.target) {
-    console.error('Edge missing required source/target properties:', edge);
-    return false;
-  }
-  
-  return true;
-};
+    mm.edges = Array.isArray(mm.edges) ? mm.edges.filter(validEdge) : [];
 
-// Map nodeType to actual type for proper rendering
-const getNodeType = (nodeTypeValue: string | undefined): string => {
-  const nodeTypeMap: Record<string, string> = {
-    'title': 'base', 
-    'topic': 'base',
-    'subtopic': 'base',
-    'paragraph': 'base',
-    'section': 'section',
-    'checklist': 'checklist',
-    'resource': 'resource',
-    'circle': 'circle',
-    'rectangle': 'rectangle',
-    'square': 'square',
-    'triangle': 'triangle',
-    'note': 'note',
-    'concept': 'concept'
-  };
-
-  // Return the mapped type or default to 'base' if not found
-  return nodeTypeValue && nodeTypeMap[nodeTypeValue] ? nodeTypeMap[nodeTypeValue] : 'base';
-};
-
-export const renderMindMap = (name: string): MindMapData | null => {
-  try {
-    const mindmapsData = localStorage.getItem('mindmaps');
-    if (!mindmapsData) {
-      console.error('No mind maps found in storage');
-      return null;
-    }
-
-    const mindmaps = safeJSONParse(mindmapsData, {});
-    const mindMap = mindmaps[name];
-
-    if (!mindMap) {
-      console.error('Mind map not found:', name);
-      return null;
-    }
-    
-    // Validate and fix nodes if necessary
-    if (!Array.isArray(mindMap.nodes)) {
-      console.error('Invalid nodes array in mind map:', name);
-      mindMap.nodes = [];
-    } else {
-      // Filter out invalid nodes
-      mindMap.nodes = mindMap.nodes.filter(node => validateNodeStructure(node));
-      
-      // Ensure each node has the proper type
-      mindMap.nodes = mindMap.nodes.map(node => {
-        // Set the node type based on data.nodeType
-        if (node.data && node.data.nodeType) {
-          node.type = getNodeType(node.data.nodeType);
-        }
-        
-        // Default to 'base' type if no type is specified
-        if (!node.type) {
-          node.type = 'base';
-        }
-        
-        return node;
-      });
-    }
-    
-    // Validate and fix edges if necessary
-    if (!Array.isArray(mindMap.edges)) {
-      console.error('Invalid edges array in mind map:', name);
-      mindMap.edges = [];
-    } else {
-      // Filter out invalid edges
-      mindMap.edges = mindMap.edges.filter(edge => validateEdgeStructure(edge));
-    }
-
-    console.log('Successfully loaded mind map:', mindMap);
-    return mindMap;
-  } catch (error) {
-    console.error('Error rendering mind map:', error);
+    console.log('Loaded mind map for viewing:', name);
+    return mm as MindMapData;
+  } catch (err) {
+    console.error('Error rendering mind map:', err);
     return null;
   }
 };
+

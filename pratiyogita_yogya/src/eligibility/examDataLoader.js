@@ -2,16 +2,11 @@
  * Exam Data Loader Utility
  * For PRATIYOGITA YOGYA - Exam Eligibility Tracker
  * 
- * This module loads exam catalog and exam payloads from Firestore.
+ * This module loads exam catalog and exam payloads from local JSON files.
+ * (Firebase/Firestore has been removed — re-add when ready.)
  */
 
-import { collection, doc, documentId, getDoc, getDocs, query, where } from 'firebase/firestore';
-import { db } from '../config/firebase';
 import { buildExamDataDocId } from './examDataDocId';
-
-const EXAM_CATALOG_COLLECTION = import.meta.env.VITE_EXAM_CATALOG_COLLECTION || 'examCatalog';
-const EXAM_CATALOG_DOC_ID = import.meta.env.VITE_EXAM_CATALOG_DOC_ID || 'allExamNames';
-const EXAM_DATA_COLLECTION = import.meta.env.VITE_EXAM_DATA_COLLECTION || 'examData';
 
 let allExamNamesCache = null;
 let catalogLoadPromise = null;
@@ -29,7 +24,7 @@ const normalizeCatalogPayload = (payload) => {
 };
 
 /**
- * Ensure exam catalog is loaded from Firestore.
+ * Ensure exam catalog is loaded from local JSON.
  * @returns {Promise<Record<string, any>>}
  */
 export const ensureExamCatalogLoaded = async () => {
@@ -38,17 +33,14 @@ export const ensureExamCatalogLoaded = async () => {
 
     catalogLoadPromise = (async () => {
         try {
-            const snapshot = await getDoc(doc(db, EXAM_CATALOG_COLLECTION, EXAM_CATALOG_DOC_ID));
-            if (!snapshot.exists()) {
-                throw new Error(`Exam catalog not found in Firestore (${EXAM_CATALOG_COLLECTION}/${EXAM_CATALOG_DOC_ID})`);
+            const response = await fetch('/examsdata/allexamnames.json');
+            if (!response.ok) {
+                throw new Error(`Failed to load exam catalog (HTTP ${response.status})`);
             }
-
-            allExamNamesCache = normalizeCatalogPayload(snapshot.data());
+            const data = await response.json();
+            allExamNamesCache = normalizeCatalogPayload(data);
             return allExamNamesCache;
         } catch (error) {
-            if (error?.code === 'permission-denied') {
-                throw new Error('Access denied: your account is not allowed to read secure exam data.');
-            }
             throw error;
         }
     })();
@@ -62,7 +54,7 @@ export const ensureExamCatalogLoaded = async () => {
 
 /**
  * Get all exam categories (folder names)
- * @returns {string[]} - Array of category names like "DEFENCE_ED", "UG_ED", etc.
+ * @returns {string[]} - Array of category names like "DEFENCE_EXAMS", "UG_EXAMS", etc.
  */
 export const getAllCategories = () => {
     return Object.keys(allExamNamesCache || {});
@@ -70,7 +62,7 @@ export const getAllCategories = () => {
 
 /**
  * Get all exams in a specific category
- * @param {string} category - Category name like "DEFENCE_ED"
+ * @param {string} category - Category name like "DEFENCE_EXAMS"
  * @returns {Array} - Array of exam objects
  */
 export const getExamsByCategory = (category) => {
@@ -143,8 +135,8 @@ const chunkArray = (arr, size) => {
 };
 
 /**
- * Load exam JSON data dynamically
- * @param {string} linkedJsonFile - Path like "DEFENCE_ED/cds.json"
+ * Load exam JSON data from local files
+ * @param {string} linkedJsonFile - Path like "DEFENCE_EXAMS/cds.json"
  * @returns {Promise<Object|null>} - Exam data object or null
  */
 export const loadExamData = async (linkedJsonFile) => {
@@ -156,23 +148,17 @@ export const loadExamData = async (linkedJsonFile) => {
     }
     
     try {
-        const docId = buildExamDataDocId(linkedJsonFile);
-        const snapshot = await getDoc(doc(db, EXAM_DATA_COLLECTION, docId));
-        if (!snapshot.exists()) {
-            console.error(`Exam data not found in Firestore for: ${linkedJsonFile}`);
+        const response = await fetch(`/examsdata/${linkedJsonFile}`);
+        if (!response.ok) {
+            console.error(`Exam data not found for: ${linkedJsonFile}`);
             return null;
         }
 
-        const data = snapshot.data();
-        const payload = data?.payload && typeof data.payload === 'object' ? data.payload : data;
+        const payload = await response.json();
         examDataCache[linkedJsonFile] = payload;
         return payload;
     } catch (error) {
-        if (error?.code === 'permission-denied') {
-            console.error('Permission denied while reading exam data. User is missing eligibility_reader claim.');
-        } else {
-            console.error(`Error loading exam data from Firestore (${linkedJsonFile}):`, error);
-        }
+        console.error(`Error loading exam data (${linkedJsonFile}):`, error);
         return null;
     }
 };
@@ -195,8 +181,7 @@ export const loadExamDataByName = async (examName) => {
 };
 
 /**
- * Load multiple exam payloads in batched Firestore requests.
- * Uses `where(documentId(), 'in', [...])` in chunks for faster cold loads.
+ * Load multiple exam payloads from local JSON files.
  * @param {string[]} linkedJsonFiles
  * @returns {Promise<Record<string, any>>}
  */
@@ -220,31 +205,12 @@ export const loadExamDataBulk = async (linkedJsonFiles = []) => {
         return loadedMap;
     }
 
-    const idToLinkedFile = new Map(
-        missingFiles.map((file) => [buildExamDataDocId(file), file])
-    );
-
-    const docIdChunks = chunkArray(Array.from(idToLinkedFile.keys()), 30);
-
     await Promise.all(
-        docIdChunks.map(async (docIds) => {
-            if (docIds.length === 0) return;
-
-            const q = query(
-                collection(db, EXAM_DATA_COLLECTION),
-                where(documentId(), 'in', docIds)
-            );
-
-            const snapshot = await getDocs(q);
-            snapshot.forEach((examDoc) => {
-                const linkedFile = idToLinkedFile.get(examDoc.id);
-                if (!linkedFile) return;
-
-                const data = examDoc.data();
-                const payload = data?.payload && typeof data.payload === 'object' ? data.payload : data;
-                examDataCache[linkedFile] = payload;
-                loadedMap[linkedFile] = payload;
-            });
+        missingFiles.map(async (file) => {
+            const data = await loadExamData(file);
+            if (data) {
+                loadedMap[file] = data;
+            }
         })
     );
 
@@ -319,36 +285,36 @@ export const getExamOptionsGroupedByCategory = () => {
 
 /**
  * Format category name for display
- * @param {string} category - Category like "DEFENCE_ED"
+ * @param {string} category - Category like "DEFENCE_EXAMS"
  * @returns {string} - Formatted name like "Defence"
  */
 export const formatCategoryName = (category) => {
     if (!category) return '';
     
     const categoryMap = {
-        'SSC_ED': 'SSC Exams',
-        'DEFENCE_ED': 'Defence Exams',
-        'UG_ED': 'Undergraduate Exams',
-        'PG_ED': 'Postgraduate Exams',
-        'BANKING_ED': 'Banking Exams',
-        'RAILWAY_ED': 'Railway Exams',
-        'TEACHING_ED': 'Teaching Exams',
-        'CIVIL_SERVICES_ED': 'Civil Services',
-        'POLICE_ED': 'Police Exams',
-        'ENGINEERING_RECRUITING_ED': 'Engineering Recruitment',
-        'INSURANCE_ED': 'Insurance Exams',
-        'JUDICIARY_ED': 'Judiciary Exams',
-        'MBA_ED': 'MBA Exams',
-        'SCHOOL_ED': 'School Level Exams',
-        'NURSING_ED': 'Nursing Exams',
-        'REGULATORY_BODY_ED': 'Regulatory Body Exams',
-        'OTHER_GOV_ED': 'Other Government Exams',
-        'OTHERS_ED': 'Other Exams',
-        'CAMPUS_PLACEMENT_ED': 'Campus Placement',
-        'ACCOUNTING_COMMERCE_ED': 'Accounting & Commerce'
+        'SSC_EXAMS': 'SSC Exams',
+        'DEFENCE_EXAMS': 'Defence Exams',
+        'UG_EXAMS': 'Undergraduate Exams',
+        'PG_EXAMS': 'Postgraduate Exams',
+        'BANKING_EXAMS': 'Banking Exams',
+        'RAILWAY_EXAMS': 'Railway Exams',
+        'TEACHING_EXAMS': 'Teaching Exams',
+        'CIVIL_SERVICES_EXAMS': 'Civil Services',
+        'POLICE_EXAMS': 'Police Exams',
+        'ENGINEERING_RECRUITING_EXAMS': 'Engineering Recruitment',
+        'INSURANCE_EXAMS': 'Insurance Exams',
+        'JUDICIARY_EXAMS': 'Judiciary Exams',
+        'MBA_EXAMS': 'MBA Exams',
+        'SCHOOL_EXAMS': 'School Level Exams',
+        'NURSING_EXAMS': 'Nursing Exams',
+        'REGULATORY_BODY_EXAMS': 'Regulatory Body Exams',
+        'OTHER_GOV_EXAMS': 'Other Government Exams',
+        'OTHERS_EXAMS': 'Other Exams',
+        'CAMPUS_PLACEMENT_EXAMS': 'Campus Placement',
+        'ACCOUNTING_COMMERCE_EXAMS': 'Accounting & Commerce'
     };
     
-    return categoryMap[category] || category.replace('_ED', '').replace(/_/g, ' ');
+    return categoryMap[category] || category.replace('_EXAMS', '').replace('_EXAMS', '').replace(/_/g, ' ');
 };
 
 // ============================================

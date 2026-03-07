@@ -44,10 +44,10 @@ const GyanPosters = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#FBF6EE]">
             Gyan Posters
           </h1>
-          <p className="mt-3 text-base sm:text-lg text-white/70 max-w-2xl mx-auto">
+          <p className="mt-3 text-base sm:text-lg text-[#E8D8C3]/80 max-w-2xl mx-auto">
             Beautiful illustration posters covering key concepts across subjects — learn visually, retain longer.
           </p>
         </div>
@@ -60,8 +60,8 @@ const GyanPosters = () => {
               onClick={() => setActive(subj)}
               className={`px-4 py-2 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 border ${
                 active === subj
-                  ? "bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/30"
-                  : "bg-white/5 text-white/80 border-white/20 hover:bg-white/10 hover:border-orange-400 hover:text-orange-400"
+                  ? "bg-[#E4572E] text-[#FBF6EE] border-[#E4572E]"
+                  : "bg-[#2B1E17]/60 text-[#E8D8C3]/90 border-[#E4572E]/20 hover:bg-[#E4572E]/15 hover:border-[#E4572E]/60 hover:text-[#E4572E]"
               }`}
             >
               {subj}
@@ -71,7 +71,7 @@ const GyanPosters = () => {
 
         {/* Poster Grid — 3 per row */}
         {filtered.length === 0 ? (
-          <p className="text-center text-white/50 text-lg py-16">
+          <p className="text-center text-[#E8D8C3]/55 text-lg py-16">
             No posters available for this subject yet.
           </p>
         ) : (
@@ -80,7 +80,7 @@ const GyanPosters = () => {
               <div
                 key={idx}
                 onClick={() => setLightbox(poster)}
-                className="group cursor-pointer rounded-xl overflow-hidden border border-white/10 bg-white/5 hover:border-orange-500/60 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300"
+                className="group cursor-pointer rounded-xl overflow-hidden border border-[#E4572E]/20 bg-[#2B1E17]/55 hover:border-[#E4572E]/65 transition-all duration-300"
               >
                 <div className="relative overflow-hidden">
                   <img
@@ -92,14 +92,14 @@ const GyanPosters = () => {
                 </div>
                 <div className="p-3 sm:p-4 flex items-center justify-between">
                   <div>
-                    <h3 className="text-white font-bold text-base sm:text-lg">
+                    <h3 className="text-[#FBF6EE] font-bold text-base sm:text-lg">
                       {poster.title}
                     </h3>
-                    <span className="text-xs text-orange-400 font-medium uppercase tracking-wide">
+                    <span className="text-xs text-[#E4572E] font-medium uppercase tracking-wide">
                       {poster.subject}
                     </span>
                   </div>
-                  <span className="text-white/30 group-hover:text-orange-400 transition-colors">
+                  <span className="text-[#E8D8C3]/35 group-hover:text-[#E4572E] transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9m11.25-5.25v4.5m0-4.5h-4.5m4.5 0L15 9m-11.25 11.25v-4.5m0 4.5h4.5m-4.5 0L9 15m11.25 5.25v-4.5m0 4.5h-4.5m4.5 0L15 15" />
                     </svg>
@@ -114,13 +114,13 @@ const GyanPosters = () => {
       {/* Lightbox overlay */}
       {lightbox && (
         <div
-          className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+          className="fixed inset-0 z-[9999] bg-[#2B1E17]/90 backdrop-blur-sm flex flex-col items-center justify-center p-4"
           onClick={() => setLightbox(null)}
         >
           {/* Close button — fixed top-right */}
           <button
             onClick={() => setLightbox(null)}
-            className="absolute top-4 right-4 bg-black/60 hover:bg-black/80 text-white rounded-full p-2.5 z-10 transition-colors"
+            className="absolute top-4 right-4 bg-[#2B1E17]/80 hover:bg-[#2B1E17] border border-[#E4572E]/40 text-[#FBF6EE] rounded-full p-2.5 z-10 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -135,25 +135,25 @@ const GyanPosters = () => {
             <img
               src={lightbox.file}
               alt={lightbox.title}
-              className="w-full h-auto rounded-xl object-contain shadow-2xl"
+              className="w-full h-auto rounded-xl object-contain"
             />
           </div>
 
           {/* Bottom bar — title, subject, like/dislike */}
           <div
-            className="w-full max-w-4xl mt-3 flex items-center justify-between bg-white/10 backdrop-blur-md rounded-xl px-4 py-3"
+            className="w-full max-w-4xl mt-3 flex items-center justify-between bg-[#2B1E17]/85 backdrop-blur-md border border-[#E4572E]/25 rounded-xl px-4 py-3"
             onClick={(e) => e.stopPropagation()}
           >
             <div>
-              <h3 className="text-white font-bold text-base sm:text-lg">{lightbox.title}</h3>
-              <span className="text-orange-400 text-xs sm:text-sm font-medium uppercase tracking-wide">{lightbox.subject}</span>
+              <h3 className="text-[#FBF6EE] font-bold text-base sm:text-lg">{lightbox.title}</h3>
+              <span className="text-[#E4572E] text-xs sm:text-sm font-medium uppercase tracking-wide">{lightbox.subject}</span>
             </div>
             <div className="flex items-center gap-2">
               {/* Download */}
               <a
                 href={lightbox.file}
                 download={`${lightbox.title} - ${lightbox.subject}.png`}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-white/5 border-white/20 text-white/60 hover:border-orange-500/50 hover:text-orange-400 transition-all duration-200"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-[#2B1E17]/60 border-[#E4572E]/25 text-[#E8D8C3]/70 hover:border-[#E4572E]/60 hover:text-[#E4572E] transition-all duration-200"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -165,8 +165,8 @@ const GyanPosters = () => {
                 onClick={() => toggleReaction(lightbox.file, "like")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 ${
                   reactions[lightbox.file] === "like"
-                    ? "bg-green-500/20 border-green-500 text-green-400"
-                    : "bg-white/5 border-white/20 text-white/60 hover:border-green-500/50 hover:text-green-400"
+                    ? "bg-[#E4572E]/20 border-[#E4572E] text-[#E4572E]"
+                    : "bg-[#2B1E17]/60 border-[#E4572E]/25 text-[#E8D8C3]/70 hover:border-[#E4572E]/60 hover:text-[#E4572E]"
                 }`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill={reactions[lightbox.file] === "like" ? "currentColor" : "none"} viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -179,8 +179,8 @@ const GyanPosters = () => {
                 onClick={() => toggleReaction(lightbox.file, "dislike")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 ${
                   reactions[lightbox.file] === "dislike"
-                    ? "bg-red-500/20 border-red-500 text-red-400"
-                    : "bg-white/5 border-white/20 text-white/60 hover:border-red-500/50 hover:text-red-400"
+                    ? "bg-[#E8D8C3]/20 border-[#E8D8C3] text-[#E8D8C3]"
+                    : "bg-[#2B1E17]/60 border-[#E4572E]/25 text-[#E8D8C3]/70 hover:border-[#E8D8C3]/60 hover:text-[#E8D8C3]"
                 }`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill={reactions[lightbox.file] === "dislike" ? "currentColor" : "none"} viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">

@@ -3,8 +3,8 @@ import React, { createContext, useState, useEffect, useContext } from "react";
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  // Start with a placeholder value, will be updated in useEffect
-  const [theme, setTheme] = useState("light");
+  // Start with dark (coffee palette optimized for dark mode)
+  const [theme, setTheme] = useState("dark");
   const [language, setLanguage] = useState("en");
 
   useEffect(() => {
@@ -16,11 +16,8 @@ export const ThemeProvider = ({ children }) => {
     if (savedTheme) {
       setTheme(savedTheme);
     } else {
-      // Check system preference
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-      const initialTheme = prefersDark ? "dark" : "light";
+      // Default to dark for the coffee palette design
+      const initialTheme = "dark";
       setTheme(initialTheme);
       localStorage.setItem("pariksha-setu-theme", initialTheme);
     }

@@ -1,6 +1,7 @@
 
 import "./App.css";
 import Navbar from "@/components/Navbar/navbar";
+import Footer from "@/components/Footer/footer";
 import { HeroUIProvider } from "@heroui/react";
 import { Routes, Route, Navigate } from "react-router-dom";
 // import ContributionPage from "./Pages/contribution";
@@ -12,6 +13,7 @@ import Signup from "./Pages/signup";
 import TermsAndConditions from "./Pages/termsandconditions";
 import RefundPolicy from "./Pages/refundpolicy";
 import CheckEligibility from "./Pages/checkeligibilitypage";
+import ExamDataLoader from "./Pages/ExamDataLoader";
 
 function App() {
   return (
@@ -20,8 +22,9 @@ function App() {
         {/* Grainy background - matching Setu */}
         <svg className="hidden">
           <filter id="grainy">
-            <feTurbulence type="turbulence" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
+            <feTurbulence type="fractalNoise" baseFrequency=".537" numOctaves="4" stitchTiles="stitch" />
             <feColorMatrix type="saturate" values="0" />
+            <feBlend in="SourceGraphic" mode="multiply" />
           </filter>
         </svg>
         <div className="grainy-background-layer" />
@@ -41,7 +44,9 @@ function App() {
           <Route path="/checkeligibility" element={<CheckEligibility />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/exam-data-loader" element={<ExamDataLoader />} />
         </Routes>
+        <Footer />
       </HeroUIProvider>
     </>
   );

@@ -1,27 +1,7 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import AuthModal from "../components/AuthModal";
+import { Navigate } from "react-router-dom";
 
-const Signup = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const params = new URLSearchParams(location.search);
-  const nextParam = params.get("next");
-  const normalizedNextParam =
-    nextParam === "/checkeligibility" ? "/check-eligibility" : nextParam;
-  const redirectPath =
-    normalizedNextParam && normalizedNextParam.startsWith("/") && !normalizedNextParam.startsWith("//")
-      ? normalizedNextParam
-      : "/";
-
-  return (
-    <AuthModal
-      isOpen={true}
-      onClose={() => navigate(redirectPath)}
-      initialMode="signup"
-    />
-  );
-};
+/** Signup page — Firebase auth removed. Redirects to home. */
+const Signup = () => <Navigate to="/" replace />;
 
 export default Signup;

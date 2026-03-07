@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { Connection, MarkerType, addEdge } from '@xyflow/react';
+import { Connection, addEdge } from '@xyflow/react';
 import { EdgeData, OnEdgeClick, MindMapEdge } from '../types';
 
 interface UseMindMapEdgeHandlersProps {
@@ -15,14 +15,6 @@ export const useMindMapEdgeHandlers = ({ setEdges }: UseMindMapEdgeHandlersProps
     setEdges((eds) =>
       eds.map((edge) => {
         if (edge.id === id) {
-          const markerEnd = newData.arrowEnd !== undefined ? 
-            (newData.arrowEnd ? { type: MarkerType.ArrowClosed } : undefined) :
-            edge.markerEnd;
-
-          const markerStart = newData.arrowStart !== undefined ? 
-            (newData.arrowStart ? { type: MarkerType.ArrowClosed } : undefined) :
-            edge.markerStart;
-
           // Define edge type based on pathStyle
           let type = edge.type;
           if (newData.pathStyle) {
@@ -39,18 +31,12 @@ export const useMindMapEdgeHandlers = ({ setEdges }: UseMindMapEdgeHandlersProps
             }
           }
 
-          // Set animated property based on strokeStyle
-          // Only animate if not 'solid'
-          const animated = newData.strokeStyle !== undefined
-            ? newData.strokeStyle !== 'solid'
-            : edge.data?.strokeStyle !== 'solid';
-
           return {
             ...edge,
             type,
-            animated,
-            markerEnd,
-            markerStart,
+            animated: false,
+            markerEnd: undefined,
+            markerStart: undefined,
             data: {
               ...edge.data,
               ...newData,
@@ -77,17 +63,14 @@ export const useMindMapEdgeHandlers = ({ setEdges }: UseMindMapEdgeHandlersProps
         addEdge(
           {
             ...params,
-            type: 'default', // Changed from 'smoothstep' to 'default' for straight lines by default
-            animated: false, // Set to false initially for solid lines
+            type: 'default',
+            animated: false,
             data: {
               strokeStyle: 'solid',
               strokeWidth: 1,
               strokeColor: '#000000',
-              arrowEnd: true,
+              arrowEnd: false,
               pathStyle: 'straight'
-            },
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
             },
           },
           eds
