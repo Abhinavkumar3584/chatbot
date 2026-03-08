@@ -21,7 +21,7 @@
 "BETWEEN_AGE",means 16 to 19, 21 to 25 are the between age 
 "MINIMUM_DOB", means born on or before 31-12-2009         
 "MAXIMUM_DOB", born on or after 31-12-2009 
-"BETWEEN_DOB", "02-01-2003 to 01-01-2008", range for candidates appearing
+"BETWEEN_DOB", "02-01-2003 to 01-01-2008", range for candidates appearing in exam
 "NO_AGE_LIMIT" means no age limit 
 
 
