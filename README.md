@@ -16,6 +16,17 @@
 
 ## Overview
 
+"STARTING_AGE", means 19, 21, 23 is the startinga age
+"ENDING_AGE", means 30, 38, 42 are the ending age
+"BETWEEN_AGE",means 16 to 19, 21 to 25 are the between age 
+"MINIMUM_DOB", means born on or before 31-12-2009         
+"MAXIMUM_DOB", born on or after 31-12-2009 
+"BETWEEN_DOB", "02-01-2003 to 01-01-2008", range for candidates appearing
+"NO_AGE_LIMIT" means there is no age limit 
+
+
+
+
 Preparing for competitive exams in India shouldn't be complicated. You need to know which exams you're eligible for, understand what to study, and then actually study it effectively. That's exactly what this platform does — it guides you through the entire journey.
 
 We've built four integrated applications that work together:

@@ -65,6 +65,10 @@ const getNodeType = (nodeType: string): string => {
       return 'hline';
     case 'vline':
       return 'vline';
+    case 'link':
+      return 'link';
+    case 'textonly':
+      return 'textonly';
     default:
       return 'base';
   }
@@ -103,6 +107,10 @@ const getDefaultLabel = (nodeType: string): string => {
       return '';
     case 'vline':
       return '';
+    case 'link':
+      return 'Link';
+    case 'textonly':
+      return 'Text';
     default:
       return nodeType.charAt(0).toUpperCase() + nodeType.slice(1);
   }
@@ -199,6 +207,25 @@ const getTypeSpecificData = (nodeType: string): Partial<BaseNodeData> => {
         strokeWidth: 3,
         strokeColor: '#374151',
         strokeStyle: 'solid' as const,
+      };
+    case 'link':
+      return {
+        width: 180,
+        height: 50,
+        linkUrl: '',
+        strokeColor: '#3b82f6',
+        backgroundColor: '#eff6ff',
+        strokeWidth: 1,
+      };
+    case 'textonly':
+      return {
+        width: 150,
+        fontColor: '#1f2937',
+        fontSize: 'm',
+        fontWeight: 'normal',
+        backgroundColor: 'transparent',
+        strokeColor: '#1f2937',
+        strokeWidth: 0,
       };
     default:
       return {};

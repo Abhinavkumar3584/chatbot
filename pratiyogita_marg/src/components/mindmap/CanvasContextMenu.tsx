@@ -58,6 +58,8 @@ export const CanvasContextMenu = ({
     { type: 'note',      label: 'Note' },
     { type: 'section',   label: 'Section' },
     { type: 'checklist', label: 'Checklist' },
+    { type: 'link',      label: 'Link' },
+    { type: 'textonly',  label: 'Text' },
   ];
 
   const item = (icon: React.ReactNode, label: string, shortcut: string, onClick: () => void, disabled = false, danger = false) => (

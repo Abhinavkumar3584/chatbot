@@ -17,6 +17,8 @@ import {
   LucideIcon,
   Minus,
   GripVertical,
+  Link,
+  Type,
 } from "lucide-react";
 
 interface ComponentsSidebarProps {
@@ -58,6 +60,8 @@ const ADVANCED: NodeItem[] = [
   { type: 'resource',  label: 'Resources',  icon: FileText,   bg: 'bg-gray-900', border: 'border-gray-800', text: 'text-white', iconColor: 'text-white' },
   { type: 'note',      label: 'Note',       icon: StickyNote, bg: 'bg-gray-900', border: 'border-gray-800', text: 'text-white', iconColor: 'text-white' },
   { type: 'concept',   label: 'Concept',    icon: Lightbulb,  bg: 'bg-gray-900', border: 'border-gray-800', text: 'text-white', iconColor: 'text-white' },
+  { type: 'link',      label: 'Link',       icon: Link,       bg: 'bg-gray-900', border: 'border-gray-800', text: 'text-white', iconColor: 'text-white' },
+  { type: 'textonly',  label: 'Text',       icon: Type,       bg: 'bg-gray-900', border: 'border-gray-800', text: 'text-white', iconColor: 'text-white' },
 ];
 
 const NodeButton = ({

@@ -7,6 +7,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { 
   Save, 
@@ -21,9 +23,19 @@ import {
   Loader2,
   Cloud,
   Download,
+  Keyboard,
 } from 'lucide-react';
 import { getAllMindMaps } from '@/utils/mindmapStorage';
 import { AutoSaveConfig, saveAutoSaveConfig } from '@/utils/mindmapAutoSave';
+
+const ShortcutRow = ({ label, shortcut }: { label: string; shortcut: string }) => (
+  <div className="flex items-center justify-between px-3 py-1.5 text-sm">
+    <span className="text-gray-700">{label}</span>
+    <kbd className="text-[11px] font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">
+      {shortcut}
+    </kbd>
+  </div>
+);
 
 interface MindMapTopBarProps {
   currentMindMap: string;
@@ -212,7 +224,41 @@ export const MindMapTopBar = ({
               <><Cloud className="h-3.5 w-3.5" /><CheckCircle2 className="h-3.5 w-3.5" /><span>Saved to cloud</span></>
             )}
           </div>
-        )}        
+        )}
+
+        {/* Keyboard Shortcuts */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1" title="Keyboard Shortcuts">
+              <Keyboard className="h-4 w-4" />
+              Shortcuts <ChevronDown className="h-3 w-3 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuLabel className="text-xs text-gray-500 font-semibold">Selection</DropdownMenuLabel>
+            <ShortcutRow label="Select node" shortcut="Click" />
+            <ShortcutRow label="Multi-select" shortcut="Shift + Click" />
+            <ShortcutRow label="Box select" shortcut="Shift + Drag" />
+            <ShortcutRow label="Select all" shortcut="Ctrl + A" />
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs text-gray-500 font-semibold">Edit</DropdownMenuLabel>
+            <ShortcutRow label="Copy node" shortcut="Ctrl + C" />
+            <ShortcutRow label="Paste node" shortcut="Ctrl + V" />
+            <ShortcutRow label="Duplicate node" shortcut="Ctrl + D" />
+            <ShortcutRow label="Delete selected" shortcut="Delete" />
+            <ShortcutRow label="Edit node text" shortcut="Double-click" />
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs text-gray-500 font-semibold">History</DropdownMenuLabel>
+            <ShortcutRow label="Undo" shortcut="Ctrl + Z" />
+            <ShortcutRow label="Redo" shortcut="Ctrl + Y" />
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs text-gray-500 font-semibold">Canvas</DropdownMenuLabel>
+            <ShortcutRow label="Pan" shortcut="Drag (empty area)" />
+            <ShortcutRow label="Zoom in/out" shortcut="Scroll wheel" />
+            <ShortcutRow label="Context menu" shortcut="Right-click" />
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <div className="ml-auto">
           <span className="text-sm font-medium text-gray-600">
             {currentMindMap || 'Unsaved mind map'}

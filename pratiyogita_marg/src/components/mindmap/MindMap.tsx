@@ -24,6 +24,8 @@ import { NoteNode } from './node-components/NoteNode';
 import { ConceptNode } from './node-components/ConceptNode';
 import { HorizontalLineNode } from './node-components/HorizontalLineNode';
 import { VerticalLineNode } from './node-components/VerticalLineNode';
+import { LinkNode } from './node-components/LinkNode';
+import { TextOnlyNode } from './node-components/TextOnlyNode';
 import { initialNodes, initialEdges } from './MindMapInitialData';
 import { MindMapTopBar } from './MindMapTopBar';
 import { MindMapDeleteDialog } from './MindMapDeleteDialog';
@@ -41,6 +43,8 @@ import { CanvasContextMenu } from './CanvasContextMenu';
 import { MindMapHeader, MindMapHeaderData } from './MindMapHeader';
 import { mindMapHistory } from '@/utils/mindmapHistory';
 import { WorkspaceBoundaryNode, WORKSPACE_WIDTH, WORKSPACE_HEIGHT, WORKSPACE_X, WORKSPACE_Y } from './WorkspaceBoundary';
+import { getHelperLines } from './utils/getHelperLines';
+import { HelperLines } from './HelperLines';
 import { useToast } from '@/hooks/use-toast';
 import { ExamCategory } from './types';
 import { 
@@ -72,6 +76,8 @@ const nodeTypes: NodeTypes = {
   concept: ConceptNode,
   hline: HorizontalLineNode,
   vline: VerticalLineNode,
+  link: LinkNode,
+  textonly: TextOnlyNode,
   workspace: WorkspaceBoundaryNode,
 };
 
@@ -99,8 +105,10 @@ export const MindMap = () => {
 const MindMapInner = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const reactFlowInstanceRef = useRef<any>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([workspaceBoundaryNode, ...initialNodes]);
+  const [nodes, setNodes, defaultOnNodesChange] = useNodesState([workspaceBoundaryNode, ...initialNodes]);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [helperLineH, setHelperLineH] = useState<number | undefined>(undefined);
+  const [helperLineV, setHelperLineV] = useState<number | undefined>(undefined);
   const [currentMindMap, setCurrentMindMap] = useState<string>('');
   const [currentExamCategory, setCurrentExamCategory] = useState<ExamCategory | ''>('');
   const [mindMapToDelete, setMindMapToDelete] = useState<string | null>(null);
@@ -138,6 +146,35 @@ const MindMapInner = () => {
   const autoSaveConfigRef = useRef(autoSaveConfig);
   const autoSaveDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const headerDataRef = useRef(headerData);
+
+  // Custom onNodesChange with alignment guide lines + snapping
+  const onNodesChange = useCallback(
+    (changes: any[]) => {
+      const { horizontal, vertical, snapX, snapY } = getHelperLines(changes, nodesRef.current);
+      setHelperLineH(horizontal);
+      setHelperLineV(vertical);
+
+      // Apply snap correction to the dragging position change
+      if (typeof snapX === 'number' || typeof snapY === 'number') {
+        const adjusted = changes.map((c: any) => {
+          if (c.type === 'position' && c.dragging && c.position) {
+            return {
+              ...c,
+              position: {
+                x: snapX ?? c.position.x,
+                y: snapY ?? c.position.y,
+              },
+            };
+          }
+          return c;
+        });
+        defaultOnNodesChange(adjusted);
+      } else {
+        defaultOnNodesChange(changes);
+      }
+    },
+    [defaultOnNodesChange],
+  );
 
   // Node handlers
   const { 
@@ -522,7 +559,7 @@ const MindMapInner = () => {
             onToggleCollapse={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
           />
           
-          <div ref={reactFlowWrapper} className="flex-1 overflow-hidden">
+          <div ref={reactFlowWrapper} className="flex-1 overflow-hidden relative">
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -549,6 +586,7 @@ const MindMapInner = () => {
             <MiniMap />
             <Background gap={12} size={1} />
           </ReactFlow>
+          <HelperLines horizontal={helperLineH} vertical={helperLineV} />
           </div>
           </div>
           

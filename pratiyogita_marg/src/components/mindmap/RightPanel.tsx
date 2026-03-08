@@ -1,4 +1,6 @@
 ﻿import { ChevronLeft, MousePointerClick } from "lucide-react";
+import { LinkSettings } from "./settings/LinkSettings";
+import { TextOnlySettings } from "./settings/TextOnlySettings";
 import { ChecklistSettings } from "./settings/ChecklistSettings";
 import { ResourceSettings } from "./settings/ResourceSettings";
 import { ShapeSettings } from "./settings/ShapeSettings";
@@ -37,6 +39,8 @@ const nodeLabel: Record<string, string> = {
   concept:   'Concept',
   hline:     'Horizontal Line',
   vline:     'Vertical Line',
+  link:      'Link',
+  textonly:  'Text',
 };
 
 export const RightPanel = ({ onToggle, selectedNode, nodeType, selectedNodeData, selectedEdgeId, selectedEdgeData }: RightPanelProps) => {
@@ -47,7 +51,8 @@ export const RightPanel = ({ onToggle, selectedNode, nodeType, selectedNodeData,
   const hasNodeSettings = selectedNode && selectedNodeData && (
     isBaseNode || isLine || isShape ||
     nodeType === 'checklist' || nodeType === 'resource' ||
-    nodeType === 'note' || nodeType === 'concept'
+    nodeType === 'note' || nodeType === 'concept' ||
+    nodeType === 'link' || nodeType === 'textonly'
   );
 
   const hasEdgeSettings = !hasNodeSettings && !!selectedEdgeId && !!selectedEdgeData;
@@ -80,6 +85,8 @@ export const RightPanel = ({ onToggle, selectedNode, nodeType, selectedNodeData,
             {isShape                  && <ShapeSettings      nodeId={selectedNode!} data={selectedNodeData!} />}
             {nodeType === 'note'      && <NoteSettings       nodeId={selectedNode!} data={selectedNodeData!} />}
             {nodeType === 'concept'   && <ConceptSettings    nodeId={selectedNode!} data={selectedNodeData!} />}
+            {nodeType === 'link'      && <LinkSettings       nodeId={selectedNode!} data={selectedNodeData!} />}
+            {nodeType === 'textonly'  && <TextOnlySettings   nodeId={selectedNode!} data={selectedNodeData!} />}
             {isLine && (
               <LineSettings
                 nodeId={selectedNode!}
