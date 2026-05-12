@@ -9,7 +9,7 @@ const AboutUs = () => {
       name: 'Abhinav Kumar',
     },
     {
-      role: 'CO-FOUNDER & TECHNICAL LEAD',
+      role: 'FOUNDING AI ENGINEER',
       image: './Aboutusimages/Manu.jpg',
       name: 'Manu Dev',
     },
@@ -32,8 +32,7 @@ const AboutUs = () => {
           <div className="bg-white rounded-xl p-8 shadow-sm border">
             <div className="w-full p-6 bg-blue-50 rounded-lg border-l-4 border-blue-500 text-gray-700 text-base sm:text-lg leading-relaxed">
               <p className="mb-4 italic">
-                We are <span className="font-semibold text-blue-700">Abhinav Kumar</span>, <span className="font-semibold text-blue-700">Manu Dev</span>, and <span className="font-semibold text-blue-700">Nitish Yadav</span>, and we created <span className="font-semibold">Pratiyogita Setu</span> with a simple purpose—
-                to bring clarity, direction, and confidence to students preparing for competitive examinations.
+                Pratiyogita Setu was built by a small team with the goal of bringing clarity, direction, and confidence to students preparing for competitive examinations. I joined as an early technical contributor and helped develop the core AI and full-stack systems behind the platform.
               </p>
               <p className="mb-4">
                 Every year in India, millions of aspirants prepare for thousands of government and competitive exams.
